@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rolf's Klima-Analyse</title>
+
+    <!--link rel="stylesheet" type="text/css" href="css/bootstrap.css" /-->
+    <link rel="stylesheet" type="text/css" href="/node_modules/bootstrap/dist/css/bootstrap.css" />
+
+    <link href="/node_modules/leaflet/dist/leaflet.css" rel="stylesheet">
+    <!--link href="/node_modules/leaflet.control.select/dist/leaflet.control.select.css" rel="stylesheet"-->
+    <link type="text/css" href="css/Chart.min.css" />
+
+    <script src="lib/jquery.min.js"></script>
+    <script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/node_modules/leaflet/dist/leaflet.js" charset="utf-8" crossorigin=""></script>
+    <script src="/node_modules/leaflet.control.select/dist/leaflet.control.select.js"></script>
+
+    <script src="lib/chart.min.js"></script>
+    <script src="lib/chartjs-plugin-datalabels.js"></script>
+    <script src="lib/chartjs-plugin-zoom.js"></script>
+    <script src="lib/chartjs-plugin-annotation.min.js"></script>
+
+    <script src="js/kli6900.js"></script>
+
+</head>
+
+<body style="width:100%;">
+    <!-- Start Navigation fixed-top -->
+    <nav class="navbar navbar-brand header  sticky-top navbar-light bg-light"
+        style=" background-color: #e3f2fd;width: 100%;">
+    </nav>
+    <script>
+        console.log("index.html script wird gestartet");
+        $(window).off("resize");
+
+        //$(document).ready(async function () {
+        requestAnimationFrame(async function () {
+            console.log("index.html aufgerufen");
+            let queryString = window.location.search;
+            if (queryString === "") {
+                queryString = "target=kli1000";
+            }
+            let urlParms = new URLSearchParams(queryString);
+            let target = urlParms.get('target')
+            console.log("index.html: " + target);
+            let ret = await kli6900.getScriptA(target);
+            console.log(target, ret.error, ret.message);
+
+            if (ret.error === true) {
+                // Fehlermeldung auf Splash-Screen oder Default-Modul zuordnen
+                ret = await kli6900.getScriptA("kli1000");
+                console.log("kli1000", ret.error, ret.message);
+            }
+            if (ret.error === false) {
+                console.log("Script-Aufruf: target");
+                let parmstring = queryString;
+                if (parmstring.startsWith("?")) {
+                    parmstring = parmstring.substr(1);
+                }
+                let parmarray = parmstring.split("&");
+                let parms = {};
+                let targetfunction = "";
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        if (t[0] === "target") {
+                            targetfunction = t[1];
+                            parms.target = targetfunction;
+                        } else {
+                            parms[t[0]] = t[1];
+                        }
+                    }
+                }
+                //if (targetfunction.indexOf(".") < 0) {
+                //    targetfunction += ".show";
+                //}
+
+                await window[targetfunction].show(parms);
+                /*
+                let html = `
+                < marquee
+                    direction="down"
+                    width="250"
+                    height="200"
+                    behavior="alternate"
+                    class="outlined" >
+                    <marquee behavior="alternate">${ret.message}</marquee>
+                </marquee >
+                    `;
+                $("body").html(html);
+                */
+            } else {
+                let html = `
+                < marquee
+                    direction="down"
+                    width="250"
+                    height="200"
+                    behavior="alternate"
+                    class="outlined" >
+                    <marquee behavior="alternate">${ret.message}</marquee>
+                </marquee >
+                    `;
+                $("body").html(html);
+            }
+        });
+    </script>
+</body>
+
+</html>

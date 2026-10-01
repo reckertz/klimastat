@@ -1,0 +1,48 @@
+{
+    // ============================================================
+    // ChatGPT - Minimalausstattung "old school"
+    // UMGEBUNGSFARBE
+    // ============================================================
+    "workbench.colorCustomizations": {
+        "editor.background": "#4f06f811", //  "#20242A",
+        "sideBar.background": "#1C2025",
+        "activityBar.background": "#181C20",
+        "titleBar.activeBackground": "#20242A",
+        "titleBar.activeForeground": "#E0E0E0",
+        "statusBar.background": "#20242A"
+    },
+    // 🔹 Tabs & Einrückung
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    // 🔹 Automatisch formatieren beim Speichern
+    "editor.formatOnSave": true,
+    // 🔹 Standards für JavaScript & TypeScript
+    "[javascript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    // 🔹 Keine alten Formatter (Prettier/Beautify) mehr
+    "editor.defaultFormatter": null,
+    "editor.minimap.enabled": false,
+    "editor.fontSize": 18,
+    "editor.lineHeight": 22, // optional für mehr Zeilenabstand
+    "editor.stickyScroll.enabled": false,
+    "editor.hover.enabled": "off",
+    "editor.parameterHints.enabled": false,
+    "editor.quickSuggestions": {
+        "comments": "off",
+        "strings": "off",
+        "other": "off"
+    },
+    "editor.suggestOnTriggerCharacters": false,
+    // 🔹 Automatische Features aktivieren
+    "javascript.format.enable": true,
+    "typescript.format.enable": true,
+    "terminal.integrated.fontSize": 16
+}

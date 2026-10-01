@@ -1,0 +1,1277 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rolf's Klima-App</title>
+    <link type="text/css" href="css/pivottable.css" />
+
+    <!--link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css" /-->
+    <!--link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/dataTables.bootstrap4.min.css" /-->
+    <!--link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.3.0/css/responsive.bootstrap4.min.css" /-->
+
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css" />
+
+    <link rel="stylesheet" type="text/css" href="css/dataTables.min.css" />
+
+
+    <!-- Wunderbaum -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/wunderbaum@0/dist/wunderbaum.min.css">
+
+    <link href="https://cdn.jsdelivr.net/npm/jquery.fancytree/dist/skin-lion/ui.fancytree.min.css" rel="stylesheet">
+
+    <link href="css/leaflet.css" rel="stylesheet">
+    <link href="/node_modules/leaflet.control.select/dist/leaflet.control.select.css" rel="stylesheet">
+    <!--link rel="stylesheet" href="https://unpkg.com/multiple-select@1.5.2/dist/multiple-select.min.css"-->
+    <!--link href="css/Leaflet.BigImage.min.css" rel="stylesheet"-->
+    <!--link rel="stylesheet" type="text/css" href="css/responsive.bootstrap4.min.css" /-->
+    <!--link rel="stylesheet" type="text/css" href="css/buttons.dataTables.min.css" /-->
+    <!-- link rel="stylesheet" type="text/css" href="css/jquery.gridly.css" /-->
+    <!--
+    <link rel="stylesheet" type="text/css" href="/node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/dataTables.bootstrap4.min.css" />
+    <link type="text/css" href="css/bootstrap-multiselect.css" />
+    <link rel="stylesheet" type="text/css" href="css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/buttons.dataTables.min.css" />
+    -->
+
+    <link type="text/css" href="css/Chart.min.css" />
+
+    <link rel="stylesheet" type="text/css" href="css/style.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/simple-discrete-range.css" />
+    <link rel="stylesheet" type="text/css" href="css/nouislider.min.css" />
+
+
+
+    <script src="lib/jquery.min.js"></script>
+    <script src="lib/jqueryui.js"></script>
+    <script src="lib/popper.js"></script>
+
+    <script src="lib/jquery.sparkline.min.js"></script>
+    <script src="lib/hilitor.js"></script>
+
+    <script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/node_modules/bootstrap-show-modal/src/bootstrap-show-modal.js"></script>
+
+    <script src="lib/jquery.csv.min.js"></script>
+
+    <script src="lib/leaflet.js" charset="utf-8"></script>
+    <script src="/node_modules/leaflet.control.select/dist/leaflet.control.select.js"></script>
+
+    <!--script src="https://unpkg.com/leaflet-image@latest/leaflet-image.js"></script-->
+    <!--script src="https://unpkg.com/leaflet-arc"></script-->
+    <!-- oder leaflet-arc.min.js -->
+    <!--script src="lib/leaflet-arc.js" charset="utf-8"></script-->
+    <script src="lib/leaflet-arc.min.js" charset="utf-8"></script>
+
+    <script src="lib/dom-to-image-more.min.js" charset="utf-8"></script>
+
+    <!--script src="lib/Leaflet.BigImage.min.js" charset="utf-8"></script-->
+    <script src="lib/leaflet-image.js" charset="utf-8"></script>
+
+
+    <script src="https://unpkg.com/multiple-select@1.5.2/dist/multiple-select.min.js"></script>
+
+    <!--script src="lib/bootstrap-multiselect.js"></script-->
+    <!--script src="lib/bootstrap-select.js"></script-->
+
+    <!--link type="text/css" href="css/bootstrap-multiselect.css" /-->
+    <!--link type="text/css" href="css/bootstrap-select.css" /-->
+
+    <script type="text/javascript" src="lib/datatables.min.js"></script>
+    <script type="text/javascript" src="lib/datatables.select.min.js"></script>
+
+    <!--script type="text/javascript" src="lib/jquery.dataTables.min.js"></script-->
+    <!--script type="text/javascript" src="lib/dataTables.buttons.min.js"></script-->
+
+    <!-- colVis generiert Buttons für das Ausblenden von Spalten   -->
+    <script type="text/javascript" src="lib/buttons.colVis.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery-ui/ui/widgets/draggable.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.fancytree/dist/jquery.fancytree-all-deps.min.js"></script>
+
+
+    <!--script src="lib/bootstrap-select.js"></script>
+    <link type="text/css" href="css/bootstrap-select.css" /-->
+
+    <!--script src="lib/jerzybrowser.js"></script-->
+
+    <!--script type="text/javascript" src="lib/jquery.gridly.js"></script-->
+    <script src="lib/jquery.sortable.js"></script>
+
+    <!-- https://simplestatistics.org/docs/ -->
+    <script src="lib/simple-statistics.min.js"></script>
+    <script src="lib/pako.min.js"></script>
+
+
+    <script src="lib/nouislider.min.js"></script>
+
+    <!--script src="https://cdn.jsdelivr.net/npm/underscore@1.13.6/underscore-umd-min.js"></script-->
+    <!--script src="lib/timeseries-analysis.js"></script-->
+
+    <script src="js/k18.js"></script>
+    <!--script src="lib/panzoom1.js"></script-->
+    <!-- https://raw.githubusercontent.com/anvaka/panzoom/refs/heads/main/dist/panzoom.min.js   -->
+    <script src="lib/panzoom.min.js"></script>
+    <!--script src="https://unpkg.com/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script-->
+
+    <script src="lib/beep.js"></script>
+
+    <script src="lib/jstree.min.js"></script>
+
+    <!-- Wunderbaum -->
+    <script defer src="https://cdn.jsdelivr.net/npm/wunderbaum@0/dist/wunderbaum.umd.min.js"></script>
+
+
+    <!--script src="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.js"></script-->
+    <!--script src="https://unpkg.com/bootstrap-table@1.18.3/dist/extensions/filter-control/bootstrap-table-filter-control.min.js"></script-->
+
+
+    <script src="/node_modules/socket.io/client-dist/socket.io.js"></script>
+
+    <!--script src="lib/jquery.tablesorter.combined.min.js"></script-->
+    <!--script src="lib/bootstrap.bundle.min.js"></script-->
+    <!--script src="lib/bootstrap.bundle.js"></script-->
+    <!--script src="lib/bootstrap-show-modal.js"></script-->
+
+    <!--script src="lib/Chart.bundle.min.js"></script-->
+    <!--script src="/node_modules/chart.js/dist/chart.js"></script-->
+    <!--script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script-->
+
+    <script src="lib/hammer.js"></script>
+    <script src="lib/chart.min.js"></script>
+    <!--script src="/node_modules/chartjs-plugin-annotation/dist/chartjs-plugin-annotation.min.js"></script-->
+    <!--script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@0.7.0"></script-->
+    <script src="lib/chartjs-plugin-datalabels.js"></script>
+    <script src="lib/chartjs-plugin-zoom.js"></script>
+    <script src="lib/chartjs-plugin-annotation.min.js"></script>
+    <!--script type="module">
+        import Chart from '/node_modules/chart.js/dist/chart.min.js'
+        console.log(Chart)
+      </script-->
+
+    <script src="lib/simple-discrete-range.js"></script>
+    <script src="lib/webm-writer-0.3.0.js"></script>
+
+    <script src="lib/js.cookie.min.js"></script>
+    <script src="lib/analogClock.js"></script>
+    <!--script src="lib/js.cookie.js"></script-->
+    <script src="lib/FileSaver.js"></script>
+    <script src="lib/async.js"></script>
+
+    <script src="lib/chroma.min.js"></script>
+
+    <script src="lib/jquery.mousewheel.min.js" charset="utf-8"></script>
+    <!--script src="https://cdn.jsdelivr.net/npm/ef-infinite-canvas@0.5.0-alpha/dist/infinite-canvas.js"></script-->
+
+    <!--script src="lib/jquery.geo-1.1.0.min.js" charset="utf-8"></script-->
+    <script src="lib/jquery.geo-1.1.0.js" charset="utf-8"></script>
+    <!-- https://tom-alexander.github.io/regression-js/  -->
+    <!-- https://github.com/Tom-Alexander/regression-js/blob/master/dist/regression.js -->
+    <script src="lib/regression.js" charset="utf-8"></script>
+    <script src="lib/sinusregression.js" charset="utf-8"></script>
+    <!-- https://www.npmjs.com/package/js-polynomial-regression läuft nicht -->
+    <!-- script src="lib/PolynomialRegression.js" type="module" charset="utf-8"></script -->
+
+    <!--script src="js/noaasuncalc.js" charset="utf-8"></script-->
+    <script src="lib/suncalc.js" charset="utf-8"></script>
+    <script src="lib/md5.js" charset="utf-8"></script>
+    <script src="lib/math.js" charset="utf-8"></script>
+
+    <script src="lib/dtm.js" charset="utf-8"></script>
+
+    <!-- https://pivottable.js.org/examples/    -->
+    <!-- script src="lib/pivot.min.js"></script -->
+    <!-- https://github.com/nicolaskruchten/pivottable/blob/master/dist/pivot.js -->
+    <!--script src="lib/pivot.js"></script-->
+    <script src="lib/pivottable.js"></script>
+    <!-- script src="https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.23.0/pivot.min.js"></script -->
+
+    <script src="lib/figue.js" charset="utf-8"></script>
+    <!-- script src="lib/clusterfck.js" charset="utf-8"></script-->
+
+    <script src="lib/cubicspline.js" charset="utf-8"></script>
+
+    <!--script src="lib/html2canvas.min.js" charset="utf-8"></script-->
+    <script src="lib/html2canvas.js" charset="utf-8"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3-array@3" charset="utf-8"></script>
+
+    <script src="js/kla6210.js"></script>
+    <script src="js/kli6900.js"></script>
+    <script src="js/kla6905ui.js"></script>
+    <script src="js/kla6920.js"></script>
+    <script src="js/kla6950.js"></script>
+
+    <script src="js/kla1000.js"></script>
+    <script src="js/kla1100.js"></script>
+    <script src="js/kla1200.js"></script>
+    <script src="js/kla1300dwd.js"></script>
+    <script src="js/kla1305dwd.js"></script>
+    <script src="js/kla1320p2k.js"></script>
+    <script src="js/kla1340co2.js"></script>
+
+    <script src="js/kla2000sel.js"></script>
+    <script src="js/kla2100.js"></script>
+    <script src="js/kla2200sel.js"></script>
+    <script src="js/kla2230.js"></script>
+    <script src="js/kla2232y.js"></script>
+    <script src="js/kla2240.js"></script>
+    <script src="js/kla2242.js"></script>
+    <script src="js/kla2243.js"></script>
+    <script type="module" src="js/kla2244.js"></script>
+    <script src="js/kla2250.js"></script>
+    <script src="js/kla2252.js"></script>
+    <script src="js/kla2260.js"></script>
+    <script src="js/kla2262p2k.js"></script>
+    <script src="js/kla2264p2k.js"></script>
+
+    <script src="js/kla2268p2k.js"></script>
+    <script src="js/kla2270p2k.js"></script>
+
+    <script src="js/kla3000kpi.js"></script>
+    <script src="js/kla3010map.js"></script>
+    <script src="js/kla3100ico.js"></script>
+    <script src="js/kla3020.js"></script>
+    <script src="js/kla3030.js"></script>
+    <script src="js/kla3040.js"></script>
+    <script src="js/kla4700.js"></script>
+    <script src="js/kla4710.js"></script>
+    <script src="js/kla4730.js"></script>
+    <script src="js/kla4740.js"></script>
+    <script src="js/kla4744.js"></script>
+    <script src="js/kla4746.js"></script>
+    <script src="js/kla4746piv.js"></script>
+    <script src="js/kla4747.js"></script>
+    <script src="js/kla4748.js"></script>
+    <script src="js/kla4749.js"></script>
+    <script src="js/kla4750.js"></script>
+    <script src="js/kla4760.js"></script>
+    <script src="js/kla4770.js"></script>
+    <script src="js/kla4780.js"></script>
+    <script src="js/kla4794.js"></script>
+    <script src="js/kla4796cl7.js"></script>
+    <!--script src="js/kla4796cl8.js"></script-->
+
+    <!--script src="js/kla4780cl3.js"></script-->
+
+    <script src="js/kla6930.js"></script>
+    <script src="js/kla6960.js"></script>
+    <script src="js/kla6962.js"></script>
+    <script src="js/kla6963.js"></script>
+    <script src="js/kla6970.js"></script>
+    <script src="js/kla6972.js"></script>
+    <script src="js/kla7000.js"></script>
+    <script src="js/kla7100.js"></script>
+    <script src="js/kla7200.js"></script>
+    <script src="js/kla7220.js"></script>
+    <script src="js/kla7230.js"></script>
+    <script src="js/kla7240.js"></script>
+    <script src="js/kla7300.js"></script>
+    <script src="js/kla7900.js"></script>
+    <!--script src="js/kla8000.js"></script-->
+
+    <!-- reines Datenmodul -->
+    <script src="js/raw1900.js"></script>
+    <!-- and (orientation: portrait)  -->
+    <style type="text/css">
+        /* https://css-tricks.com/books/volume-i/scale-typography-screen-size/ */
+        /*
+        body,
+        button,
+        div,
+        span,
+        button {
+            font-size: calc(12px + (26 - 14) * ((100vw - 300px) / (1600 - 300)));
+            line-height: calc(1.3em + (1.5 - 1.2) * ((100vw - 300px)/(1600 - 300)));
+        }
+        */
+
+        html {
+            font-size: 11px;
+        }
+
+        dialog[open] {
+            pointer-events: auto;
+        }
+
+        dialog:not([open]) {
+            display: none;
+        }
+
+
+        .wip {
+            border: 3px solid red !important;
+        }
+
+        .content {
+            height: 90%;
+            overflow: auto;
+            background: mistyrose;
+        }
+
+        .colseparator {
+            clear: both;
+            text-align: center;
+            font-weight: bold;
+            padding-top: 1em;
+        }
+
+        .col1of1 {
+            text-align: center;
+            float: left;
+            width: 100%;
+        }
+
+        .col1of2 {
+            text-align: left;
+            float: left;
+            width: 49%;
+        }
+
+        .col2of2 {
+            text-align: left;
+            float: right;
+            padding: .4em;
+            width: 49%;
+        }
+
+        .col1of3 {
+            text-align: left;
+            float: left;
+            width: 32%;
+        }
+
+        .col2of3 {
+            text-align: left;
+            float: left;
+            width: 32%;
+        }
+
+        .col3of3 {
+            text-align: left;
+            float: right;
+            width: 32%;
+        }
+
+        .col1of5 {
+            text-align: left;
+            float: left;
+            width: 19%;
+        }
+
+        .col2of5 {
+            text-align: left;
+            float: left;
+            width: 19%;
+        }
+
+        .col3of5 {
+            text-align: left;
+            float: left;
+            width: 19%;
+        }
+
+        .col4of5 {
+            text-align: left;
+            float: left;
+            width: 19%;
+        }
+
+        .col5of5 {
+            text-align: left;
+            float: right;
+            width: 19%;
+        }
+
+
+        tbody tr:nth-child(odd) {
+            background-color: #eeeeee;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+
+        div label {
+            margin: 5px;
+            font-weight: bold;
+        }
+
+        .dobold {
+            text-decoration-thickness: from-font;
+            font-size: 1.5rem;
+            color: blue;
+        }
+
+        .dotitle {
+            display: block;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        @media only screen and (max-width: 768px) {
+
+            /* For mobile phones: */
+            [class*="col"] {
+                width: 95% !important;
+                margin: 15px !important;
+                /* margin-left: 1em !important; */
+                /* padding: 1em !important; */
+                /* font-size: calc(12px + 1.5vw) !important; */
+            }
+
+            img {
+                width: 90% !important;
+                height: auto;
+            }
+
+            pre {
+                margin-left: 5px !important;
+            }
+        }
+
+
+        .imageContainer1 {
+            display: inline-block;
+            position: relative;
+            background-color: mistyrose;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        /* For all zoom buttons */
+        .zoomButton {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            color: #000;
+            width: 15px;
+            height: 15px;
+            line-height: 15px;
+            text-align: center;
+            border-radius: 3px;
+            cursor: pointer;
+            position: absolute;
+            top: 0;
+            font-weight: bold;
+            left: 10px;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -o-user-select: none;
+            user-select: none;
+        }
+
+        /* Reset Zoom button first */
+        .zoomReset {
+            top: 10px;
+        }
+
+        /* Then Zoom In button */
+        .zoomIn {
+            top: 30px;
+        }
+
+        /* Then Zoom Out button */
+        .zoomOut {
+            top: 50px;
+        }
+
+        button {
+            margin-bottom: 0.5em;
+            margin-left: 5px !important;
+        }
+
+        .btn-bolder {
+            font-weight: bolder;
+            font-size: large;
+        }
+
+        td {
+            padding: 3px;
+            margin: 0 0 0 0;
+        }
+
+        @media (min-width: 641px) {
+            span.icon {
+                display: none;
+            }
+
+            span.text {
+                display: inline-block;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                background-color: white;
+            }
+
+            span.icon {
+                display: inline-block;
+            }
+
+            span.text {
+                display: none;
+            }
+        }
+
+        .geo-label {
+            margin: -2em 0 0 1em;
+            padding: .25em .5em;
+            font-family: Ariel;
+            font-size: .7em;
+            color: #444;
+            background: #dedede;
+            border-radius: 8px;
+            border: solid 2px #444;
+            width: auto;
+            /* we will show it on geomapmove */
+            display: none;
+        }
+
+        @media print {
+            .new-page {
+                page-break-before: always;
+            }
+        }
+
+        .nested {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+
+        /* range-slider vertical, orient=vertical beim Element für Firefox */
+        input[type="range"] {
+            writing-mode: bt-lr;
+            -webkit-appearance: slider-horizontal;
+        }
+
+
+        div.dataTables_wrapper {
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .jqstooltip {
+            box-sizing: content-box;
+        }
+
+        .vertical-header {
+            -webkit-transform: rotate(-90deg);
+            -ms-transform: rotate(-90deg);
+            transform: rotate(-90deg);
+            /* Additional styling like width and padding for better layout */
+        }
+
+
+        /* Style the tab */
+        .klitab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+
+        /* Style the buttons that are used to open the tab content */
+        .klitab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+
+        /* Change background color of buttons on hover */
+        .klitab button:hover {
+            background-color: #ddd;
+        }
+
+        /* Create an active/current tablink class */
+        .klitab button.kliactive {
+            background-color: #ccc;
+        }
+
+        /* Style the tab content */
+        .klitabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+
+        /* List item styles */
+        .clickable-item {
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Mouse-over effect */
+        .clickable-item:hover {
+            background-color: #f0f0f0 !important;
+        }
+
+        .annotation-icon {
+            position: absolute;
+            top: -25px;
+            /* Adjust based on your icon */
+            left: -12.5px;
+            /* Adjust based on your icon */
+        }
+
+        .annotation {
+            background-color: white;
+            padding: 2px;
+            border: 1px solid red;
+        }
+
+        .full-size-overlay {
+            background-size: cover;
+            /* Makes image fill the container */
+        }
+
+        /* DEBUG: sichtbar machen & umranden */
+        /*
+        .sdr {
+            display: block !important;
+            width: 100% !important;
+            min-height: 32px !important;
+            outline: 1px dashed #e11d48;
+        }
+
+        .sdr .sdr-track {
+            height: 12px !important;
+            background: #e5e7eb !important;
+            outline: 1px dashed #2563eb;
+        }
+
+        .sdr .sdr-fill {
+            background: #93c5fd !important;
+        }
+
+        .sdr .sdr-handle {
+            width: 20px !important;
+            height: 20px !important;
+            border: 2px solid #3b82f6 !important;
+            background: #fff !important;
+        }
+        */
+        .sdr,
+        .sdr * {
+            box-sizing: border-box;
+        }
+
+        .zoomable {
+            width: 200px;
+            cursor: zoom-in;
+            transition: all 0.3s ease;
+        }
+
+        .zoomable.active {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 60vw;
+            max-height: 60vh;
+            width: auto;
+            height: auto;
+            z-index: 10;
+            cursor: zoom-out;
+        }
+    </style>
+</head>
+<!-- style="background-color: deeppink;"-->
+<!--
+    .lineClass {
+            background-color: rgb(240, 227, 227)
+        }
+-->
+
+<body style="width:100%;">
+    <!-- Start Navigation fixed-top -->
+    <nav class="navbar navbar-brand header  sticky-top navbar-light bg-light"
+        style=" background-color: #e3f2fd;width: 100%;">
+    </nav>
+    <!-- End Navigation -->
+    <!-- role="main"  div class="clearfix"></div-->
+    <!--script src="upup.min.js"></script-->
+    <!--audio autoplay>
+        <source src="sounds/heartbeat-trailer-488.wav" type="audio/wav">
+          Your browser does not support the audio element. (funktioniert nur in Edge so richtig)
+      </audio-->
+    <!--audio id="intro" src="sounds/heartbeat-trailer-488.wav" muted></audio-->
+    <script>
+        console.log("index.html script wird gestartet");
+        $(window).off("resize");
+        window.charts = {};
+        var socketio;
+
+        /*
+        $(window).resize(function () {
+            var wh = $(window).height();
+            //var hh = $("body").outerHeight();
+            alert("Resize:" + (wh - fh - 1));
+            var fh = $("nav.navbar").outerHeight();
+            var ah = wh - fh - 1;
+            $(".klicontainer").height(wh - fh - 1);
+            $(".kliratings").height(wh - fh - 1);
+            console.log("index.html wh:" + wh + " nav:" + fh + " ch:" + ah);
+            // $(".content").css("overflow", "auto");
+        });
+        */
+
+        $(document).ready(function () {
+            console.log("index.html aufgerufen");
+
+            socketio = io();
+            socketio.on("connect", function () {
+                socketio.emit("checkupghcnd", "index.html started");
+                //socket.emit(<channel>,<message>); sendet
+            });
+
+
+            Chart.defaults.plugins.legend.display = true;
+            Chart.defaults.font.size = 14;
+            Chart.defaults.font.weight = "bold";
+            Chart.register(ChartDataLabels);
+            //Chart.register(zoomPlugin);
+            //Chart.register(annotationPlugin);
+            //$('[data-toggle="tooltip"]').tooltip();
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+            //Chart.register(annotationPlugin);
+            //Chart.register(zoomPlugin);
+            /*
+            try {
+                UpUp.start({
+                    'content-url': 'offline.html',
+                    'assets': [
+                        'node_modules/bootstrap/dist/css/bootstrap.min.css',
+                        'css/Chart.min.css',
+                        'lib/jquery.min.js',
+                        'lib/beep.js',
+                        'node_modules/bootstrap/dist/js/bootstrap.bundle.min.js',
+                        'node_modules/bootstrap-show-modal/src/bootstrap-show-modal.js',
+                        'lib/Chart.bundle.min.js',
+                        'lib/simple-statistics.min.js',
+                        'lib/js.cookie.min.js',
+                        'lib/async.js',
+                        'lib/jquery.sparkline.min.js',
+                        'lib/chroma.min.js',
+                        'lib/jquery.geo-1.1.0.js',
+                        'lib/regression.js',
+
+                        'js/kla6210.js',
+                        'js/kli6900.js'
+                    ]
+                });
+            } catch (err) {
+                alert(err + " Fortsetzung ohne Progressive Support");
+            }
+            */
+
+            // https://stackoverflow.com/questions/7042611/override-console-log-for-production/30197438
+            // define a new console, ABER: der Verweis auf das ursprüngliche Statement und damit
+            // den eigentlichen Kontext geht verlogen, besser: console.time("label") und console.timeEnd("label")
+            // nutzen, um nativ die Performance zu überwachen. time in ms
+            // https://www.geeksforgeeks.org/console-in-javascript/#:~:text=In%20javascript%2C%20the%20console%20is,log()
+            /*
+            var console = (function (oldCons) {
+                var today = new Date();
+                var time = ("0" + today.getHours()).slice(-2);
+                time += ":" + ("0" + today.getMinutes()).slice(-2);
+                time += ":" + ("0" + today.getSeconds()).slice(-2);
+                time += " " + this.caller();
+                return {
+                    log: function (text) {
+                        oldCons.log(time + " " + text);
+                        // Your code
+                    },
+                    info: function (text) {
+                        oldCons.info(time + " " + text);
+                        // Your code
+                    },
+                    warn: function (text) {
+                        oldCons.warn(time + " " + text);
+                        // Your code
+                    },
+                    error: function (text) {
+                        oldCons.error(time + " " + text);
+                        // Your code
+                    }
+                };
+            } (window.console));
+            //Then redefine the old console
+            window.console = console;
+            */
+            kli6900.setModus("online");
+            //Chart.plugins.unregister("datalabels");
+            //Chart.register("CategoryScale");
+            //Chart.register("category");
+
+            // 6100
+
+
+            let queryString = window.location.search;
+            let urlParms = new URLSearchParams(queryString);
+            let target = urlParms.get('target')
+            console.log("index.html: " + target);
+            if (typeof target === "string" && target.length > 0 && target === "kla1100") {
+                kli6900.navigateTo("kla1100.show", {
+                    cb6000: function (err) {
+
+                    }
+                });
+            } else if (typeof target === "string" && target.length > 0 && target === "kla1200") {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla1200".length);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla1200.show", parms);
+            } else if (typeof target === "string" && target.length > 0 && target === "kla1300dwd") {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla1300dwd".length);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla1300dwd.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target === "kla1320p2k") {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla1320p2k".length);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla1320p2k.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf(
+                "kla7200.showSuperResults") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla7200.showSuperResults".length);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla7200.showSuperResults", parms);
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla7300.show") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla7300.show".length);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla7300.show", parms);
+            } else if (typeof target === "string" && target.length > 0 && target === "kla2000sel") {
+                kli6900.navigateTo("kla2000sel.show", {
+                    cb6000: function (err) {
+
+                    }
+                });
+            } else if (typeof target === "string" && target.length > 0 && target === "kla2200sel") {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla2200sel".length);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2200sel.show", parms);
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2230.show") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr(1);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2230.show", parms);
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2232y.show") >=
+                0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla2232y.show".length);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2232y.show", parms);
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2240") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla2240.show".length);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2240.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2242") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr(1);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2242.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2243") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla2243.show".length);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2243.show", parms);
+
+
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2244") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr(1);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2244.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2250") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr(1);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2250.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2252") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr(1);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2252.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2260") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr(1);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2260.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2262p2k") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr(1);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2262p2k.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2264p2k") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr(1);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2264p2k.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target.indexOf("kla2268p2k") >= 0) {
+                let parms = {
+                    cb6000: function (err) { }
+                }
+                // die Parameter
+                let parmstring = queryString.substr(1);
+                let parmarray = parmstring.split("&");
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla2268p2k.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target === "kla3000kpi") {
+                kli6900.navigateTo("kla3000kpi.show", {
+                    cb6000: function (err) {
+
+                    }
+                });
+            } else if (typeof target === "string" && target.length > 0 && target === "kla3040") {
+                kli6900.navigateTo("kla3040.show", {
+                    cb6000: function (err) {
+
+                    }
+                });
+            } else if (typeof target === "string" && target.length > 0 && target === "kla3100ico") {
+                kli6900.navigateTo("kla3100ico.show", {
+                    cb6000: function (err) {
+
+                    }
+                });
+            } else if (typeof target === "string" && target.length > 0 && target === "kla3010map") {
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla3010map".length);
+                let parmarray = parmstring.split("&");
+                let parms = {};
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla3010map.showKPIdataInBigMap", parms);
+            } else if (typeof target === "string" && target.length > 0 && target === "kla3020") {
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla3020".length);
+                let parmarray = parmstring.split("&");
+                let parms = {};
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla3020", parms);
+            } else if (typeof target === "string" && target.length > 0 && target === "kla3030") {
+                // die Parameter
+                let parmstring = queryString.substr("?target=kla3030".length);
+                let parmarray = parmstring.split("&");
+                let parms = {};
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla3030", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target === "kla7220") {
+                // die Parameter
+                console.log("Aufruf: kla7220");
+                let parmstring = queryString.substr("?target=kla7220".length);
+                let parmarray = parmstring.split("&");
+                let parms = {};
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla7220.show", parms);
+
+            } else if (typeof target === "string" && target.length > 0 && target === "kla7240") {
+                // die Parameter
+                console.log("Aufruf: kla7240");
+                let parmstring = queryString.substr("?target=kla7240".length);
+                let parmarray = parmstring.split("&");
+                let parms = {};
+                for (let i = 0; i < parmarray.length; i++) {
+                    if (parmarray[i].trim().length > 0) {
+                        t = parmarray[i].split("=");
+                        parms[t[0]] = t[1];
+                    }
+                }
+                kli6900.navigateTo("kla7240.show", parms);
+            } else if (target === null) {
+                kli6900.navigateTo("kla7000.showSplashscreen", {
+                    source: "GHCND",
+                    cb6000: function (err) { }
+                });
+
+            } else {
+                /**
+                 *  Reminder
+                 *  let queryString = window.location.search;
+                    let urlParms = new URLSearchParams(queryString);
+                    let target = urlParms.get('target')
+                 */
+                console.log("docall");
+                //docall(target, function (ret) {
+                kli6900.getScript(target, function (ret) {
+                    if (ret === false) {
+                        kli6900.navigateTo("kla7000.showSplashscreen", {
+                            source: "GHCND",
+                            cb6000: function (err) { }
+                        });
+                    } else {
+                        console.log("Script-Aufruf: target");
+                        let parmstring = queryString;
+                        if (parmstring.startsWith("?")) {
+                            parmstring = parmstring.substr(1);
+                        }
+                        let parmarray = parmstring.split("&");
+                        let parms = {};
+                        let targetfunction = "";
+                        for (let i = 0; i < parmarray.length; i++) {
+                            if (parmarray[i].trim().length > 0) {
+                                t = parmarray[i].split("=");
+                                if (t[0] === "target") {
+                                    targetfunction = t[1];
+                                } else {
+                                    parms[t[0]] = t[1];
+                                }
+                            }
+                        }
+                        if (targetfunction.indexOf(".") < 0) {
+                            targetfunction += ".show";
+                        }
+                        kli6900.navigateTo(targetfunction, parms);
+                    }
+                });
+            }
+        });
+
+        function docall(target, cb0000X0) {
+            try {
+                let url = target;
+                let module = target;
+                if (target.indexOf(".") >= 0) {
+                    url = target.substr(0, target.indexOf("."));
+                    module = url;
+                }
+                url = "js/" + url + ".js";
+                $.getScript(url, function (data, textStatus, jqxhr) {
+                    if (typeof window[module] === "undefined") {
+                        cb0000X0(null, {
+                            error: true,
+                            message: "not found",
+                            url: url,
+                            module: module
+                        });
+                    } else {
+                        cb0000X0("found", {
+                            error: false,
+                            message: "found",
+                            url: url,
+                            module: module
+                        });
+                    }
+                });
+            } catch (err) {
+                cb0000X0("Error", {
+                    error: true,
+                    message: "not found:" + err,
+                    url: "",
+                    module: ""
+                });
+            }
+        }
+    </script>
+
+</body>
+
+</html>
