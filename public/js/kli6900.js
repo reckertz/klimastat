@@ -373,6 +373,21 @@
     };
 
 
+    /**
+     * getPerformance - Initialisierung mit Timestamp, sonst wird Default now gesetzt
+     * @param {*} lasttime - aktuelle Zeitangabe als date, ist "von-Time"
+     * @returns string mit Performance in Sekunden, " " und aktueller ISO-Timestamp
+     */
+    kli6900.getPerformance = function (lasttime) {
+        let newdate = new Date();
+        if (typeof lasttime === "undefined" || lasttime === null) {
+            return "0" + " " + newdate.toISOString();
+        }
+        let newtime = newdate.getTime();
+        let diffInMs = newtime - lasttime;
+        return (diffInMs / 1000).toFixed(3) + " " + newdate.toISOString();
+    };
+
     kli6900.calculateAutoHeight = function () {
         const element = document.querySelector('.overflow-auto');
         const viewportHeight = window.innerHeight;
@@ -395,6 +410,156 @@
         }
         return width;
     };
+
+    kli6900.copyHtml2Clipboard = function (windowContent) {
+
+        let blobarray = [];
+        blobarray.push(windowContent);
+
+        let blobHtml = new Blob(blobarray, { // htmlContent
+            type: "text/html"
+        });
+
+        let clipboardItemInput = new ClipboardItem({
+            'text/html': blobHtml
+        });
+
+        navigator.clipboard.write([clipboardItemInput])
+            .then(() => {
+                kli6900.putMessage("Copy to clipboard successfull");
+                console.log("Content copied to clipboard successfully!");
+            })
+            .catch((error) => {
+                kli6900.putMessage("Copy to clipboard Error:" + error, 3);
+                console.log("Error copying content to clipboard:", error);
+            });
+    };
+
+
+    /**
+     * kla6920.getTrivial - Einfache Analyse Zahlenarray
+     * @param {*} data
+     * @param {*} doround - wenn true (default), dann auf 1 Dezimalstelle runden
+     * @param {*} korr - wenn true (default ist false), dann null für missing setzen
+     * return min, avg, max, sum, counted, missing, missingseqmax als Object, kann null's enthalten
+     * außerdem Indices: imin, imax
+     * NEU: realcounted, zählt Werte ungleich 0.0, wichtig z.B. für PRCP
+     */
+    kli6900.getTrivial = function (data, doround, korr) {
+        let numdata = [];
+        if (typeof doround === "undefined") {
+            doround = true;
+        }
+        if (typeof korr === "undefined") {
+            korr = false;
+        }
+        let imin = null;
+        let imax = null
+        let min = null;
+        let max = null;
+        let sum = 0;
+        let anz = 0;
+        let realanz = 0;
+        let missing = 0;
+        let missingseq = 0;
+        let missingseqmax = 0;
+        if (typeof data === "string" && data.length > 0) {
+            data = JSON.parse(data);
+        }
+        if (typeof data === "object" && Array.isArray(data) && data.length > 0) {
+            for (var itriv = 0; itriv < data.length; itriv++) {
+                let ival = data[itriv];
+                if (ival === null || ival === "null" || ival === "") {
+                    missing++;
+                    missingseq++;
+                    if (korr === true) {
+                        data[itriv] = null;
+                    }
+                } else {
+                    if (missingseq > 0) {
+                        if (missingseq > missingseqmax) {
+                            missingseqmax = missingseq;
+                        }
+                        missingseq = 0;
+                    }
+                    if (typeof ival === "string") {
+                        ival = parseFloat(ival);
+                    }
+                    if (korr === true) {
+                        data[itriv] = ival;
+                    }
+                    if (min === null) {
+                        min = ival;
+                        imin = itriv;
+                    } else if (ival < min) {
+                        min = ival;
+                        imin = itriv;
+                    }
+                    if (max === null) {
+                        max = ival;
+                        imax = itriv;
+                    } else if (ival > max) {
+                        max = ival;
+                        imax = itriv;
+                    }
+                    if (typeof ival !== "number" || !Number.isFinite(ival)) {
+                        debugger;
+                    }
+                    sum += ival;
+                    anz += 1;
+                    if (ival !== 0.0) {
+                        realanz++;
+                    }
+                }
+            }
+        } else {
+            data = [];
+        }
+        if (missingseq > missingseqmax) {
+            missingseqmax = missingseq;
+        }
+        if (anz > 0) {
+            if (doround === true) {
+                return {
+                    min: min.toFixed(1),
+                    imin: imin,
+                    avg: (sum / anz).toFixed(1),
+                    max: max.toFixed(1),
+                    imax: imax,
+                    sum: sum,
+                    missing: missing,
+                    missingseqmax: missingseqmax,
+                    counted: anz,
+                    realcounted: realanz
+                };
+            } else {
+                return {
+                    min: min,
+                    imin: imin,
+                    avg: (sum / anz),
+                    max: max,
+                    imax: imax,
+                    sum: sum,
+                    missing: missing,
+                    missingseqmax: missingseqmax,
+                    counted: anz,
+                    realcounted: realanz
+                };
+            }
+        } else {
+            return {
+                min: null,
+                avg: null,
+                max: null,
+                sum: null,
+                missing: data.length,
+                missingseqmax: missingseqmax,
+                counted: anz,
+                realcounted: realanz
+            };
+        }
+    };
+
 
 
     /**
@@ -436,6 +601,24 @@
             latS: minLat,
             lonE: maxLon
         };
+    };
+
+
+    /**
+     * lindistance - Lineare Distanz auf der Erdkugel, angenähert
+     * https://snipplr.com/view/25479/calculate-distance-between-two-points-with-latitude-and-longitude-coordinates/
+     * modifiziert
+     */
+    kli6900.lindistance = function (lat1, lon1, lat2, lon2) {
+        let R = 6371; // km (change this constant to get miles)
+        let dLat = (lat2 - lat1) * Math.PI / 180;
+        let dLon = (lon2 - lon1) * Math.PI / 180;
+        let a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        let d = R * c;
+        return Math.round(d);
     };
 
 
@@ -526,8 +709,179 @@
     };
 
 
+    /**
+     * getCookie - holt Cookie oder Pseudocookie aus localStorage
+     * und gibt object zurück (!)
+     * @param {*} cookiename
+     * returns cookie-Inhalt als Objekt (!) oder null
+     */
+    kli6900.getCookie = function (cookiename) {
+        let emptycookie = null;
+        try {
+            let cookiestring = Cookies.get(cookiename);
+            // spezielle Abfrage, kommt wegen API
+            if (typeof cookiestring === "undefined" || cookiestring === "undefined" || cookiestring === null || cookiestring.length === 0) {
+                if (kli6900.isStorageAvailable) {
+                    let newcookie = localStorage.getItem(cookiename);
+                    if (typeof newcookie === "undefined" || newcookie === null) {
+                        return emptycookie;
+                    } else {
+                        return JSON.parse(newcookie);
+                    }
+                }
+            } else {
+                // Default-Setzungen für klimaquizparms
+                let cookieobj = cookiestring;
+                if (typeof cookiestring === "string") {
+                    cookieobj = JSON.parse(cookiestring);
+                }
+                if (cookiename === "klimaquizparms") {
+                    let haschanged = false;
+                    if (typeof cookieobj.guestmode === "undefined") {
+                        haschanged = true;
+                        if (cookieobj.firstname === "GAST" || cookieobj.firstname === "GUEST") {
+                            cookieobj.guestmode = "true";
+                        } else {
+                            cookieobj.guestmode = "false";
+                        }
+                    }
+                    if (typeof cookieobj.language === "undefined") {
+                        let lan = navigator.language;
+                        cookieobj.language = lan;
+                        if (!lan.startsWith("de")) {
+                            cookieobj.language = "en-US";
+                        } else {
+                            cookieobj.language = "de";
+                        }
+                    }
+                    if (haschanged === true) {
+                        kli6900.setCookie("klimaquizparms", cookieobj);
+                    }
+                }
+                return cookieobj;
+            }
+        } catch (err) {
+            return emptycookie;
+        }
+    };
+
+    /**
+     * setCookie - setzt Cookie oder Pseudocookie in localStorage
+     * Cookie als String, Pseudocookie als object
+     * @param {*} cookiename
+     * @param {*} cookiestring
+     * @param {*} cookieparms
+     * returns true oder false, wenn es nicht geklappt hat
+     */
+    kli6900.setCookie = function (cookiename, cookiestring, cookieparms) {
+        let config = {};
+        if (cookiename !== "config") {
+            config = kli6900.getCookie("config");
+        } else {
+            config.nocookie = false;
+        }
+        let cookiedata;
+        if (typeof cookiestring === "string") {
+            cookiedata = JSON.parse(cookiestring);
+        } else {
+            cookiedata = kli6900.cloneObject(cookiestring);
+            cookiestring = JSON.stringify(cookiedata);
+        }
+        if (config.nocookie === false) {
+            if (typeof cookieparms === "undefined") {
+                cookieparms = {
+                    expires: 1000, // Tage
+                    SameSite: "Strict"
+                };
+            }
+            Cookies.set(cookiename, cookiestring, cookieparms);
+            return true;
+        } else {
+            if (kli6900.isStorageAvailable) {
+                localStorage.setItem(cookiename, cookiestring);
+                return true;
+            } else {
+                return false;
+            }
+        }
+    };
 
 
+    /**
+     * isStorageAvailable - localStorage (dft) und sessionStorage
+     * @param {*} type
+     * @returns true oder error mit code und name oder false
+     */
+    kli6900.isStorageAvailable = function (type) {
+        let storage;
+        if (typeof type === "undefined" || type === null || type.length === 0) {
+            type = "localStorage";
+        }
+        try {
+            storage = window[type];
+            var x = '__storage_test__';
+            storage.setItem(x, x);
+            storage.removeItem(x);
+            return true;
+        } catch (e) {
+            return e instanceof DOMException && (
+                // everything except Firefox
+                e.code === 22 ||
+                // Firefox
+                e.code === 1014 ||
+                // test name field too, because code might not be present
+                // everything except Firefox
+                e.name === 'QuotaExceededError' ||
+                // Firefox
+                e.name === 'NS_ERROR_DOM_QUOTA_REACHED') &&
+                // acknowledge QuotaExceededError only if there's something already stored
+                (storage && storage.length !== 0);
+        }
+    };
+
+
+    /**
+     * deep copy für Objekte, Arrays etc.
+     * https://www.codementor.io/avijitgupta/deep-copying-in-js-7x6q8vh5d
+     */
+    kli6900.cloneObject = function (o) {
+        if (o === null) return null;
+        var output, v, key;
+        output = Array.isArray(o) ? [] : {};
+        for (key in o) {
+            if (key.startsWith("_")) {
+                console.log("***cloneObject-1***:" + key);
+                continue;
+            }
+            try {
+                if (typeof o === "boolean") {
+                    output[key] = o[key];
+                } else if (typeof o === "string") {
+                    output[key] = o[key];
+                } else if (typeof o === "object") {
+                    v = o[key];
+                    output[key] = (typeof v === "object") ? kli6900.cloneObject(v) : v;
+                } else if (o.hasOwnProperty(key)) {
+                    v = o[key];
+                    output[key] = (typeof v === "object") ? kli6900.cloneObject(v) : v;
+                } else {
+                    console.log("***cloneObject-2***:" + key);
+                    console.log(JSON.stringify(o[key]));
+                    //console.trace();
+                    continue;
+                }
+            } catch (err) {
+                console.log(err.stack);
+                alert(err);
+                alert(key + "=>" + typeof (o[key]));
+                if (typeof (o[key]) !== "object") {
+                    alert(key + "=>" + o[key] + " : " + typeof (o[key]));
+                }
+                debugger;
+            }
+        }
+        return output;
+    };
 
 
 

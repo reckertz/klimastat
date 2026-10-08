@@ -136,6 +136,13 @@
             return { worldmap, worldmapid, layerControl };
         }
 
+        function getWorldmap() {
+            return {
+                worldmap: map,
+                worldmapid: mapid,
+                layerControl: layerControl
+            };
+        }
 
         let onMarkerClickDefault = async function (e) {
             console.log("onMarkerClick");
@@ -153,7 +160,7 @@
 
 
 
-        async function addMarkerLayer(layername, centerlocation, geopoints, parms) {
+        async function addMarkerLayer(layertype, layername, centerlocation, geopoints, parms) {
             let onMarkerClick;
             if (typeof parms.onMarkerClick !== "undefined") {
                 onMarkerClick = parms.onMarkerClick;
@@ -180,17 +187,31 @@
                 let marker2 = L.circleMarker([centerlocation.latitude, centerlocation.longitude], geoparms);
                 marker2.addTo(newlayer);
             }
-
+            // genauere Übernahme
             for (let geopoint of geopoints) {
                 let geoparms = {
                     id: geopoint.source + "_" + geopoint.stationid + "_" + geopoint.variable,
                     latitude: geopoint.latitude,
                     longitude: geopoint.longitude,
-                    height: geopoint.height,
                     stationname: geopoint.stationname,
-                    source: geopoint.source,
-                    stationid: geopoint.stationid,
-                    variable: geopoint.variable
+                    custom: {  // xxxxxxxxx
+                        source: geopoint.source,
+                        stationid: geopoint.stationid,
+                        stationname: geopoint.stationname,
+                        //fromyear: geopoint.fromyear,  // aus GROUP_CONCAT mit variables, aufbereiten
+                        //toyear: geopoint.toyear,
+                        latitude: geopoint.latitude,
+                        height: geopoint.height,
+                        variables: geopoint.variables,
+                        uopp_1850: geopoint.uopp_1850,
+                        popd_1850: geopoint.popd_1850,
+                        uopp_1950: geopoint.uopp_1950,
+                        popd_1950: geopoint.popd_1950,
+                        uopp_2019: geopoint.uopp_2019,
+                        popd_2019: geopoint.popd_2019,
+                        zind_1950AD: geopoint.zind_1950AD,
+                        zind_2019AD: geopoint.zind_2019AD
+                    }
                 };
                 // radius, color, fill: true berechnen aus source, variable
                 geoparms.radius = 3;
@@ -216,6 +237,10 @@
             }
             layerControl.addOverlay(newlayer, layername);
             overlayLayers.set(layername, newlayer);
+            newlayer.custom = {
+                type: layertype,
+                layername: layername
+            };
             newlayer.addTo(map);
             //$(".kli1000Btip").parent().css({
             //    padding: "0 !important"
@@ -288,7 +313,12 @@
                                 weight: 2,
                                 fill: false
                             }
-                        }).addTo(map);
+                        });
+                        countryLayer.custom = {
+                            layertype: "countrylayer",
+                            layername: "countrylayer"
+                        };
+                        countryLayer.addTo(map);
                     } else {
                         countryLayer.addData(countryGeoJSON);
                     }
@@ -426,6 +456,7 @@
 
         return {
             showWorldMap,
+            getWorldmap,
             addMarkerLayer,
             addCountryLayer,
             createLeafletToolbar

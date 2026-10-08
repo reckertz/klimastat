@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rolf's Klima-Analyse</title>
+    <style>
+        /*
+              #configDialog {
+                     min-width: 500px;
+                     max-width: 700px;
+                     border: 1px solid #aaa;
+                     border-radius: 8px;
+                     padding: 20px;
+              }
+
+              #configDialog::backdrop {
+                     background: rgb(0 0 0 / 30%);
+              }
+              */
+        .form-grid {
+            display: grid;
+            grid-template-columns: max-content minmax(250px, 1fr);
+            gap: 10px 20px;
+            align-items: center;
+        }
+
+        .form-grid label {
+            text-align: right;
+        }
+
+        /*
+              .form-grid input,
+              .form-grid select,
+              .form-grid textarea {
+                     box-sizing: border-box;
+                     width: 100%;
+              }
+
+              .form-grid textarea {
+                     resize: vertical;
+              }
+
+              .form-grid input[type="checkbox"] {
+                     width: auto;
+                     justify-self: start;
+              }
+
+              .dialog-buttons {
+                     display: flex;
+                     justify-content: flex-end;
+                     gap: 10px;
+                     margin-top: 20px;
+              }
+              */
+    </style>
+</head>
+
+<body>
+    <dialog id="configDialog">
+        <form id="configForm" method="dialog">
+            <h3>Konfiguration der Auswertung</h3>
+            <div class="form-grid">
+                <label for="title">Bezeichnung</label>
+                <input id="title" name="title" type="text" maxlength="80" required>
+                <label for="description">Beschreibung</label>
+                <textarea id="description" name="description" rows="4" maxlength="500"></textarea>
+                <label for="year">Jahr</label>
+                <input id="year" name="year" type="number" min="1900" max="2100" step="1" value="2026">
+                <label for="temperature">Temperatur</label>
+                <input id="temperature" name="temperature" type="number" min="-100" max="100" step="0.1" value="20.0">
+                <label for="dateFrom">Datum von</label>
+                <input id="dateFrom" name="dateFrom" type="date" min="1950-01-01" max="2100-12-31">
+                <label for="timeFrom">Uhrzeit</label>
+                <input id="timeFrom" name="timeFrom" type="time" step="60">
+                <label for="datetime">Zeitpunkt</label>
+                <input id="datetime" name="datetime" type="datetime-local">
+                <label for="variable">Variable</label>
+                <select id="variable" name="variable" required>
+                    <option value="">Bitte auswählen</option>
+                    <option value="TAVG">Temperatur</option>
+                    <option value="PRCP">Niederschlag</option>
+                    <option value="WIND">Wind</option>
+                    <option value="CO2">CO₂</option>
+                </select>
+                <label for="threshold">Grenzwert</label>
+                <input id="threshold" name="threshold" type="range" min="0" max="100" step="1" value="50">
+                <label for="email">E-Mail</label>
+                <input id="email" name="email" type="email">
+                <label for="url">URL</label>
+                <input id="url" name="url" type="url">
+                <label for="active">Aktiv</label>
+                <input id="active" name="active" type="checkbox" checked>
+            </div>
+            <div class="dialog-buttons">
+                <button type="button" id="cancelButton">
+                    Abbrechen
+                </button>
+                <button type="submit">
+                    Übernehmen
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <script>
+        const dialog = document.getElementById("configDialog");
+        const form = document.getElementById("configForm");
+        dialog.showModal();
+        document
+            .getElementById("cancelButton")
+            .addEventListener("click", function () {
+                dialog.close("cancel");
+            });
+        form.addEventListener("submit", function () {
+            const data = Object.fromEntries(
+                new FormData(form)
+            );
+            console.log(data);
+            dialog.close("ok");
+        });
+    </script>
+</body>
+
+</html>
