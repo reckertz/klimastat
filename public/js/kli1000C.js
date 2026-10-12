@@ -21,10 +21,10 @@
 
     kli1000C.createBubbleChart = function () {
 
-        async function showOneBubbleChart(wrapperid, datasets, title, xlabel, ylabel, cbtitle, cblabel) {
+        async function showOneBubbleChart(wrapperid, datasets, title, xlabel, ylabel, cbtitle, cblabel, setspecialparms) {
 
             let containerid = "kli1000bubble" + (Math.floor(Math.random() * 1000000) + 1000000);
-            let mh = $("#kli1000projects").height() * 0.5;
+            let mh = $("#kli1000projects").height() * 0.7;
 
             $("#" + wrapperid)
                 .append($("<div/>", {
@@ -124,6 +124,10 @@
                     animation: false
                 }
             };
+
+            if (typeof setspecialparms === "function") {
+                setspecialparms(chartConfig);
+            }
 
             let container = document.getElementById(containerid);
             $(container)

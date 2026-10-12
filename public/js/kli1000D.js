@@ -18,6 +18,7 @@
      * Datenzugriff auf KLIDATA und KLIDATA10 mit Verdichtung auf Jahre und IPCC-Perioden
      */
 
+
     kli1000D.createBubbleChart = function () {
         let bubbleselparms = {};
         let bubblerecords = [];
@@ -25,7 +26,7 @@
         let bubblewrapperid = "";
         let bubbleparms = null;
 
-        async function showOneBubbleChart(wrapperid, layerdata, selparms, title, xlabel, ylabel, cbtitle, cblabel) {
+        async function showOneDataBubbleChart(wrapperid, layerdata, selparms, title, xlabel, ylabel, cbtitle, cblabel) {
             bubbleparms = {
                 title,
                 xlabel,
@@ -33,6 +34,7 @@
                 cbtitle,
                 cblabel
             };
+            
             bubblewrapperid = wrapperid;
             /*
             layerdata = layercontrol[source] = {
@@ -41,30 +43,69 @@
                 geopoints: geopoints
             };
             */
-            debugger;
+
             bubblelayerdata = layerdata;
+            bubbleselparms = selparms;
+            // ergänzende Default-Setzungen
+            bubbleselparms.filter = "default";
             let ret = await getData(layerdata, selparms);
             if (ret.error === true) {
                 return;
             }
-            bubbleselparms = selparms;
-            // ergänzende Default-Setzungen
-            bubbleselparms.filter = "default";
+
             bubblerecords = ret.records;
-            let datasets = await getDatasets();
-            await putBubbleChart(datasets, "default");
+            let datacontrol = await getDataControl();
+            // datacontrol[key].source
+            // datacontrol[key].stationid
+            // datacontrol[key].variables[variable].yeardata[year][values, , , , ]
+
+            let datasets = await getDatasets(datacontrol);
+            // bubbleparms und datasets sind die Vorgaben
+            await putBubbleChart(datasets, "default", true);
+
+            let datasets01 = await getDatasets(datacontrol, "height");
+            // bubbleparms und datasets sind die Vorgaben
+            await putBubbleChart(datasets01, "default", false, {
+                title: layerdata.source + " " + "height vs" + "TMAX/TMIN",
+                xlabel: "height",
+                ylabel: "Celsius"
+            });
+            await putLineChart(datasets01, "default", false, {
+                title: layerdata.source + " " + "height vs" + "TMAX/TMIN",
+                xlabel: "height",
+                ylabel: "Celsius"
+            });
+        }
+
+        async function putLineChart(datasets, title, doline, parms) {
+            //title: layerdata.source + " " + "height vs" + "TMAX/TMIN",
+            //xlabel: "height",
+            //ylabel: "Celsius"
         }
 
 
 
 
-        async function putBubbleChart(datasets, title) {
+
+
+        async function putBubbleChart(datasets, attribute, doDiagonale, parms) {
+            //title: layerdata.source + " " + "height vs" + "TMAX/TMIN",
+            // xlabel: "height",
+            // ylabel
+            if (typeof parms === "undefined") {
+                parms = bubbleparms;
+            } else {
+                parms.cbtitle = bubbleparms.cbtitle;
+                parms.cblabel = bubbleparms.cblabel;
+
+            }
             let wrapperid = bubblewrapperid;
             let containerid = bubblewrapperid + (Math.floor(Math.random() * 1000000) + 1000000);
-            let mh = $("#kli1000projects").height() * 0.5;
-            debugger;
-            let dataset = getDiagonaleFromDatasets(datasets);
-            datasets.push(dataset.dataset);
+            let mh = $("#kli1000projects").height() * 0.7;
+            if (typeof doDiagonale !== "undefined" && doDiagonale === true) {
+                let dataset = getDiagonaleFromDatasets(datasets);
+                datasets.push(dataset.dataset);
+            }
 
             $("#" + wrapperid)
                 .append($("<div/>", {
@@ -90,7 +131,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: bubbleparms.title   //"height / latitude"  // config.options.plugins.title.text
+                            text: parms.title   //"height / latitude"  // config.options.plugins.title.text
                         },
                         legend: {
                             display: false
@@ -108,7 +149,7 @@
                                 },
                                 */
                                 title: function (items) {
-                                    let text = bubbleparms.cbtitle(items);
+                                    let text = parms.cbtitle(items);
                                     return text;
                                 },
                                 /*
@@ -128,7 +169,7 @@
                                 }
                                 */
                                 label: function (context) {
-                                    let text = bubbleparms.cblabel(context);
+                                    let text = parms.cblabel(context);
                                     return text;
                                 }
                             }
@@ -139,7 +180,7 @@
                             type: "linear",
                             title: {
                                 display: true,
-                                text: bubbleparms.xlabel
+                                text: parms.xlabel
                             },
                             grid: {
                                 display: true
@@ -149,7 +190,7 @@
                             type: "linear",
                             title: {
                                 display: true,
-                                text: bubbleparms.ylabel
+                                text: parms.ylabel
                             },
                             grid: {
                                 display: true
@@ -260,10 +301,8 @@
             };
         }
 
+        async function getDataControl() {
 
-        async function getDatasets() {
-            // records aufbereiten zu datasets
-            // bubbleselparms = {}; bubblerecords = [];
             let datacontrol = {};
             for (let record of bubblerecords) {
                 let key = record.source + "_" + record.stationid;
@@ -303,29 +342,41 @@
                     }
                 }
             }
+            for (let geopoint of bubblelayerdata.geopoints) {
+                let key = bubblelayerdata.source + "_" + geopoint.stationid;
+                if (typeof datacontrol[key] !== "undefined") {
+                    datacontrol[key].attributes = kli6900.cloneObject(geopoint);
+                }
+            }
+            
+            return datacontrol;
+        }
+
+        async function getDatasets(datacontrol, attribute) {
+            // records aufbereiten zu datasets
+            // bubbleselparms = {}; bubblerecords = [];
+
             // datacontrol weiter verdichten auf rangedata
             /*
-            datacontrol[key] = {
-                source: record.source,
-                stationid: record.stationid,
-                variables: {
-                    TMAX: {
-                        yeardata: {}
+                datacontrol[key] = {
+                    source: record.source,
+                    stationid: record.stationid,
+                    variables: {
+                        TMAX: {
+                            yeardata: {}
+                        },
+                        TMIN: {
+                            yeardata: {}
+                        }
+                        // Bereitstellung bubbles je Jahr
+                        TMAXmax: [],
+                        TMAXavg: [],
+                        TMINmin: [],
+                        TMINavg: [],        
                     },
-                    TMIN: {
-                        yeardata: {}
-                    }
-                    // Bereitstellung bubbles je Jahr
-                    TMAXmax: [],
-                    TMAXavg: [],
-                    TMINmin: [],
-                    TMINavg: [],        
-                },
-                attributes: {}  // Felder aus KLISTATIONS in 
-            }
+                    attributes: {}  // Felder aus KLISTATIONS in 
+                }
             */
-
-            debugger;
 
             let p1fromyear = bubbleselparms.range[0].fromyear;
             let p1toyear = bubbleselparms.range[0].toyear;
@@ -333,100 +384,208 @@
             let p2toyear = bubbleselparms.range[1].toyear;
             let anz = p1toyear - p1fromyear + 1;
 
-
+            let geopoints = [];
             for (let geopoint of bubblelayerdata.geopoints) {
                 let source = bubblelayerdata.source;
                 let stationid = geopoint.stationid;
                 let key = source + "_" + stationid;
-                for (let i = 1; i <= anz; i++) {
-                    let p1year = parseInt(p1fromyear) + i - 1;
-                    let p2year = parseInt(p2fromyear) + i - 1;
-                    if (typeof datacontrol[key].variables["TMAX"].yeardata[p1year] !== "undefined" &&
-                        typeof datacontrol[key].variables["TMAX"].yeardata[p2year] !== "undefined") {
-                        datacontrol[key].variables["TMAXmax"].push({
-                            x: datacontrol[key].variables["TMAX"].yeardata[p1year].max,
-                            y: datacontrol[key].variables["TMAX"].yeardata[p2year].max,
-                            r: 3,
-                            raw: {
-                                year: p1year + "/" + p2year
-                            }
-                        });
-                        datacontrol[key].variables["TMAXavg"].push({
-                            x: datacontrol[key].variables["TMAX"].yeardata[p1year].avg,
-                            y: datacontrol[key].variables["TMAX"].yeardata[p2year].avg,
-                            r: 3,
-                            raw: {
-                                year: p1year + "/" + p2year
-                            }
-                        });
-                        datacontrol[key].variables["TMINmin"].push({
-                            x: datacontrol[key].variables["TMIN"].yeardata[p1year].min,
-                            y: datacontrol[key].variables["TMIN"].yeardata[p2year].min,
-                            r: 3,
-                            raw: {
-                                year: p1year + "/" + p2year
-                            }
-                        });
-                        datacontrol[key].variables["TMINavg"].push({
-                            x: datacontrol[key].variables["TMIN"].yeardata[p1year].avg,
-                            y: datacontrol[key].variables["TMIN"].yeardata[p2year].avg,
-                            r: 3,
-                            raw: {
-                                year: p1year + "/" + p2year
-                            }
-                        });
-                    }
+                if (typeof datacontrol[key] === "undefined") {
+                    continue;
                 }
+                if (typeof geopoint[attribute] === "string") {
+                    geopoint[attribute] = parseFloat(geopoint[attribute]);
+                }
+                geopoints.push(geopoint);
             }
-            /*
-            let yeardatasets = [];
-            let rangedatasets = [];
-            for (let source of Object.keys(bubblelayerdata)) {
-                for (let geopoint of bubblelayerdata[source].geopoints) {
-                    let stationid = geopoint.stationid;
-                    let key = source + "_" + stationid;
-                    let record = datacontrol[key];
 
-                    let yeardataset = {};   // eine bubble je year, color nach range
-                    let rangedataset = {};  // eine bubble je range als x und y
-                    yeardataset = kli6900.cloneObject(bubblelayerdata[source])
-                }
-            }
-            */
-            /*
-            let bubbledata = [];
-            for (let record of geopoints) {
-                bubbledata.push({
-                    x: parseFloat(record.latitude),
-                    y: parseFloat(record.height),
-                    r: 3,
-                    raw: {
-                        source: record.source,
-                        stationid: record.stationid,
-                        stationname: record.stationname
+            let datasets = [];
+
+            if (typeof attribute !== "undefined" && ["height"].includes(attribute)) {
+                geopoints = geopoints.sort(function (a, b) {
+                    if (a[attribute] > b[attribute]) {
+                        return 1;
+                    } else if (a[attribute] < b[attribute]) {
+                        return -1;
+                    } else {
+                        return 0;
                     }
                 });
+                // nach attribute sortiert, first 3, last 3
+                if (geopoints.length >= 2) {
+                    let middleindex = Math.floor(geopoints.length / 2);
+                    if (middleindex > 3) middleindex = 3;
+                    if (middleindex > 1) {
+                        for (let i = 0; i < middleindex; i++) {
+                            geopoints[i].level = 3;  // low
+                            geopoints[i].levelcolor = "blue";
+                        }
+                        let fromind = geopoints.length - 1;
+                        let toind = geopoints.length - middleindex - 1;
+                        for (let i = fromind; i > toind; i--) {
+                            geopoints[i].level = 1;  // high
+                            geopoints[i].levelcolor = "orange";
+                        }
+                    }
+                } else {
+                    for (let i = 0; i < geopoints.length; i++) {
+                        if (i % 2 === 0) {
+                            geopoints[i].level = 1;  // high
+                            geopoints[i].levelcolor = "orange";
+                        } else {
+                            geopoints[i].level = 3;  // low
+                            geopoints[i].levelcolor = "blue";
+                        }
+                    }
+                }
+
+                for (let geopoint of geopoints) {
+                    let source = bubblelayerdata.source;
+                    let stationid = geopoint.stationid;
+                    let key = source + "_" + stationid;
+                    if (typeof datacontrol[key] === "undefined") {
+                        continue;
+                    }
+
+                    for (let i = 1; i <= anz; i++) {
+                        let p1year = parseInt(p1fromyear) + i - 1;
+                        let p2year = parseInt(p2fromyear) + i - 1;
+                        for (let variable of ["TMAX", "TMIN"]) {
+                            if (typeof datacontrol[key].variables[variable] !== "undefined") {
+                                for (let year of [p1year, p2year]) {
+                                    if (typeof datacontrol[key].variables[variable].yeardata[year] === "undefined") {
+                                        continue;
+                                    }
+                                    let dc = {
+                                        x: datacontrol[key].attributes[attribute],
+                                        y: datacontrol[key].variables[variable].yeardata[year].avg,
+                                        r: 3,
+                                        raw: {
+                                            source: source,
+                                            stationid: stationid,
+                                            stationname: geopoint.stationname,
+                                            year: year
+                                        }
+                                    };
+                                    dc.raw.text = dc.x + "=>" + dc.y;
+                                    datacontrol[key].variables[variable + "avg"].push(dc);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                for (let geopoint of geopoints) {
+                    let source = bubblelayerdata.source;
+                    let stationid = geopoint.stationid;
+                    let key = source + "_" + stationid;
+                    if (typeof datacontrol[key] === "undefined") {
+                        continue;
+                    }
+                    for (let variable of ["TMAX", "TMIN"]) {
+                        let dataset = {
+                            label: "Daten",
+                            data: datacontrol[key].variables[variable + "avg"],
+                            backgroundColor: "rgba(54, 162, 235, 0.35)",
+                            borderColor: "rgba(54, 162, 235, 0.8)",
+                            borderWidth: 1
+                        };
+                        datasets.push(dataset);
+                    }
+                }
             }
-            */
-            let datasets = [];
-            for (let geopoint of bubblelayerdata.geopoints) {
-                let source = bubblelayerdata.source;
-                let stationid = geopoint.stationid;
-                let key = source + "_" + stationid;
-                let dataset = {
-                    label: "Daten",
-                    data: datacontrol[key].variables["TMAXavg"],
-                    backgroundColor: "rgba(54, 162, 235, 0.35)",
-                    borderColor: "rgba(54, 162, 235, 0.8)",
-                    borderWidth: 1
-                };
-                datasets.push(dataset);
+
+
+            /**
+             * undefined attribute
+             */
+
+            if (typeof attribute === "undefined") {
+                for (let geopoint of geopoints) {
+                    let source = bubblelayerdata.source;
+                    let stationid = geopoint.stationid;
+                    let key = source + "_" + stationid;
+                    if (typeof datacontrol[key] === "undefined") {
+                        continue;
+                    }
+                    for (let i = 1; i <= anz; i++) {
+                        let p1year = parseInt(p1fromyear) + i - 1;
+                        let p2year = parseInt(p2fromyear) + i - 1;
+                        if (typeof datacontrol[key].variables["TMAX"].yeardata[p1year] !== "undefined" &&
+                            typeof datacontrol[key].variables["TMAX"].yeardata[p2year] !== "undefined") {
+                            datacontrol[key].variables["TMAXmax"].push({
+                                x: datacontrol[key].variables["TMAX"].yeardata[p1year].max,
+                                y: datacontrol[key].variables["TMAX"].yeardata[p2year].max,
+                                r: 3,
+                                raw: {
+                                    source: source,
+                                    stationid: stationid,
+                                    stationname: geopoint.stationname,
+                                    year: p1year + "/" + p2year
+                                }
+                            });
+                            datacontrol[key].variables["TMAXavg"].push({
+                                x: datacontrol[key].variables["TMAX"].yeardata[p1year].avg,
+                                y: datacontrol[key].variables["TMAX"].yeardata[p2year].avg,
+                                r: 3,
+                                raw: {
+                                    source: source,
+                                    stationid: stationid,
+                                    stationname: geopoint.stationname,
+                                    year: p1year + "/" + p2year
+                                }
+                            });
+                            datacontrol[key].variables["TMINmin"].push({
+                                x: datacontrol[key].variables["TMIN"].yeardata[p1year].min,
+                                y: datacontrol[key].variables["TMIN"].yeardata[p2year].min,
+                                r: 3,
+                                raw: {
+                                    source: source,
+                                    stationid: stationid,
+                                    stationname: geopoint.stationname,
+                                    year: p1year + "/" + p2year
+                                }
+                            });
+                            datacontrol[key].variables["TMINavg"].push({
+                                x: datacontrol[key].variables["TMIN"].yeardata[p1year].avg,
+                                y: datacontrol[key].variables["TMIN"].yeardata[p2year].avg,
+                                r: 3,
+                                raw: {
+                                    source: source,
+                                    stationid: stationid,
+                                    stationname: geopoint.stationname,
+                                    year: p1year + "/" + p2year
+                                }
+                            });
+                        }
+                    }
+                }
+
+                for (let geopoint of bubblelayerdata.geopoints) {
+                    let source = bubblelayerdata.source;
+                    let stationid = geopoint.stationid;
+                    let key = source + "_" + stationid;
+                    if (typeof datacontrol[key] === "undefined") {
+                        continue;
+                    }
+                    let dataset = {
+                        label: "Daten",
+                        data: datacontrol[key].variables["TMAXavg"],
+                        backgroundColor: "rgba(54, 162, 235, 0.35)",
+                        borderColor: "rgba(54, 162, 235, 0.8)",
+                        borderWidth: 1
+                    };
+                    datasets.push(dataset);
+                }
             }
             return datasets;
         }
 
 
         async function getData(layerdata) {
+            let p1fromyear = bubbleselparms.range[0].fromyear;
+            let p1toyear = bubbleselparms.range[0].toyear;
+            let p2fromyear = bubbleselparms.range[1].fromyear;
+            let p2toyear = bubbleselparms.range[1].toyear;
             let sql = "SELECT ";
             let table = layerdata.table;
             let source = layerdata.source;
@@ -444,6 +603,10 @@
                     sql += " AND stationid IN ('" + stationids.join("', '") + "')";
                 }
                 sql += " AND variable IN ('TMAX','TMIN')";
+                sql += " AND fromyear <= " + p1fromyear;
+                sql += " AND toyear >= " + p1toyear;
+                sql += " AND fromyear <= " + p2fromyear;
+                sql += " AND toyear >= " + p2toyear;
                 sql += " ORDER BY source, stationid, variable";
             } else if (table === "KLIDATA10") {
                 sql += " source, stationid, variable, years"
@@ -455,6 +618,10 @@
                     sql += " AND stationid IN ('" + stationids.join("', '") + "')";
                 }
                 sql += " AND variable IN ('TMAX','TMIN')";
+                sql += " AND fromyear <= " + p1fromyear;
+                sql += " AND toyear >= " + p1toyear;
+                sql += " AND fromyear <= " + p2fromyear;
+                sql += " AND toyear >= " + p2toyear;
                 sql += " ORDER BY source, stationid, variable";
             }
             // Zugriff auf den Server
@@ -667,8 +834,9 @@
             }
         }
         return {
-            showOneBubbleChart,
-            addBubbleLineButton
+            showOneDataBubbleChart,
+            addBubbleLineButton,
+            getDataControl
         };
     }
 

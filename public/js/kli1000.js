@@ -38,6 +38,8 @@
         console.log("kli1000C", ret2.error, ret2.message);
         let ret3 = await kli6900.getScriptA("kli1000D");
         console.log("kli1000D", ret3.error, ret3.message);
+        let ret4 = await kli6900.getScriptA("kli1000E");
+        console.log("kli1000E", ret4.error, ret3.message);
 
         $("nav.navbar").find("button").last()
             .after(
@@ -1013,7 +1015,6 @@
                         if (layer.custom?.type === "stationlayer") {
                             let layername = layer.custom.layername;
                             let geopoints = [];
-                            debugger;
                             const markers = layer.getLayers();
                             for (const marker of markers) {
                                 if (typeof marker.options.custom !== "undefined") {
@@ -1023,7 +1024,6 @@
                             await kli1000.showBubbleHeightLat("kli1000bubblewrapper", geopoints, layername);
                             await kli1000.showBubblePopdUopp("kli1000bubblewrapper", geopoints, layername);
                             await kli1000.showBubblePopdZind("kli1000bubblewrapper", geopoints, layername);
-                            debugger;  // xxxxx
                         }
                     }
                     await kli1000.calculateAutoHeight("#kli1000matrix");
@@ -1138,10 +1138,12 @@
                         let cblabel = function (context) {
                             const point = context.raw;
                             const row = point.raw;
+                            console.log(context.raw);
                             // Trick der mehrzeiligen Ausgabe
                             return [
                                 "stationid: " + row.stationid,
-                                "name: " + row.stationname
+                                "name: " + row.stationname,
+                                "year: " + row.year
                                 //"Temperatur: " + point.x + " °C",
                                 //"CO₂: " + point.y + " ppm",
                                 //"Land: " + (row.country ?? ""),
@@ -1149,11 +1151,11 @@
                                 //"Wind: " + (row.windSpeed ?? "") + " m/s"
                             ];
                         };
-                        await bubbles.showOneBubbleChart(wrapperid, layerdata, selparms, title, xlabel, ylabel, cbtitle, cblabel);
+                        await bubbles.showOneDataBubbleChart(wrapperid, layerdata, selparms, title, xlabel, ylabel, cbtitle, cblabel);
+                        debugger;
+                        let dataControl = await bubbles.getDataControl();
+                        await kli1000.showAllRanks(wrapperid, layercontrol[source].geopoints, layerdata.source, dataControl);
                     }
-
-                    debugger;
-
                     await kli1000.calculateAutoHeight("#kli1000matrix");
                     let elmnt = document.getElementById("kli1000databubblewrapper");
                     $(elmnt).css({
@@ -1194,6 +1196,244 @@
             }));
     };
 
+
+    /**
+    * showAllRanks - Integrierte Anzeige mehrere Attribute der Stationen im Linechart,
+    * x-Achse als category je Attribut, normalisierte Werte mit z-order
+    *
+    * @param {any} wrapperid -
+    * @param {any} geopoints -
+    * @param {any} layername -
+    * @param {any} dataControl -
+    *
+    * @returns {any} - This function does not return a value but performs assertions on the input data.
+    */
+    kli1000.showAllRanks = async function (wrapperid, geopoints, layername, dataControl) {
+        // line-Chart mit category als x-Achse, das sind die Attribute
+        debugger;
+        let attrs = "latitude,height,popd_1950,popd_2019,uopp_1950,uopp_2019,zind_1950AD,zind_2019AD".split(",");
+        let anz = attrs.length;
+        let stationcontrol = {};
+        let attrdata = [];
+        let dobuf = {};
+        let ind = -1;
+        let datasets = [];
+        let zindcontrol = kli6901.getZindControl();
+        let zinds = Object.keys(zindcontrol);
+        for (let geopoint of geopoints) {
+            ind++;
+            let key = geopoint.source + "_" + geopoint.stationid;
+            if (typeof dataControl === "undefined") {
+                continue;
+            } else if (typeof dataControl[key] === "undefined") {
+                continue;
+            }
+            let attrvalues = [];
+            let dataset = {
+                ind: ind,
+                source: geopoint.source,
+                stationid: geopoint.stationid,
+                stationname: geopoint.stationname,
+                raws: new Array(anz).fill(-1),
+                vals: new Array(anz).fill(-1),
+                data: new Array(anz).fill(-1),
+            };
+            // da die Attribute in geopoints enthalten sind, können sie vollständig übernommen werden nach values
+            for (let i = 0; i < attrs.length; i++) {
+                let attribute = attrs[i];
+                let rawvalue = geopoint[attrs[i]];
+                dataset.raws[i] = rawvalue;
+                let value = Number(rawvalue);
+                if (!Number.isFinite(value)) {
+                    dataset.vals[i] = null;
+                    dataset.data[i] = null;
+                    continue;
+                }
+                if (attribute.startsWith("popd")) {
+                    value = value >= 0
+                        ? Math.log1p(value)
+                        : null;
+                    dataset.vals[i] = value;
+                } else if (attribute.startsWith("zind")) {
+                    let ind = zinds.indexOf("" + rawvalue);
+                    if (ind >= 0) {
+                        dataset.vals[i] = ind;
+                    } else {
+                        dataset.vals[i] = null;
+                    }
+                } else {
+                    dataset.vals[i] = value;
+                }
+            }
+            datasets.push(dataset);
+        }
+        // jetzt stehen in datasets[i].vals die transormierten Werte
+        // jetzt geht es an die Analytic mit Z-Order nach datasets[i].data
+        for (let i = 0; i < attrs.length; i++) {
+            let reference = datasets
+                .map(ds => ds.vals[i])
+                .filter(Number.isFinite);
+            // values sind jetzt vertikale arrays
+            // Referenzwerte eines Merkmals
+            const mean = ss.mean(reference);
+            const sd = ss.standardDeviation(reference);
+
+            // Z-Score einer ausgewählten Station
+            for (let dataset of datasets) {
+                let stationValue = dataset.vals[i];
+                if (Number.isFinite(stationValue)) {
+                    const z = (stationValue - mean) / sd;
+                    dataset.data[i] = z;
+                }
+            }
+        }
+
+        // dataset komplettieren
+        for (let dataset of datasets) {
+            dataset.type = "line";
+            dataset.label = dataset.stationname;
+        }
+        let xlabels = attrs;
+        let title = layername + " Rangskalierung, statisch";
+        let parms = {};
+
+        let lineChart = kli1000E.createLineChart();
+        console.log(datasets);
+        let canvasid = await lineChart.showLineChart(wrapperid, title, xlabels, datasets, parms);
+        let graph = Chart.getChart(canvasid);
+        graph.options.interaction = {
+            mode: 'point',  //'nearest',
+            intersect: true,  // false,
+            axis: 'x'
+        };
+        graph.options.plugins.tooltip.callbacks = {
+            title: (items) => {
+                // const ctx = items[0];
+                // return ctx.dataset.stationname;  //[ctx.dataIndex];  //  + " " + items[0].label;
+            },
+            label: (ctx) => {
+                let raw = ctx.dataset.raws[ctx.dataIndex];
+                const stationname = ctx.dataset.stationname;
+                const attr = attrs[ctx.dataIndex];
+                if (!attr.startsWith("zind") && raw !== null) {
+                    raw = Number(raw).toFixed(1);
+                }
+                return [
+                    stationname,
+                    attr + ": " + raw
+                    //`Raw: ${raw}`,
+                    //`Var: ${attrs[ctx.dataIndex]}`
+                    //`Wert: ${ctx.parsed.y}`
+                ];
+            }
+        };
+        graph.update("none");
+    };
+
+    kli1000.showAllRanksOld = async function (wrapperid, geopoints, layername, dataControl) {
+        // line-Chart mit category als x-Achse, das sind die Attribute
+
+        let attrs = "latitude,height,popd_1950,popd_2019,uopp_1950,uopp_2019,zind_1950AD,zind_2019AD".split(",");
+        let anz = attrs.length;
+        let stationcontrol = {};
+        let attrdata = [];
+        let dobuf = {};
+        let ind = -1;
+        for (let geopoint of geopoints) {
+            ind++;
+            let key = geopoint.source + "_" + geopoint.stationid;
+            if (typeof dataControl === "undefined") {
+                continue;
+            } else if (typeof dataControl[key] === "undefined") {
+                continue;
+            }
+            //else if (typeof dataControl[key].variables === "undefined") {
+            //    continue;
+            //} else if (typeof dataControl[key].variables["TMAX"] !== "undefined") {
+            //    continue;
+            //}
+            let attrvalues = [];
+            if (typeof stationcontrol[key] === "undefined") {
+                stationcontrol[key] = {
+                    ind: ind,
+                    source: geopoint.source,
+                    stationid: geopoint.stationid,
+                    stationname: geopoint.stationname,
+                    data: new Array(anz).fill(-1),
+                    vals: new Array(anz).fill(-1),
+                };
+            }
+            for (let i = 0; i < attrs.length; i++) {
+                // index in stationcontrol, attributindex, attributwert, rank
+                let value = geopoint[attrs[i]];
+                if (typeof value === "string") {
+                    value = parseInt(value);
+                }
+                attrdata.push([i, value, 0, key, ind]);
+            }
+        }
+        attrdata = attrdata.sort(function (a, b) {
+            if (a[0] > b[0]) {
+                return 1;
+            } else if (a[0] < b[0]) {
+                return -1;
+            } else if (a[1] > b[1]) {
+                return 1;
+            } else if (a[1] < b[1]) {
+                return -1;
+            } else {
+                return 0;
+            }
+        });
+        let oldattrind = -1;
+        let attrrank = 0;
+        let oldvalue;
+
+        for (let i = 0; i < attrdata.length; i++) {
+            let [attrind, attrval, oldattrrank, key, ind] = attrdata[i];
+            if (oldattrind !== attrind) {
+                attrrank = -1;
+                oldvalue = -999999
+            }
+            if (oldvalue !== attrval) {
+                attrrank = attrrank + 1;  // gleiche Werte - gleicher rank?
+                oldvalue = attrval;
+            }
+            if (attrind < 0 || attrind > anz - 1) {
+                oldattrind = attrind;
+                continue;
+            }
+            stationcontrol[key].data[attrind] = attrrank;
+            stationcontrol[key].vals[attrind] = attrval;
+            oldattrind = attrind;
+        }
+
+        // dataset erzeugen
+        let datasets = [];
+        for (let key of Object.keys(stationcontrol)) {
+            let station = stationcontrol[key];
+            let dataset = {
+                type: "line",
+                label: station.stationname,
+                source: station.source,
+                stationid: station.stationid,
+                stationname: station.stationname,
+                data: station.data,
+                values: station.vals
+            }
+            datasets.push(dataset);
+        }
+        let xlabels = attrs;
+        let title = layername + " Rangskalierung, statisch";
+        let parms = {};
+
+        let lineChart = kli1000E.createLineChart();
+        console.log(datasets);
+        await lineChart.showLineChart(wrapperid, title, xlabels, datasets, parms);
+
+
+
+    };
 
     kli1000.showBubbleHeightLat = async function (wrapperid, geopoints, layername) {
         // Kandidaten für die Auswertungen:
@@ -1373,14 +1613,16 @@
         for (let record of geopoints) {
             for (let year of ["1950", "2019"]) {
                 let bubble = {
-                    x: parseFloat(record["zind_" + year + "AD"]),
+                    x: "" + record["zind_" + year + "AD"],
                     y: parseFloat(record["popd_" + year]),
                     r: 3,
                     raw: {
                         source: record.source,
                         stationid: record.stationid,
                         stationname: record.stationname,
-                        year: year
+                        year: year,
+                        zind1950: record["zind_1950AD"],
+                        zind2019: record["zind_2019AD"],
                     }
                 };
                 if (bubble.y >= 6000) {
@@ -1410,6 +1652,9 @@
         };
         datasets.push(dataset2019);
 
+        let zindcontrol = kli6901.getZindControl();
+        let zinds = Object.keys(zindcontrol);
+
         let title = layername + " : zind / popd";
         let xlabel = "land use";
         let ylabel = "population";
@@ -1427,7 +1672,9 @@
             return [
                 //"stationid: " + row.stationid,
                 "name: " + row.stationname,
-                "zind: " + point.x + " " + kli6901.getZindText(point.x).text
+                "year: " + row.year,
+                "zind1: " + row.zind1950 + " (" + kli6901.getZindText(row.zind1950).text,
+                "zind2: " + row.zind2019 + " (" + kli6901.getZindText(row.zind2019).text,
                 //"Temperatur: " + point.x + " °C",
                 //"CO₂: " + point.y + " ppm",
                 //"Land: " + (row.country ?? ""),
@@ -1436,27 +1683,22 @@
             ];
         };
         let bubbles = kli1000C.createBubbleChart();
-        let chartid = await bubbles.showOneBubbleChart(wrapperid, datasets, title, xlabel, ylabel, cbtitle, cblabel);
+
+        let setspecialparms = function (config) {
+            config.options.scales.x = {};
+            config.options.scales.x.type = 'category';
+            config.options.scales.x.labels = zinds;
+        };
+
+        let chartid = await bubbles.showOneBubbleChart(wrapperid, datasets, title, xlabel, ylabel, cbtitle, cblabel, setspecialparms);
         let newcanvasid = chartid + "l";
         let newgraph = Chart.getChart(newcanvasid);
 
-        let zinddata = kli6901.getAnthromesRAW();
-        let zindlabels = [];
-        for (let adata of zinddata) {
-            let [zind, text, r, g, b] = adata.split(";");
-            if (zind !== "Code") {
-                zindlabels.push("" + zind);
-            }
-        }
-        newgraph.options.scales.x = {
-            type: 'category',
-            labels: zindlabels
-        };
-        newgraph.update("none");
         requestAnimationFrame(async function () {
             // hier postprocessing möglich, z.B. Buttons zufügen
             await bubbles.addBubbleLineButton(chartid, newcanvasid);
         });
+
     };
 
     kli1000.getLocalization = async function () {

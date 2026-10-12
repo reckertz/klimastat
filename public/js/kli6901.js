@@ -37,6 +37,17 @@
         return anthromesRAW;
     };
 
+    kli6901.getZindControl = function () {
+        for (let adata of anthromesRAW) {
+            let [zind, text, r, g, b] = adata.split(";");
+            zindcontrol[zind] = {
+                text: text,
+                color: "rgba(r, g, b, 0.8)"
+            };
+        }
+        return zindcontrol;
+    }
+
     kli6901.getZindText = function (code) {
         if (typeof zindcontrol["61"] === "undefined") {
             for (let adata of anthromesRAW) {

@@ -437,6 +437,40 @@
 
 
     /**
+     * getOneOf10Colors - Stellt Farben bereit 0-9 indiziert
+     * Farbpalette von https://gist.github.com/AndiH/c957b4d769e628f506bd eigentlich Python, aber leicht zu konvertieren (gute Quelle):
+     * @param {*} icolor
+     */
+    kli6900.getOneOf20Colors = function (icolor) {
+        if (typeof icolor !== "number" || icolor < 0 || icolor > 19) {
+            return "#000000";
+        }
+        const rgb20 = [
+            "#D62728",
+            "#1F77B4",
+            "#2CA02C",
+            "#FF7F0E",
+            "#FFBB78",
+            "#9467BD",
+            "#E377C2",
+            "#8C564B",
+            "#FF9896",
+            "#7F7F7F",
+            "#C5B0D5",
+            "#C49C94",
+            "#F7B6D2",
+            "#C7C7C7",
+            "#BCBD22",
+            "#DBDB8D",
+            "#9EDAE5",
+            "#AEC7E8",
+            "#98DF8A",
+            "#17BECF"
+        ];
+        return rgb20[icolor];
+    };
+
+    /**
      * kla6920.getTrivial - Einfache Analyse Zahlenarray
      * @param {*} data
      * @param {*} doround - wenn true (default), dann auf 1 Dezimalstelle runden
