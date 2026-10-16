@@ -34,7 +34,7 @@
                 cbtitle,
                 cblabel
             };
-            
+
             bubblewrapperid = wrapperid;
             /*
             layerdata = layercontrol[source] = {
@@ -348,7 +348,7 @@
                     datacontrol[key].attributes = kli6900.cloneObject(geopoint);
                 }
             }
-            
+
             return datacontrol;
         }
 
@@ -493,12 +493,9 @@
                     }
                 }
             }
-
-
             /**
              * undefined attribute
              */
-
             if (typeof attribute === "undefined") {
                 for (let geopoint of geopoints) {
                     let source = bubblelayerdata.source;
@@ -511,7 +508,13 @@
                         let p1year = parseInt(p1fromyear) + i - 1;
                         let p2year = parseInt(p2fromyear) + i - 1;
                         if (typeof datacontrol[key].variables["TMAX"].yeardata[p1year] !== "undefined" &&
-                            typeof datacontrol[key].variables["TMAX"].yeardata[p2year] !== "undefined") {
+                            typeof datacontrol[key].variables["TMAX"].yeardata[p2year] !== "undefined" &&
+                            typeof datacontrol[key].variables["TMAX"].yeardata[p1year].min !== "undefined" &&
+                            typeof datacontrol[key].variables["TMAX"].yeardata[p2year].min !== "undefined" &&
+                            typeof datacontrol[key].variables["TMIN"].yeardata[p1year] !== "undefined" &&
+                            typeof datacontrol[key].variables["TMIN"].yeardata[p2year] !== "undefined" &&
+                            typeof datacontrol[key].variables["TMIN"].yeardata[p1year].min !== "undefined" &&
+                            typeof datacontrol[key].variables["TMIN"].yeardata[p2year].min !== "undefined") {
                             datacontrol[key].variables["TMAXmax"].push({
                                 x: datacontrol[key].variables["TMAX"].yeardata[p1year].max,
                                 y: datacontrol[key].variables["TMAX"].yeardata[p2year].max,
@@ -556,6 +559,10 @@
                                     year: p1year + "/" + p2year
                                 }
                             });
+                        } else {
+                            console.log("******", key, " ausgesteuert, Datenmangel");
+                            //console.log(datacontrol[key].variables["TMAX"].yeardata);
+                            //console.log(datacontrol[key].variables["TMIN"].yeardata);
                         }
                     }
                 }

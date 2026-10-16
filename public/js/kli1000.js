@@ -39,8 +39,9 @@
         let ret3 = await kli6900.getScriptA("kli1000D");
         console.log("kli1000D", ret3.error, ret3.message);
         let ret4 = await kli6900.getScriptA("kli1000E");
-        console.log("kli1000E", ret4.error, ret3.message);
-
+        console.log("kli1000E", ret4.error, ret4.message);
+        let ret5 = await kli6900.getScriptA("kli1000E01");
+        console.log("kli1000E01", ret5.error, ret5.message);
         $("nav.navbar").find("button").last()
             .after(
                 $("<button/>", {
@@ -641,27 +642,26 @@
                 selparms.savesource.push(thissource);
             }
         }
+        /*
         let { worldmap, worldmapid, layerControl } = maps.getWorldmap();
         worldmap.eachLayer(function (layer) {
             if (layer.custom?.type === "stationlayer") {
                 let layername = layer.custom.layername;
                 let index = selparms.source.indexOf(layername);
                 if (index >= 0) {
-                    selparms.source.splice(index, 1);
+                    // selparms.source.splice(index, 1); // muss aktualisiert werden!!!
+                } else {
+                    // muss nicht mehr angezeigt werden
                 }
             }
         });
+        */
 
         if (selparms.source.length === 0) {
             return;
         } else {
             console.log("______________________________");
             console.log("new:", selparms.source);
-        }
-
-        if (geo === null) {
-            let radiusKm = 50;
-            geo = kli6900.lincoordinates(parseFloat(localization.latitude), parseFloat(localization.longitude), radiusKm);
         }
 
         selparms.fromyear = 9999;
@@ -737,6 +737,18 @@
         console.log(selparms);
         console.log(categorycontrol);
 
+        selparms.distancekm = 50;
+        let kmbuttons = $("button.kli1000selkms").toArray();
+
+        for (let kmbutton of kmbuttons) {
+            let status = $(kmbutton).find("span").first().text();
+            if (status === okletter) {
+                selparms.distancekm = parseInt($(kmbutton).attr("varvalue"));
+                break;
+            }
+        }
+        geo = kli6900.lincoordinates(parseFloat(localization.latitude), parseFloat(localization.longitude), selparms.distancekm);
+        console.log(selparms);
         for (let source of selparms.source) {
 
             let sql = kli1000A.buildSQLfromButtons(localization, geo, source, selparms, categorycontrol);
@@ -775,8 +787,39 @@
                 console.log(ret.records.length + " found" + pmsg);
                 kli6900.putMessage(ret.records.length + " found" + pmsg, 1);
             }
+            let status = $("#kli1000selprecision").find("span").first().text();
+            let precision = false;
+            let pkorr = 2;
+            if (status === okletter) {
+                precision = true;
+                pkorr = 0;
+            }
+            let geopoints = [];
 
-            let geopoints = ret.records;
+            for (let record of ret.records) {
+                let variables = record.variables.split(",");
+                let fromyears = record.fromyears.split(",");
+                let toyears = record.toyears.split(",");
+
+                let found = false;
+                for (let i = 0; i < variables.length; i++) {
+                    let variable = variables[i];
+                    let fromyear = parseInt(fromyears[i]);
+                    let toyear = parseInt(toyears[i]);
+                    // gezielte Terminprüfung
+                    if (variable === "TMAX" || variable === "TMIN") {
+                        if (fromyear <= selparms.fromyear - pkorr && toyear >= selparms.toyear + pkorr) {
+                            console.log(record.source, record.stationid, variable, fromyear, toyear, record.stationname);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (found === true) {
+                    geopoints.push(structuredClone(record));
+                }
+            }
+            console.log("+++ primärer Datenzugriff", ret.records.length, geopoints.length);
 
             // Verdichten auf continent, alpha3 und countryname
             let countrycontrol = {};
@@ -799,34 +842,35 @@
                 }
             }
             //parms.metadata = metadata;
+
             await maps.addMarkerLayer("stationlayer", source, localization, geopoints, {});
             // countrypolygons holen vom Server über alpha3s
             await maps.addCountryLayer(alpha3s);
         }
         // event für Änderungen in leaflet.control - reines Template ohne Funktion
-        worldmap.on("overlayadd overlayremove", async function (e) {
-            const visible = worldmap.hasLayer(e.layer);
-            // console.log("Layer:", e.name);
-            // e.layer hat custom mit layername als source und type=markerlayer
-            // console.log("sichtbar:", visible);
-            // console.log("Layerobjekt:", e.layer);
-            //updateSomething(e.layer, visible);
-            // es muss der button selbtn mit varname und varvalue 
-            // im Status entsprechend aktualisiert werden
-            // ohne dass dort ein event ausgelöst wird
-            let varname = "source";
-            let varvalue = e.layer.custom.layername;
-            /*
-            let button = $("button.kli1000selbtn[varname=" + varname + "][varvalue=" + varvalue + "]");
-            if (visible === true) {
-                $(button).find("span").first().html(oksign);
-            } else {
-                $(button).find("span").first().html(cancelsign);
-            }
-            */
-            //let buttons = $("button.kli1000selbtn").toArray();
-            //await kli1000.updateWorldmap(visible, varname, varvalue, buttons);
-        });
+        //worldmap.on("overlayadd overlayremove", async function (e) {
+        //    const visible = worldmap.hasLayer(e.layer);
+        // console.log("Layer:", e.name);
+        // e.layer hat custom mit layername als source und type=markerlayer
+        // console.log("sichtbar:", visible);
+        // console.log("Layerobjekt:", e.layer);
+        //updateSomething(e.layer, visible);
+        // es muss der button selbtn mit varname und varvalue 
+        // im Status entsprechend aktualisiert werden
+        // ohne dass dort ein event ausgelöst wird
+        //    let varname = "source";
+        //    let varvalue = e.layer.custom.layername;
+        /*
+        let button = $("button.kli1000selbtn[varname=" + varname + "][varvalue=" + varvalue + "]");
+        if (visible === true) {
+            $(button).find("span").first().html(oksign);
+        } else {
+            $(button).find("span").first().html(cancelsign);
+        }
+        */
+        //let buttons = $("button.kli1000selbtn").toArray();
+        //await kli1000.updateWorldmap(visible, varname, varvalue, buttons);
+        //});
     };
 
 
@@ -912,6 +956,59 @@
                 html: "<span> " + oksign + "</span><span> sharp</span>",
                 title: "sharp - full coverage of range or only partial coverage of range"
             }));
+
+
+        $("#kli1000commands")
+            .append($("<button/>", {
+                class: "btn btn-sm btn-secondary kli1000selkms",
+                css: {
+                    "margin-bottom": "3px",
+                    "margin-left": "5px"
+                },
+                varname: "distance",
+                varvalue: "50",
+                html: "<span> " + oksign + "</span><span> 50km</span>",
+                title: "Suche in +/- 50 km um die Lokation"
+            }));
+
+        $("#kli1000commands")
+            .append($("<button/>", {
+                class: "btn btn-sm btn-secondary kli1000selkms",
+                css: {
+                    "margin-bottom": "3px",
+                    "margin-left": "5px"
+                },
+                varname: "distance",
+                varvalue: "100",
+                html: "<span> " + cancelsign + "</span><span> 100km</span>",
+                title: "Suche in +/- 100 km um die Lokation"
+            }));
+
+        $("#kli1000commands")
+            .append($("<button/>", {
+                class: "btn btn-sm btn-secondary kli1000selkms",
+                css: {
+                    "margin-bottom": "3px",
+                    "margin-left": "5px"
+                },
+                varname: "distance",
+                varvalue: "250",
+                html: "<span> " + cancelsign + "</span><span> 250km</span>",
+                title: "Suche in +/- 250 km um die Lokation"
+            }));
+
+        $(document).on("click", ".kli1000selkms", async function (evt) {
+            evt.preventDefault();
+            let kmbutton = $(this);
+            let kmbuttons = $("button.kli1000selkms").toArray();
+            for (let button of kmbuttons) {
+                $(button).find("span").first().html(cancelsign);
+            }
+            $(kmbutton).find("span").first().html(oksign);
+
+            await kli1000.updateLayers();
+        });
+
 
         let categories = ["Temperature", "Niederschlag", "Wind", "Sonne", "other"];
         for (let vardata of parms.metadata.varmeta) {
@@ -1047,7 +1144,10 @@
                 title: "Auswertung Jahres- und Periodendaten mit Bubble-Charts",
                 click: async function (evt) {
                     evt.preventDefault();
-                    $("#kli1000databubblewrapper").remove();
+                    // es müsste ALLES aus #kli1000databubblewrapper entfernt werden
+                    // auch die factory instanzen
+
+                    $("#kli1000databubblewrapper").empty();
                     $(".klicontainer")
                         .append($("<div/>", {
                             class: "row",
@@ -1152,9 +1252,11 @@
                             ];
                         };
                         await bubbles.showOneDataBubbleChart(wrapperid, layerdata, selparms, title, xlabel, ylabel, cbtitle, cblabel);
-                        debugger;
+
                         let dataControl = await bubbles.getDataControl();
-                        await kli1000.showAllRanks(wrapperid, layercontrol[source].geopoints, layerdata.source, dataControl);
+
+                        let rankchart = kli1000E01.createGHCNDChart();
+                        await rankchart.showAllRanks(wrapperid, layercontrol[source].geopoints, layerdata.source, dataControl);
                     }
                     await kli1000.calculateAutoHeight("#kli1000matrix");
                     let elmnt = document.getElementById("kli1000databubblewrapper");
@@ -1197,243 +1299,17 @@
     };
 
 
-    /**
-    * showAllRanks - Integrierte Anzeige mehrere Attribute der Stationen im Linechart,
-    * x-Achse als category je Attribut, normalisierte Werte mit z-order
-    *
-    * @param {any} wrapperid -
-    * @param {any} geopoints -
-    * @param {any} layername -
-    * @param {any} dataControl -
-    *
-    * @returns {any} - This function does not return a value but performs assertions on the input data.
-    */
-    kli1000.showAllRanks = async function (wrapperid, geopoints, layername, dataControl) {
-        // line-Chart mit category als x-Achse, das sind die Attribute
-        debugger;
-        let attrs = "latitude,height,popd_1950,popd_2019,uopp_1950,uopp_2019,zind_1950AD,zind_2019AD".split(",");
-        let anz = attrs.length;
-        let stationcontrol = {};
-        let attrdata = [];
-        let dobuf = {};
-        let ind = -1;
-        let datasets = [];
-        let zindcontrol = kli6901.getZindControl();
-        let zinds = Object.keys(zindcontrol);
-        for (let geopoint of geopoints) {
-            ind++;
-            let key = geopoint.source + "_" + geopoint.stationid;
-            if (typeof dataControl === "undefined") {
-                continue;
-            } else if (typeof dataControl[key] === "undefined") {
-                continue;
-            }
-            let attrvalues = [];
-            let dataset = {
-                ind: ind,
-                source: geopoint.source,
-                stationid: geopoint.stationid,
-                stationname: geopoint.stationname,
-                raws: new Array(anz).fill(-1),
-                vals: new Array(anz).fill(-1),
-                data: new Array(anz).fill(-1),
-            };
-            // da die Attribute in geopoints enthalten sind, können sie vollständig übernommen werden nach values
-            for (let i = 0; i < attrs.length; i++) {
-                let attribute = attrs[i];
-                let rawvalue = geopoint[attrs[i]];
-                dataset.raws[i] = rawvalue;
-                let value = Number(rawvalue);
-                if (!Number.isFinite(value)) {
-                    dataset.vals[i] = null;
-                    dataset.data[i] = null;
-                    continue;
-                }
-                if (attribute.startsWith("popd")) {
-                    value = value >= 0
-                        ? Math.log1p(value)
-                        : null;
-                    dataset.vals[i] = value;
-                } else if (attribute.startsWith("zind")) {
-                    let ind = zinds.indexOf("" + rawvalue);
-                    if (ind >= 0) {
-                        dataset.vals[i] = ind;
-                    } else {
-                        dataset.vals[i] = null;
-                    }
-                } else {
-                    dataset.vals[i] = value;
-                }
-            }
-            datasets.push(dataset);
-        }
-        // jetzt stehen in datasets[i].vals die transormierten Werte
-        // jetzt geht es an die Analytic mit Z-Order nach datasets[i].data
-        for (let i = 0; i < attrs.length; i++) {
-            let reference = datasets
-                .map(ds => ds.vals[i])
-                .filter(Number.isFinite);
-            // values sind jetzt vertikale arrays
-            // Referenzwerte eines Merkmals
-            const mean = ss.mean(reference);
-            const sd = ss.standardDeviation(reference);
-
-            // Z-Score einer ausgewählten Station
-            for (let dataset of datasets) {
-                let stationValue = dataset.vals[i];
-                if (Number.isFinite(stationValue)) {
-                    const z = (stationValue - mean) / sd;
-                    dataset.data[i] = z;
-                }
-            }
-        }
-
-        // dataset komplettieren
-        for (let dataset of datasets) {
-            dataset.type = "line";
-            dataset.label = dataset.stationname;
-        }
-        let xlabels = attrs;
-        let title = layername + " Rangskalierung, statisch";
-        let parms = {};
-
-        let lineChart = kli1000E.createLineChart();
-        console.log(datasets);
-        let canvasid = await lineChart.showLineChart(wrapperid, title, xlabels, datasets, parms);
-        let graph = Chart.getChart(canvasid);
-        graph.options.interaction = {
-            mode: 'point',  //'nearest',
-            intersect: true,  // false,
-            axis: 'x'
-        };
-        graph.options.plugins.tooltip.callbacks = {
-            title: (items) => {
-                // const ctx = items[0];
-                // return ctx.dataset.stationname;  //[ctx.dataIndex];  //  + " " + items[0].label;
-            },
-            label: (ctx) => {
-                let raw = ctx.dataset.raws[ctx.dataIndex];
-                const stationname = ctx.dataset.stationname;
-                const attr = attrs[ctx.dataIndex];
-                if (!attr.startsWith("zind") && raw !== null) {
-                    raw = Number(raw).toFixed(1);
-                }
-                return [
-                    stationname,
-                    attr + ": " + raw
-                    //`Raw: ${raw}`,
-                    //`Var: ${attrs[ctx.dataIndex]}`
-                    //`Wert: ${ctx.parsed.y}`
-                ];
-            }
-        };
-        graph.update("none");
-    };
-
-    kli1000.showAllRanksOld = async function (wrapperid, geopoints, layername, dataControl) {
-        // line-Chart mit category als x-Achse, das sind die Attribute
-
-        let attrs = "latitude,height,popd_1950,popd_2019,uopp_1950,uopp_2019,zind_1950AD,zind_2019AD".split(",");
-        let anz = attrs.length;
-        let stationcontrol = {};
-        let attrdata = [];
-        let dobuf = {};
-        let ind = -1;
-        for (let geopoint of geopoints) {
-            ind++;
-            let key = geopoint.source + "_" + geopoint.stationid;
-            if (typeof dataControl === "undefined") {
-                continue;
-            } else if (typeof dataControl[key] === "undefined") {
-                continue;
-            }
-            //else if (typeof dataControl[key].variables === "undefined") {
-            //    continue;
-            //} else if (typeof dataControl[key].variables["TMAX"] !== "undefined") {
-            //    continue;
-            //}
-            let attrvalues = [];
-            if (typeof stationcontrol[key] === "undefined") {
-                stationcontrol[key] = {
-                    ind: ind,
-                    source: geopoint.source,
-                    stationid: geopoint.stationid,
-                    stationname: geopoint.stationname,
-                    data: new Array(anz).fill(-1),
-                    vals: new Array(anz).fill(-1),
-                };
-            }
-            for (let i = 0; i < attrs.length; i++) {
-                // index in stationcontrol, attributindex, attributwert, rank
-                let value = geopoint[attrs[i]];
-                if (typeof value === "string") {
-                    value = parseInt(value);
-                }
-                attrdata.push([i, value, 0, key, ind]);
-            }
-        }
-        attrdata = attrdata.sort(function (a, b) {
-            if (a[0] > b[0]) {
-                return 1;
-            } else if (a[0] < b[0]) {
-                return -1;
-            } else if (a[1] > b[1]) {
-                return 1;
-            } else if (a[1] < b[1]) {
-                return -1;
-            } else {
-                return 0;
-            }
-        });
-        let oldattrind = -1;
-        let attrrank = 0;
-        let oldvalue;
-
-        for (let i = 0; i < attrdata.length; i++) {
-            let [attrind, attrval, oldattrrank, key, ind] = attrdata[i];
-            if (oldattrind !== attrind) {
-                attrrank = -1;
-                oldvalue = -999999
-            }
-            if (oldvalue !== attrval) {
-                attrrank = attrrank + 1;  // gleiche Werte - gleicher rank?
-                oldvalue = attrval;
-            }
-            if (attrind < 0 || attrind > anz - 1) {
-                oldattrind = attrind;
-                continue;
-            }
-            stationcontrol[key].data[attrind] = attrrank;
-            stationcontrol[key].vals[attrind] = attrval;
-            oldattrind = attrind;
-        }
-
-        // dataset erzeugen
-        let datasets = [];
-        for (let key of Object.keys(stationcontrol)) {
-            let station = stationcontrol[key];
-            let dataset = {
-                type: "line",
-                label: station.stationname,
-                source: station.source,
-                stationid: station.stationid,
-                stationname: station.stationname,
-                data: station.data,
-                values: station.vals
-            }
-            datasets.push(dataset);
-        }
-        let xlabels = attrs;
-        let title = layername + " Rangskalierung, statisch";
-        let parms = {};
-
-        let lineChart = kli1000E.createLineChart();
-        console.log(datasets);
-        await lineChart.showLineChart(wrapperid, title, xlabels, datasets, parms);
 
 
 
-    };
+
+
+
+
+
+
+
+
 
     kli1000.showBubbleHeightLat = async function (wrapperid, geopoints, layername) {
         // Kandidaten für die Auswertungen:
@@ -1777,7 +1653,7 @@
             document.title = pageid + " " + name;
         }
         $('meta[name="description"]').attr("content", pageid + " " + name + " " + title);
-        //kla6900.init("online");
+        //kli6900.init("online");
         $(".klimobile").remove();
         $("body").removeClass("overflow-hidden");
         $("body").addClass("overflow-hidden");

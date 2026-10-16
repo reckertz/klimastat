@@ -143,7 +143,25 @@ app.post('/getallrecordsx', async function (req, res) {
     return;
 });
 
+app.get('/getsourceanalysis', async function (req, res) {
 
+    var timeout = 10 * 60 * 1000; // hier: gesetzter Default
+    if (req.query && typeof req.query.timeout !== "undefined" && req.query.timeout.length > 0) {
+        timeout = req.query.timeout;
+        req.setTimeout(parseInt(timeout));
+    }
+    // var rootdir = path.dirname(require.main.filename);
+    let doc1000 = require("./doc1000.js");
+    let { res1, ret } = await doc1000.getsourceanalysis(req, null, res);  //, function (res, ret) {
+    // in ret liegen error, message und record
+    var smsg = JSON.stringify(ret);
+    res.writeHead(200, {
+        'Content-Type': 'application/text',
+        "Access-Control-Allow-Origin": "*"
+    });
+    res.end(smsg);
+    return;
+});
 
 let httpsServer;
 async function startServer() {

@@ -161,19 +161,45 @@
 
 
         async function addMarkerLayer(layertype, layername, centerlocation, geopoints, parms) {
+            // zuerst feststellen, ob der Layer schon vorhanden ist!!
+            //let { worldmap, worldmapid, layerControl } = maps.getWorldmap();
+            let found = false;
+            let newlayer = null;
+            
+            map.eachLayer(function (layer) {
+                if (found === true) {
+                    return;
+                }
+                if (layer instanceof L.LayerGroup) {
+                    console.log(layer.custom);
+                    if (layer.custom?.type === "stationlayer") {
+                        if (layername === layer.custom.layername) {
+                            found = true;
+                            layer.clearLayers();  // entfernt die alten Marker
+                            newlayer = layer;     // formale Zuweisung
+                            return;
+                        }
+                    }
+                }
+            });
+            if (found === false) {
+                newlayer = new L.layerGroup();  // hier noch ohne Marker
+            }
+
             let onMarkerClick;
             if (typeof parms.onMarkerClick !== "undefined") {
                 onMarkerClick = parms.onMarkerClick;
             } else {
                 onMarkerClick = onMarkerClickDefault;
             }
-            let newlayer = L.layerGroup();
+
             // centerlocation - spezieller Marker, wenn vorhanden
             if (typeof centerlocation !== "undefined" && centerlocation !== null) {
                 let geoparms = {
                     id: "Bezugspunkt",
                     latitude: centerlocation.latitude,
                     longitude: centerlocation.longitude,
+                    label: centerlocation.locname || "Bezugspunkt",
                     //height: geopoint.height,
                     stationname: "your location"
                 };
@@ -185,6 +211,13 @@
                 geoparms.fillOpacity = 1;
                 //L.circleMarker([geopoint.latitude, geopoint.longitude]).addTo(newlayer);
                 let marker2 = L.circleMarker([centerlocation.latitude, centerlocation.longitude], geoparms);
+                let html = '<div style="font-size:8px;padding:1px !important;">' + geoparms.label + '</div>';
+                marker2.bindTooltip(html, {
+                    interactive: true,
+                    background: "green",
+                    permanent: true,
+                    direction: 'bottom'
+                });
                 marker2.addTo(newlayer);
             }
             // genauere Übernahme
@@ -235,13 +268,15 @@
                 }
                 marker2.addTo(newlayer);
             }
-            layerControl.addOverlay(newlayer, layername);
-            overlayLayers.set(layername, newlayer);
-            newlayer.custom = {
-                type: layertype,
-                layername: layername
-            };
-            newlayer.addTo(map);
+            if (found === false) {
+                layerControl.addOverlay(newlayer, layername);
+                overlayLayers.set(layername, newlayer);
+                newlayer.custom = {
+                    type: layertype,
+                    layername: layername
+                };
+                newlayer.addTo(map);
+            }
             //$(".kli1000Btip").parent().css({
             //    padding: "0 !important"
             //});
@@ -329,7 +364,7 @@
                 };
             } else {
                 if (alpha3 !== "*none") {
-                    kla6900.putMessage("countryShape fehlt für " + alpha3, 3);
+                    kli6900.putMessage("countryShape fehlt für " + alpha3, 3);
                 }
                 return {
                     error: true,

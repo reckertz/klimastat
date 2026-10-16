@@ -45,6 +45,7 @@ data/
 public/data/
 public/img/
 public/lib/
+public/temp/
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/

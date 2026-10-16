@@ -245,23 +245,20 @@
                     class: "btn btn-warning",
                     style: "float: left; margin-left: 20px;",
                     html: "C*",
-                    title: "Test neue Analyse des Source", // mit Graphischer Aufbereitung der Calls",
+                    title: "Analyse des Source", // mit Graphischer Aufbereitung der Calls",
                     click: async function (evt) {
                         evt.preventDefault();
-                        alert("wird ergänzt");
-                        /*
                         let list = $(document.querySelectorAll('div[pageid]')).toArray();
                         let pageid = $(list[0]).attr("pageid");
                         if (typeof pageid === "string" && pageid !== "undefined") {
-                            let gurl = "index.html?target=ghd6010";
+                            let gurl = "index.html?target=doc3010";
                             gurl += "&caller=" + pageid;
                             gurl += "&modus=new";
                             //let link = "<a href='" + gurl + "' target=_blank>" + stationid + "</a>";
                             let wname = "_blank";
-                            let ghd6010handle1 = window.open(gurl, wname);
-                            ghd6010handle1.focus();
+                            let doc3010handle1 = window.open(gurl, wname);
+                            doc3010handle1.focus();
                         }
-                        */
                     }
                 }))
 
@@ -469,6 +466,29 @@
         ];
         return rgb20[icolor];
     };
+
+
+    /**
+    * kla6900.getContrastYIQ - von ChatGPT
+    *
+    * @param {any} hexcolor -
+    * @returns {any} - contrast-color black or white
+    */
+    kli6900.getContrastYIQ = function (hexcolor) {
+        // falls #xxx → in #xxxxxx erweitern
+        if (hexcolor.length === 4) {
+            hexcolor = "#" + [...hexcolor.slice(1)].map(c => c + c).join("");
+        }
+        // RGB-Werte extrahieren
+        const r = parseInt(hexcolor.substr(1, 2), 16);
+        const g = parseInt(hexcolor.substr(3, 2), 16);
+        const b = parseInt(hexcolor.substr(5, 2), 16);
+        // Wahrgenommene Helligkeit (YIQ-Formel)
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // Entscheidung: schwarz oder weiß
+        return (brightness > 128) ? "#000000" : "#ffffff";
+    };
+
 
     /**
      * kla6920.getTrivial - Einfache Analyse Zahlenarray

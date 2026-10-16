@@ -104,13 +104,11 @@ GHCNMETH	TT60	895
     */
     kli1000A.buildSQLfromButtons = function (localization, geo, source, selparms, categorycontrol) {
 
-
         // 1. es kann nur eine source geben!!!
         // 2. es mehrere categories geben, die nach variable IN umzusetzen sind mit counter
         let sourcedata = categorycontrol[source];
         let catkeys = Object.keys(sourcedata);
         let table = categorycontrol[source][catkeys[0]].table;
-
         let sql = "";
         sql += "SELECT KLISTATIONS.source, KLISTATIONS.stationid, KLISTATIONS.stationname,";
         sql += " KLISTATIONS.latitude, KLISTATIONS.longitude, KLISTATIONS.height,";
@@ -165,17 +163,18 @@ GHCNMETH	TT60	895
         if (ands.length > 0) {
             sql += " AND " + ands.join(" AND ");
         }
+
         sql += " GROUP BY KLISTATIONS.source, KLISTATIONS.stationid";
         // HAVING-Klausel
         let ors = [];
 
         for (let category of Object.keys(categorycontrol[source])) {
-            ors.push(" sum_" + category + " > 0");
+            ors.push(" sum_" + category + " > 1");
         }
         if (ors.length === 1) {
             sql += " HAVING " + ors[0];
         } else if (ors.length > 1) {
-            sql += " HAVING " + ors.join(" OR ");
+            sql += " HAVING (" + ors.join(" OR ") + ")";
         }
         sql += " ORDER BY KLISTATIONS.source, KLISTATIONS.stationid";
         // jetzt der eigentliche Zugriff mit fetch
