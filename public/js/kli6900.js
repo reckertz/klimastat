@@ -490,8 +490,28 @@
     };
 
 
+
+
     /**
-     * kla6920.getTrivial - Einfache Analyse Zahlenarray
+    * kli6900.seededRandom - wiederholbare, deterministische Random-Zahlen gemäß seed
+    * damit können Random-Auswertungen mit unterschiedlichen seeds wiederholt und verglichen werden
+    *
+    * @param {any} seed - Vorgabe einer Zahl
+    * @returns {any} - random-number zwischen 0 und 1 wie bei Math.random
+    */
+    kli6900.seededRandom = function (seed) {
+        let m = 0x80000000; // 2**31
+        let a = 1103515245;
+        let c = 12345;
+        let state = seed ? seed : Math.floor(Math.random() * (m - 1));
+        return function () {
+            state = (a * state + c) % m;
+            return state / (m - 1);
+        };
+    };
+
+    /**
+     * kli6900.getTrivial - Einfache Analyse Zahlenarray
      * @param {*} data
      * @param {*} doround - wenn true (default), dann auf 1 Dezimalstelle runden
      * @param {*} korr - wenn true (default ist false), dann null für missing setzen

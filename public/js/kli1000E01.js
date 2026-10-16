@@ -22,6 +22,8 @@
 
     kli1000E01.createGHCNDChart = function () {
 
+        let recordset = {};   // mit key und allen attributen (labeln) für das dataset
+
         /**
         * showAllRanks - Integrierte Anzeige mehrere Attribute der Stationen im Linechart,
         * x-Achse als category je Attribut, normalisierte Werte mit z-order
@@ -127,27 +129,6 @@
                     }
                 }
             }
-
-            /*
-            for (let i = 0; i < attrs.length; i++) {
-                let reference = datasets
-                    .map(ds => ds.vals[i])
-                    .filter(Number.isFinite);
-                // values sind jetzt vertikale arrays
-                // Referenzwerte eines Merkmals
-                const mean = ss.mean(reference);
-                const sd = ss.standardDeviation(reference);
-                // Z-Score einer ausgewählten Station
-                for (let dataset of datasets) {
-                    let stationValue = dataset.vals[i];
-                    if (Number.isFinite(stationValue)) {
-                        const z = (stationValue - mean) / sd;
-                        dataset.data[i] = z;
-                    }
-                }
-            }
-            */
-
             // dataset komplettieren
             for (let dataset of datasets) {
                 dataset.type = "line";
@@ -201,11 +182,16 @@
                 let topcontainerid = canvasid.replace("canvas", "topbuttons");
                 let topcontainer = $("#" + topcontainerid);
                 await showTopButtons(wrapperid, topcontainer, canvasid, attrs);
+                requestAnimationFrame(async function () {
+                    await addDataColumns(canvasid);
+                });
             });
         }
 
         async function showTopButtons(wrapperid, topcontainer, canvasid, attrs) {
+
             $(topcontainer).find("button.kli1000special").remove();
+            /*
             for (let variable of ["TMAX", "TMIN"]) {
                 $(topcontainer)
                     .append($("<button/>", {
@@ -230,22 +216,57 @@
                 }
                 $(this).find("span").first().html(oksign);
                 let canvasid = $(this).attr("canvasid");
-                let attrs = $(this).attr("attrs");
-                let varname = $(this).attr("varname");
-                let graph = Chart.getChart(canvasid);
+                //let attrs = $(this).attr("attrs");
+                //let varname = $(this).attr("varname");
+                await addDataColumns(canvasid);
+            });
+            */
+            let topcontainerid = $(topcontainer).attr("id");
+            $(topcontainer).find("button.kli1000cluster").remove();
+            $(topcontainer)
+                .append($("<button/>", {
+                    class: "btn btn-sm btn-success kli1000cluster",
+                    css: {
+                        padding: "1px",
+                        margin: "5px"
+                    },
+                    canvasid: canvasid,
+                    topcontainerid: topcontainerid,
+                    attrs: attrs,
+                    html: " Cluster ",
+                    click: async function (evt) {
+                        evt.preventDefault();
+                        await showClusters(wrapperid, canvasid);
 
-                let stationcontrol = {};
-                let keycontrol = {};
-                let datasets = [];
-                let xlabels = [];
-                for (let dataset of graph.data.datasets) {
-                    if (typeof stationcontrol[dataset.source] === "undefined") {
-                        stationcontrol[dataset.source] = [];
                     }
-                    stationcontrol[dataset.source].push(dataset.stationid);
-                    let key = dataset.source + "_" + dataset.stationid;
-                    keycontrol[key] = dataset.ind;
+                }));
+        }
+
+        async function addDataColumns(canvasid) {
+            debugger;
+            let stationbuttonscontainerid = canvasid.replace("canvas", "rightbuttons");
+            let stationbuttonscontainer = $("#" + stationbuttonscontainerid);
+            let topcontainerid = canvasid.replace("canvas", "topbuttons");
+            let topcontainer = $("#" + topcontainerid);
+
+            let graph = Chart.getChart(canvasid);
+
+            let stationcontrol = {};
+            let keycontrol = {};
+            let datasets = [];
+            let xlabels = [];
+            for (let dataset of graph.data.datasets) {
+                if (typeof stationcontrol[dataset.source] === "undefined") {
+                    stationcontrol[dataset.source] = [];
                 }
+                stationcontrol[dataset.source].push(dataset.stationid);
+                let key = dataset.source + "_" + dataset.stationid;
+                keycontrol[key] = dataset.ind;
+            }
+            let attrs = [];
+            for (let varname of ["TMAX", "TMIN"]) {
+                attrs = structuredClone(graph.data.labels);
+                xlabels = [];
                 let records = await getData4Varname(stationcontrol, varname, attrs);
                 // ret.records hat jetzt zwei zusätzliche Felder mit varname als prefix
                 // Transformation der Variablen
@@ -294,6 +315,9 @@
                     reference = reference.concat(ref);
                 }
                 // hier liegt der Gesamtvektor vor
+                if (reference.length < 1) {
+                    debugger;
+                }
                 const mean = ss.mean(reference);
                 const sd = ss.standardDeviation(reference);
                 for (let dataset of datasets) {
@@ -305,81 +329,220 @@
                         }
                     }
                 }
-
-                // Versuch das alte LineChart fortzuschreiben
                 graph.data.labels = xlabels;
                 graph.data.datasets = datasets;
-                delete graph.options.scales.y.min;
-                delete graph.options.scales.y.max;
-                delete graph.options.scales.x.min;
-                delete graph.options.scales.x.max;
-                graph.options.scales.x.labels = xlabels;
-                graph.update("none");
-                for (const axis of ["x", "y"]) {
-                    const scale = graph.scales[axis];
-                    if (axis === "y") {
-                        if (scale.max > scale.min * -1) {
-                            scale.min = scale.max * -1;
-                        } else {
-                            scale.max = scale.min * -1;
-                        }
+            }
+            // Versuch das alte LineChart fortzuschreiben
+            delete graph.options.scales.y.min;
+            delete graph.options.scales.y.max;
+            delete graph.options.scales.x.min;
+            delete graph.options.scales.x.max;
+            graph.options.scales.x.labels = xlabels;
+            graph.update("none");
+            for (const axis of ["x", "y"]) {
+                const scale = graph.scales[axis];
+                if (axis === "y") {
+                    if (scale.max > scale.min * -1) {
+                        scale.min = scale.max * -1;
+                    } else {
+                        scale.max = scale.min * -1;
                     }
-                    graph.options.scales[axis].min = scale.min;
-                    graph.options.scales[axis].max = scale.max;
                 }
-                graph.update("none");
-            });
-
-            let topcontainerid = $(topcontainer).attr("id");
-            $(topcontainer).find("button.kli1000cluster").remove();
-            $(topcontainer)
-                .append($("<button/>", {
-                    class: "btn btn-sm btn-success kli1000cluster",
-                    css: {
-                        padding: "1px",
-                        margin: "5px"
-                    },
-                    canvasid: canvasid,
-                    topcontainerid: topcontainerid,
-                    attrs: attrs,
-                    html: " Cluster ",
-                    click: async function (evt) {
-                        evt.preventDefault();
-
-                        await doClusters(wrapperid, canvasid, attrs, topcontainerid);
-                    }
-                }));
+                graph.options.scales[axis].min = scale.min;
+                graph.options.scales[axis].max = scale.max;
+            }
+            graph.update("none");
         }
 
-        async function doClusters(wrapperid, canvasid, attrs, topcontainerid) {
+
+        async function showClusters(wrapperid, canvasid) {
+            let stationbuttonscontainerid = canvasid.replace("canvas", "rightbuttons");
+            let stationbuttonscontainer = $("#" + stationbuttonscontainerid);
+            let topcontainerid = canvasid.replace("canvas", "topbuttons");
+            let topcontainer = $("#" + topcontainerid);
+            let graph = Chart.getChart(canvasid);
+
+            $("body")
+                .append($("<dialog/>", {
+                    css: {
+                        width: "40%",
+                        "max-width": "none"
+                    },
+                    id: "kli1000clusterdialog"
+                })
+                    .append($("<form/>", {
+                        id: "kli1000clusterformwrapper",
+                        method: "dialog"
+                    })
+                        .append($("<h3/>", {
+                            html: "Cluster-Analysis"
+                        }))
+                        .append($("<div/>", {
+                            id: "kli1000clusterform",
+                            class: "form-grid"
+                        }))
+                        .append($("<hr/>"))
+                        // <div class="button-area">
+                        .append($("<div/>", {
+                            //class: "form-buttons"
+                        })
+                            .append($("<div/>", {
+                                class: "d-flex flex-wrap",
+                                id: "kli1000attrbuttons"
+                            }))
+                            .append($("<div/>", {
+                                class: "d-flex flex-wrap",
+                                id: "kli1000cmdbuttons"
+                            }))
+                        )
+                        .append($("<div/>", {
+                            class: "form-list overflow-auto",
+                            "max-height": "50vh",
+                            "overflow-y": "auto"
+                        })
+                            .append($("<ul/>", {
+                                id: "kli1000locliste"
+                            }))
+                        )
+                    )
+                );
+            let attrs = graph.data.labels;
+            let basecontrol = [];
+            for (let attr of attrs) {
+                let basename = attr.split("_")[0];
+                if (basecontrol.includes(basename)) {
+                    continue;
+                }
+                basecontrol.push(basename);
+                $("#kli1000attrbuttons")
+                    .append($("<button/>", {
+                        class: "btn btn-sm btn-primary kli1000clusterattr",
+                        style: "margin:5px;padding: 3px;",
+                        attrbasename: basename,
+                        html: "<span>" + oksign + "</span><span> " + basename + "</span>"
+                    }));
+            }
+            $("#kli1000attrbuttons").on("click", ".kli1000clusterattr", function (evt) {
+                evt.preventDefault();
+                let status = $(this).find("span").first().text();
+                if (status === okletter) {
+                    $(this).find("span").first().html(cancelsign);
+                } else {
+                    $(this).find("span").first().html(oksign);
+                }
+            });
+
+            $("#kli1000cmdbuttons")
+                .append($("<button/>", {
+                    class: "btn btn-sm btn-secondary kli1000clustercmds",
+                    style: "margin:5px;padding: 3px;",
+                    cmd: "cluster",
+                    html: "Clusteranalyse",
+                    click: async function (evt) {
+                        evt.preventDefault();
+                        let buttons = $("#kli1000attrbuttons").find("button.kli1000clusterattr").toArray();
+                        let attrbasenames = [];
+                        for (let button of buttons) {
+                            let status = $(button).find("span").first().text();
+                            if (status === okletter) {
+                                attrbasenames.push($(button).attr("attrbasename"));
+                            }
+                        }
+                        await doClusters(wrapperid, canvasid, attrbasenames);
+                        dialog.close();
+                        $("#kli1000clusterdialog").remove();
+                    }
+                }));
+
+
+            $("#kli1000cmdbuttons")
+                .append($("<button/>", {
+                    class: "btn btn-sm btn-secondary kli1000clustercmds",
+                    style: "margin:5px;padding: 3px;",
+                    cmd: "cancel",
+                    html: "Abbruch",
+                    click: function (evt) {
+                        evt.preventDefault();
+                        dialog.close();
+                        $("#kli1000clusterdialog").remove();
+                    }
+                }));
+
+
+            //await doClusters(wrapperid, canvasid, attrs);
+            let dialog = document.getElementById("kli1000clusterdialog");
+            let form = document.getElementById("kli1000clusterform");
+            dialog.showModal();
+        }
+
+
+        async function doClusters(wrapperid, canvasid, attrbasenames) {
             console.log(wrapperid, canvasid);
+            let stationbuttonscontainerid = canvasid.replace("canvas", "rightbuttons");
+            let stationbuttonscontainer = $("#" + stationbuttonscontainerid);
+            let topcontainerid = canvasid.replace("canvas", "topbuttons");
+            let topcontainer = $("#" + topcontainerid);
+
             let graph = Chart.getChart(canvasid);
             let datasets = graph.data.datasets;
             let labels = graph.data.labels;
+
+            // Bereinigung datasets, Entfernung kernel-Sätze und means-Sätze
+            for (let i = datasets.length - 1; i >= 0; i--) {
+                let dataset = datasets[i];
+                if (typeof dataset.settype === "undefined") {
+                    datasets[i].settype = "raw";
+                    dataset.settype = "raw";
+                } else if (dataset.settype === "kernel") {
+                    datasets[i].settype = "raw";
+                    dataset.settype = "raw";
+                } else {
+                    datasets.splice(i, 1);
+                }
+            }
+
+            let attrindexes = [];
+            for (let i = 0; i < labels.length; i++) {
+                let label = labels[i];
+                let basename = label.split("_")[0];
+                if (attrbasenames.includes(basename)) {
+                    attrindexes.push(i);
+                }
+            }
             let keycontrol = {};
             let ind = -1;
             let sortcontrol = [];
             for (let dataset of datasets) {
                 ind++;
+                let cdata = [];
+                for (let index of attrindexes) {
+                    cdata.push(dataset.data[index]);
+                }
+                dataset.cdata = structuredClone(cdata);
                 let key = dataset.key;
                 if (typeof keycontrol[key] === "undefined") {
                     keycontrol[key] = {};
                     keycontrol[key].ind = ind;
                 }
                 let sum = 0;
-                for (let value of dataset.data) {
+                for (let value of dataset.cdata) {  // dataset.data
                     if (value !== null) {
                         sum += value;
                     }
                 }
                 keycontrol[key].sum = sum;
                 let members = [];
-                sortcontrol.push([sum, ind, key, members]);
+                let keys = [];
+                sortcontrol.push([sum, ind, key, members, keys]);
             }
             sortcontrol = sortcontrol.sort(function (a, b) {
                 if (a[0] > b[0]) {
                     return 1;
                 } else if (a[0] < b[0]) {
+                    return -1;
+                } else if (a[1] > b[1]) {
+                    return 1;
+                } else if (a[1] < b[1]) {
                     return -1;
                 } else {
                     return 0;
@@ -395,38 +558,64 @@
             let middleind = Math.floor(sortcontrol.length / 2);
             kernels.push(sortcontrol[middleind]);
             indcontrol.push(middleind);
-            let ihit = 0;
+            let ihit = kernels.length;
             let len = datasets.length;
-            for (let r = 0; r < 10; r++) {
-                let ind = Math.floor(Math.random() * len);
+            // test von detrandom - wie erwartet, wiederholbar!!!
+            /*
+            for (let i = 0; i < 10; i++) {
+                let detrandomx = kli6900.seededRandom(4711);
+                let rnds = [];
+                for (let j = 0; j < 10; j++) {
+                    rnds.push(detrandomx());
+                }
+                console.log(rnds);
+            }
+            */
+            console.log(Math.sqrt(datasets.length));
+            let maxclusters = Math.ceil(Math.sqrt(datasets.length) / 2);
+            let detrandom = kli6900.seededRandom(4711);
+            for (let r = 0; r < maxclusters; r++) {
+                if (ihit >= maxclusters) {
+                    break;
+                }
+                //let ind = Math.floor(Math.random() * len);
+                let rnum = detrandom();
+                let ind = Math.floor(rnum * len);
                 if (!indcontrol.includes(ind)) {
                     indcontrol.push(ind);
                     kernels.push(sortcontrol[ind]);
                     ihit++;
                 }
-                if (ihit >= 2) {
-                    break;
-                }
+            }
+            for (let kernel of kernels) {
+                let index = kernel[1];
+                datasets[index].settype = "kernel";
             }
             // datasets auf die Kernel zuordnen
             for (let idataset = 0; idataset < datasets.length; idataset++) {
                 let candidate = datasets[idataset];
-                let a = candidate.data;
+                let a = candidate.cdata;
                 let actkind = -1;
                 let actdis = 999999;
                 let actind = -1;
+                let actkey = "";
                 for (let ikernel = 0; ikernel < kernels.length; ikernel++) {
                     let kernel = kernels[ikernel];
                     let kernelset = datasets[kernel[1]];
-                    let b = kernelset.data;
+                    let b = kernelset.cdata;
                     let dis = squaredDistance(a, b);
                     if (dis < actdis) {
                         actkind = ikernel;
                         actdis = dis;
                         actind = idataset;
+                        actkey = candidate.key;
                     }
                 }
                 kernels[actkind][3].push(actind);
+                kernels[actkind][4].push(actkey);
+                if (actind !== keycontrol[actkey].ind) {
+                    alert("mist");
+                }
             }
             // .kli1000stationbutton" key="GHCND_GME00121042" canvasid="kli1000databubblewrapper1483048canvas" 
             // Vererben der Cluster auf die Datasets und Buttons sowie Abrufbuttons einrichten
@@ -435,20 +624,49 @@
                 i++;
                 console.log(i, kernel[0], kernel[2], kernel[3]);
             }
-            $("#" + topcontainerid).find(".kli1000clusterbtns").remove();
 
-            $("#" + topcontainerid)
+            $("#" + topcontainerid).find("button.kli1000clusterbtns").off("click");
+            $("button.kli1000clusterbtns").off("click");
+            let oldbuttons = $("#" + topcontainerid).find("button.kli1000clusterbtns").toArray();
+            for (let oldbutton of oldbuttons) {
+                //$("#" + topcontainerid).find(".kli1000clusterbtns").off("click");
+                $(oldbutton).off("click");
+                $(oldbutton).remove();
+            }
+
+            $("#" + topcontainerid).find("button.kli1000clustervari").off("click");
+            $("button.kli1000clustervari").off("click");
+            let oldvaributtons = $("#" + topcontainerid).find("button.kli1000clustervari").toArray();
+            for (let oldbutton of oldvaributtons) {
+                //$("#" + topcontainerid).find(".kli1000clusterbtns").off("click");
+                $(oldbutton).off("click");
+                $(oldbutton).remove();
+            }
+
+            //$("#" + topcontainerid)
+            // Vererben auf die datasets und die stationbuttons
             let kernelind = -1;
             for (let kernel of kernels) {
                 kernelind++;
-                let [sum, ind, key, members] = kernel;
+                let [sum, ind, key, members, memberkeys] = kernel;
                 let clustermembers = [];
-                for (let memberind of members) {
+                //for (let memberind of members) {
+                for (let i = 0; i < members.length; i++) {
+                    let memberind = members[i];
+                    let memberkey = memberkeys[i];
                     let dataset = datasets[memberind];
+                    if (dataset.key !== memberkey) {
+                        alert("Grosser Mist");
+                    }
                     let key = dataset.key;
                     clustermembers.push(key);
                     datasets[memberind].cluster = kernelind;
-                    $("button.kli1000stationbutton[key=" + key + "]").attr("cluster", kernelind);
+                    let memberbutton = $(stationbuttonscontainer).find("button.kli1000stationbutton[key=" + key + "]");
+                    if ($(memberbutton).length === 1) {
+                        $(memberbutton).attr("cluster", kernelind);
+                    } else {
+                        alert("Grosser Mist++");
+                    }
                 }
                 $("#" + topcontainerid)
                     .append($("<button/>", {
@@ -461,12 +679,57 @@
                         cluster: kernelind,
                         html: "<span>" + oksign + "</span><span> cluster: " + kernelind + "</span>"
                     }));
-
             }
-            debugger;
+
+
+            $("#" + topcontainerid)
+                .append($("<button/>", {
+                    class: "btn btn-sm btn-info kli1000clustervari",
+                    css: {
+                        padding: "1px",
+                        margin: "5px"
+                    },
+                    canvasid: canvasid,
+                    doshow: "clusterkernels",
+                    html: "<span>" + cancelsign + "</span><span> show kernels</span>",
+                    title: "show original cluster-kernels"
+                }));
+
+            $("#" + topcontainerid)
+                .append($("<button/>", {
+                    class: "btn btn-sm btn-info kli1000clustervari",
+                    css: {
+                        padding: "1px",
+                        margin: "5px"
+                    },
+                    canvasid: canvasid,
+                    doshow: "hideraw",
+                    html: "<span>" + cancelsign + "</span><span> hide raws</span>",
+                    title: "hide normal datasets"
+                }));
+
+            $("#" + topcontainerid)
+                .append($("<button/>", {
+                    class: "btn btn-sm btn-info kli1000clustervari",
+                    css: {
+                        padding: "1px",
+                        margin: "5px"
+                    },
+                    canvasid: canvasid,
+                    doshow: "clustermeans",
+                    html: "<span>" + cancelsign + "</span><span> show means</span>",
+                    title: "show calculated cluster-means"
+                }));
+
+            for (let i = 0; i < graph.data.datasets.length; i++) {
+                graph.setDatasetVisibility(i, true);
+            }
+            graph.update("none");
+
             $("#" + topcontainerid).on("click", "button.kli1000clusterbtns", function (evt) {
                 evt.preventDefault();
-                
+                evt.stopImmediatePropagation();
+                evt.stopPropagation();
                 let status = $(this).find("span").first().text();
                 let doshow = false;
                 if (status === okletter) {
@@ -476,6 +739,8 @@
                     doshow = true;
                     $(this).find("span").first().html(oksign);
                 }
+                let canvasid = $(this).attr("canvasid");
+
                 let cluster = $(this).attr("cluster");
                 let buttons = $("button.kli1000stationbutton[cluster=" + cluster + "]").toArray();
                 let keys = [];
@@ -498,6 +763,79 @@
                     }
                 }
                 graph.update("none");
+            });
+
+            $("#" + topcontainerid).on("click", "button.kli1000clustervari", function (evt) {
+                //canvasid: canvasid,
+                //doshow: "clustermeans", und "clusterkernels"
+                let doshow = $(this).attr("doshow");
+                let canvasid = $(this).attr("canvasid");
+                let status = $(this).find("span").first().text();
+                if (status === okletter) {
+                    $(this).find("span").first().html(cancelsign);
+                    status = "";
+                } else {
+                    $(this).find("span").first().html(oksign);
+                    status = okletter;
+                }
+                let stationbuttonscontainerid = canvasid.replace("canvas", "rightbuttons");
+                let stationbuttonscontainer = $("#" + stationbuttonscontainerid);
+                let topcontainerid = canvasid.replace("canvas", "topbuttons");
+                let topcontainer = $("#" + topcontainerid);
+
+                let graph = Chart.getChart(canvasid);
+                let datasets = graph.data.datasets;
+                if (doshow === "clusterkernels") {
+                    // bestehende Sichtbarkeit bleibt unverändert
+                    for (let dataset of datasets) {
+                        if (dataset.settype === "kernel") {
+                            if (status === okletter) {
+                                dataset.borderWidth = 7;
+                            } else {
+                                dataset.borderWidth = 2;
+                            }
+                        }
+                    }
+                    graph.update("none");
+                } else if (doshow === "hideraw") {
+                    // cluster-Sichtbarkeit muss geprüft werden
+                    // kli1000clusterbtns und cluster sowie canvasid
+                    let visibleclusters = [];
+                    let buttons = $(topcontainer).find("button.kli1000clusterbtns").toArray();
+                    for (let button of buttons) {
+                        let status = $(button).find("span").first().text();
+                        if (status === okletter) {
+                            visibleclusters.push($(button).attr("cluster"));
+                        }
+                    }
+
+                    for (let i = 0; i < datasets.length; i++) {
+                        let dataset = datasets[i];
+                        if (dataset.settype === "raw") {
+                            let button = $(stationbuttonscontainer).find("button.kli1000stationbutton[key=" + dataset.key + "]");
+                            if (status === okletter) {
+                                graph.setDatasetVisibility(i, false);
+                                //kli1000stationbutton" mit key und canvasid
+                                $(button).find("span").first().html(cancelsign);
+                            } else {
+                                if (visibleclusters.includes("" + dataset.cluster)) {
+                                    graph.setDatasetVisibility(i, true);
+                                    $(button).find("span").first().html(oksign);
+                                }
+                            }
+                        }
+                    }
+                    graph.update("none");
+                } else if (doshow === "clustermeans") {
+                    // Berechnen Mittelwerte und Ausgabe je Cluster
+                    for (let kernel of kernels) {
+                        //debugger;
+                    }
+                    debugger;
+
+                }
+
+                //datasets[index].settype = "kernel";
             });
         }
 
