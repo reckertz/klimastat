@@ -56,6 +56,7 @@
                 parms.cbconfig(config);
             }
             let icolor = -1;
+
             for (let dataset of datasets) {
                 if (typeof dataset.backgroundColor === "undefined") {
                     icolor++;
@@ -154,9 +155,7 @@
                     class: "btn btn-sm btn-primary",
                     css: {
                         padding: "1px",
-                        css: {
-                            margin: "5px"
-                        },
+                        margin: "5px"
                     },
                     canvasid: canvasid,
                     html: "clipboard",
@@ -176,9 +175,37 @@
                         kli6900.putMessage("Clipboard kopiert", 1);
                     }
                 }));
+
+            $("#" + buttoncontainerid)
+                .append($("<button/>", {
+                    class: "btn btn-sm btn-primary",
+                    css: {
+                        padding: "1px",
+                        margin: "5px"
+                    },
+                    canvasid: canvasid,
+                    html: "print table",
+                    title: "show Table of label and data of the datasets",
+                    click: async function (evt) {
+                        evt.preventDefault();
+                        let canvasid = $(this).attr("canvasid");
+                        let wrapperid = $(this).closest(".kli1000chartwrapper").first().attr("id");
+                        kli1000E.showTable4Chart(canvasid, wrapperid, {
+                            maxprecision: 3
+                        });
+
+                        kli1000E.showTable4Clusters(canvasid, wrapperid, {
+                            maxprecision: 3
+                        });
+
+                        kli1000E.showTable4Clusters(canvasid, wrapperid, {
+                            maxprecision: 3,
+                            rawdata: true,
+                        });
+
+                    }
+                }));
         }
-
-
 
 
         function getLineChartTemplate(title, xlabels, datasets) {
@@ -238,6 +265,194 @@
         }
     };
 
+    kli1000E.showTable4Clusters = function (canvasid, wrapperid, parms) {
+        // maxprecision: kli6900.harmonizeDecimalPrecision mit Feldvorgabe denkbar
+        if (typeof parms.maxprecision === "undefined") {
+            parms.maxprecision = 0;
+        }
+        let suffix = "";
+        if (typeof parms.rawdata === "undefined") {
+            parms.rawdata = false;
+        }
+        if (parms.rawdata === true) {
+            suffix = "raw";
+        }
+        let graph = Chart.getChart(canvasid);
+        let clusters = {};
+        let irow = -1;
+        for (let dataset of graph.data.datasets) {
+            irow++;
+            if (typeof dataset.cluster !== "undefined") {
+                if (typeof clusters[dataset.cluster] === "undefined") {
+                    clusters[dataset.cluster] = {
+                        count: 0,
+                        indexes: [],
+                        labels: []
+                    }
+                }
+                clusters[dataset.cluster].count++;
+                clusters[dataset.cluster].indexes.push(irow);
+                clusters[dataset.cluster].labels.push(dataset.label);
+            }
+        }
+        let clusterids = Object.keys(clusters);
+        for (let clusterid of clusterids) {
+            $("#" + wrapperid)
+                .append($("<div/>", {
+                    class: "col col-12",
+                    id: wrapperid + "charttablew" + clusterid + suffix
+                })
+                    .append($("<table/>", {
+                        id: wrapperid + "charttable" + clusterid + suffix,
+                        class: "display",
+                        style: "width:100%"
+                    }))
+                );
+
+            let tableid = wrapperid + "charttable" + clusterid + suffix;
+            $("#" + tableid).empty();
+
+            let theaders = [];
+            theaders.push("label");
+            theaders = theaders.concat(graph.data.labels);
+            let headers = [];
+            for (let theader of theaders) {
+                headers.push({ data: theader, title: theader });
+            }
+
+            let rows = [];
+            for (let index of clusters[clusterid].indexes) {
+                let dataset = graph.data.datasets[index];
+                //for (let dataset of graph.data.datasets) {
+                let row = {};
+                row.label = dataset.label;
+                if (parms.rawdata === false) {
+                    for (let i = 0; i < dataset.data.length; i++) {
+                        let n = parms.maxprecision;
+                        if (n > 0) {
+                            for (let i = 0; i < dataset.data.length; i++) {
+                                let value = dataset.data[i];
+                                row[graph.data.labels[i]] = kli1000E.roundn(value, n);
+                            }
+                        } else {
+                            row[graph.data.labels[i]] = dataset.data[i];
+                        }
+                    }
+                } else {
+                    for (let i = 0; i < dataset.data.length; i++) {
+                        let value = dataset.raws[i];
+                        value = kli1000E.roundn(value, 3);
+                        row[graph.data.labels[i]] = value;
+                    }
+                }
+                rows.push(row);
+            }
+            requestAnimationFrame(async function () {
+                let table = $("#" + tableid).DataTable({
+                    title: graph.options,
+                    data: rows,
+                    columns: headers,
+                    destroy: true
+                });
+                let tableTitle = graph.options.plugins.title.text;
+                $("#" + tableid)
+                    .prepend($("<caption/>", {
+                        html: tableTitle + " Cluster: " + clusterid + " (" + clusters[clusterid].count + ") " + suffix,
+                        class: "lead",
+                        css: {
+                            "caption-side": "top",
+                            "color": "black",
+                            "font-weight": "bold",
+                            "font-size": "large",
+                            "text-align": "center"
+                        }
+                    }));
+                kli6900.putMessage("Tabelle ausgegeben", 1);
+            });
+        }
+    }
+
+    kli1000E.showTable4Chart = function (canvasid, wrapperid, parms) {
+        // maxprecision: kli6900.harmonizeDecimalPrecision mit Feldvorgabe denkbar
+        if (typeof parms.maxprecision === "undefined") {
+            parms.maxprecision = 0;
+        }
+        let graph = Chart.getChart(canvasid);
+        $("#" + wrapperid)
+            .append($("<div/>", {
+                class: "col col-12",
+                id: wrapperid + "charttablew"
+            })
+                .append($("<table/>", {
+                    id: wrapperid + "charttable",
+                    class: "display",
+                    style: "width:100%"
+                }))
+            );
+
+        let tableid = wrapperid + "charttable";
+        $("#" + tableid).empty();
+
+        let theaders = [];
+        theaders.push("label");
+        theaders = theaders.concat(graph.data.labels);
+        let headers = [];
+        for (let theader of theaders) {
+            headers.push({ data: theader, title: theader });
+        }
+
+        let rows = [];
+        for (let dataset of graph.data.datasets) {
+            let row = {};
+            row.label = dataset.label;
+            for (let i = 0; i < dataset.data.length; i++) {
+                let n = parms.maxprecision;
+                if (n > 0) {
+                    for (let i = 0; i < dataset.data.length; i++) {
+                        let value = dataset.data[i];
+                        dataset.data[i] = kli1000E.roundn(value, n);
+                    }
+                }
+                row[graph.data.labels[i]] = dataset.data[i];
+            }
+            rows.push(row);
+        }
+        requestAnimationFrame(async function () {
+            let table = $("#" + tableid).DataTable({
+                title: graph.options,
+                data: rows,
+                columns: headers,
+                destroy: true
+            });
+            let tableTitle = graph.options.plugins.title.text;
+            $("#" + tableid)
+                .prepend($("<caption/>", {
+                    html: tableTitle,
+                    class: "lead",
+                    css: {
+                        "caption-side": "top",
+                        "color": "black",
+                        "font-weight": "bold",
+                        "font-size": "large",
+                        "text-align": "center"
+                    }
+                }));
+
+            kli6900.putMessage("Tabelle ausgegeben", 1);
+        });
+    }
+
+    kli1000E.roundn = function (value, n) {
+        if (typeof value === "number") {
+            return Number(value.toFixed(n));
+        }
+        if (typeof value === "string" &&
+            value.trim() !== "" &&
+            Number.isFinite(Number(value))) {
+            return String(Number(Number(value).toFixed(n)));
+        }
+        return value;
+    }
 
 
 

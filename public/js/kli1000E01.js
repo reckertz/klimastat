@@ -191,36 +191,6 @@
         async function showTopButtons(wrapperid, topcontainer, canvasid, attrs) {
 
             $(topcontainer).find("button.kli1000special").remove();
-            /*
-            for (let variable of ["TMAX", "TMIN"]) {
-                $(topcontainer)
-                    .append($("<button/>", {
-                        class: "btn btn-sm btn-primary kli1000special",
-                        css: {
-                            padding: "1px",
-                            margin: "5px"
-                        },
-                        varname: variable,
-                        canvasid: canvasid,
-                        attrs: attrs,
-                        html: "<span>" + cancelsign + "</span><span> " + variable + "</span>"
-                    }));
-            }
-
-            $(topcontainer).on("click", "button.kli1000special", async function (evt) {
-                evt.preventDefault();
-
-                let status = $(this).find("span").first().text();
-                if (status === okletter) {
-                    return;
-                }
-                $(this).find("span").first().html(oksign);
-                let canvasid = $(this).attr("canvasid");
-                //let attrs = $(this).attr("attrs");
-                //let varname = $(this).attr("varname");
-                await addDataColumns(canvasid);
-            });
-            */
             let topcontainerid = $(topcontainer).attr("id");
             $(topcontainer).find("button.kli1000cluster").remove();
             $(topcontainer)
@@ -243,7 +213,7 @@
         }
 
         async function addDataColumns(canvasid) {
-            debugger;
+
             let stationbuttonscontainerid = canvasid.replace("canvas", "rightbuttons");
             let stationbuttonscontainer = $("#" + stationbuttonscontainerid);
             let topcontainerid = canvasid.replace("canvas", "topbuttons");
@@ -448,7 +418,11 @@
                                 attrbasenames.push($(button).attr("attrbasename"));
                             }
                         }
-                        await doClusters(wrapperid, canvasid, attrbasenames);
+                        console.log("attrbasenames-selected:");
+                        console.log(attrbasenames);
+                        console.log("columnOrder-all:");
+                        console.log(columnOrder);
+                        await doClusters(wrapperid, canvasid, attrbasenames, columnOrder);
                         dialog.close();
                         $("#kli1000clusterdialog").remove();
                     }
@@ -468,15 +442,54 @@
                     }
                 }));
 
+            // DragDrop: kli1000attrbuttons,kli1000clusterattr,attrbasename
 
             //await doClusters(wrapperid, canvasid, attrs);
             let dialog = document.getElementById("kli1000clusterdialog");
             let form = document.getElementById("kli1000clusterform");
             dialog.showModal();
+            //let container = $("#kli1000attrbuttons");
+            let container = document.getElementById("kli1000attrbuttons");
+
+            let draggedButton = null;
+            let columnOrder = [];
+            container.querySelectorAll("button.kli1000clusterattr").forEach(button => {
+                button.draggable = true;
+                button.addEventListener("dragstart", e => {
+                    draggedButton = button;
+                    e.dataTransfer.effectAllowed = "move";
+                });
+                button.addEventListener("dragover", e => {
+                    e.preventDefault();
+                });
+                button.addEventListener("drop", e => {
+                    e.preventDefault();
+                    if (!draggedButton || draggedButton === button) return;
+                    // Gezogenen Button vor dem Zielbutton einfügen
+                    container.insertBefore(draggedButton, button);
+                    // Reihenfolge aus dem DOM übernehmen
+                    columnOrder = [...container.querySelectorAll("button.kli1000clusterattr")]
+                        .map(btn => btn.attributes["attrbasename"].textContent);  //Number(btn.dataset.col));
+                    console.log(columnOrder);
+                    // updateColumnOrder();
+                });
+                button.addEventListener("dragend", () => {
+                    draggedButton = null;
+                });
+            });
+
+            function updateColumnOrder() {
+                chart.data.labels = columnOrder.map(i => labels[i]);
+                chart.data.datasets.forEach((ds, j) => {
+                    ds.data = columnOrder.map(i => datasets[j].data[i]);
+                });
+                chart.update("none");
+            }
+
         }
 
 
-        async function doClusters(wrapperid, canvasid, attrbasenames) {
+        async function doClusters(wrapperid, canvasid, attrbasenames, columnOrder) {
             console.log(wrapperid, canvasid);
             let stationbuttonscontainerid = canvasid.replace("canvas", "rightbuttons");
             let stationbuttonscontainer = $("#" + stationbuttonscontainerid);
@@ -721,10 +734,119 @@
                     title: "show calculated cluster-means"
                 }));
 
+            $("#" + topcontainerid)
+                .append($("<button/>", {
+                    class: "btn btn-sm btn-primary",
+                    css: {
+                        padding: "1px",
+                        margin: "5px"
+                    },
+                    canvasid: canvasid,
+                    html: "print cluster-table",
+                    title: "show Table of label and data of the datasets after clustering",
+                    click: async function (evt) {
+                        evt.preventDefault();
+                        let canvasid = $(this).attr("canvasid");
+                        let wrapperid = $(this).closest(".kli1000chartwrapper").first().attr("id");
+                        kli1000E.showTable4Clusters(canvasid, wrapperid, {
+                            maxprecision: 3
+                        });
+
+                        //showTable4Clusters(canvasid, wrapperid, {
+                        //    maxprecision: 3,
+                        //    rawdata: true,
+                        //});
+
+                    }
+                }));
+
+            $("#" + topcontainerid)
+                .append($("<button/>", {
+                    class: "btn btn-sm btn-primary",
+                    css: {
+                        padding: "1px",
+                        margin: "5px"
+                    },
+                    canvasid: canvasid,
+                    html: "print raw-table",
+                    title: "show Table of label and data of the rawdata after clustering",
+                    click: async function (evt) {
+                        evt.preventDefault();
+                        let canvasid = $(this).attr("canvasid");
+                        let wrapperid = $(this).closest(".kli1000chartwrapper").first().attr("id");
+                        kli1000E.showTable4Clusters(canvasid, wrapperid, {
+                            maxprecision: 3,
+                            rawdata: true
+                        });
+                    }
+                }));
+
             for (let i = 0; i < graph.data.datasets.length; i++) {
                 graph.setDatasetVisibility(i, true);
             }
             graph.update("none");
+            // columnOrder übernehmen, wenn vorhanden und Verstecken, wenn notwendig
+            // attrbasenames ist die aktuelle Auswahl schon in der richtigen Reihenfolge
+            if (columnOrder.length > 0) {
+                // komplette Übernahme der Reihenfolge
+                let oldOrder = graph.data.labels;
+                // data, vals und raws müssen konvertiert werden ebenso wie labels bzw. xlabels.
+                // das Prinzip: gezielt redundant in Zwischen array arbeiten
+                // columnOrder und attrbasenames gehen nicht auf die konkrete Variable
+                let newOrder = [];
+                let icol = -1;
+                for (let column of columnOrder) {
+                    let ihit = 0;
+                    for (let label of oldOrder) {
+                        if (ihit >= 2) {
+                            break;
+                        }
+                        if (label.startsWith(column)) {
+                            ihit++;
+                            icol++;
+                            newOrder.push({
+                                label: label,
+                                base: column,
+                                newcol: icol,
+                                oldcol: oldOrder.indexOf(label),
+                                visible: attrbasenames.includes(column)
+                            });
+                        }
+                    }
+                }
+                let len = graph.data.datasets[0].data.length;
+
+                for (let dataset of graph.data.datasets) {
+                    let newdata = new Array(len).fill(null);
+                    let newcdata = new Array(len).fill(null);
+                    let newvals = new Array(len).fill(null);
+                    let newraws = new Array(len).fill(null);
+                    for (let order of newOrder) {
+                        newdata[order.newcol] = dataset.data[order.oldcol];
+                        newcdata[order.newcol] = dataset.cdata[order.oldcol];
+                        newvals[order.newcol] = dataset.vals[order.oldcol];
+                        newraws[order.newcol] = dataset.raws[order.oldcol];
+                    }
+                    dataset.data.length = 0;
+                    dataset.cdata.length = 0;
+                    dataset.vals.length = 0;
+                    dataset.raws.length = 0;
+                    dataset.data = newdata;
+                    dataset.cdata = newcdata;
+                    dataset.vals = newvals;
+                    dataset.raws = newraws;
+                }
+                let newlabels = new Array(len).fill("");
+                for (let order of newOrder) {
+                    newlabels[order.newcol] = graph.data.labels[order.oldcol];
+                }
+                graph.data.labels.length = 0;
+                graph.data.labels = newlabels;
+                graph.options.scales.x.labels = newlabels;
+                console.log(newlabels);
+                console.log(newOrder);
+                graph.update("none");
+            }
 
             $("#" + topcontainerid).on("click", "button.kli1000clusterbtns", function (evt) {
                 evt.preventDefault();
@@ -832,9 +954,7 @@
                         //debugger;
                     }
                     debugger;
-
                 }
-
                 //datasets[index].settype = "kernel";
             });
         }

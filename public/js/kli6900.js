@@ -489,6 +489,37 @@
         return (brightness > 128) ? "#000000" : "#ffffff";
     };
 
+    /**
+    * kla6900.harmonizeDecimalPrecision
+    *
+    * @param {any} value - string oder number oder null/"null"/undefined/NaN
+    * @param {any} maxprecision -
+    *
+    * @returns {any} - String mit "null" oder Zahl mit maximaler Dezimalpräzision oder weniger, wenn gegeben
+    */
+    kli6900.harmonizeDecimalPrecision = function (value, maxprecision) {
+        let valuestring = "";
+        if (typeof maxprecision === "undefined") {
+            maxprecision = 3;
+        }
+        if (typeof value === "undefined" || value === null || value === "null") {
+            return "null";
+        }
+        if (typeof value === "string") {
+            valuestring = value;
+        } else {
+            valuestring = value.toString();
+        }
+        let decimals = 0;
+        if (valuestring.indexOf(".") >= 0) {
+            decimals = valuestring.split(".")[1].length;
+        }
+        if (decimals <= maxprecision) {
+            return valuestring;
+        } else {
+            return parseFloat(valuestring).toFixed(maxprecision);
+        }
+    };
 
 
 
