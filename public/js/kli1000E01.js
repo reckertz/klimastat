@@ -751,12 +751,6 @@
                         kli1000E.showTable4Clusters(canvasid, wrapperid, {
                             maxprecision: 3
                         });
-
-                        //showTable4Clusters(canvasid, wrapperid, {
-                        //    maxprecision: 3,
-                        //    rawdata: true,
-                        //});
-
                     }
                 }));
 

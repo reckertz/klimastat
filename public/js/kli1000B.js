@@ -165,7 +165,7 @@
             //let { worldmap, worldmapid, layerControl } = maps.getWorldmap();
             let found = false;
             let newlayer = null;
-            
+
             map.eachLayer(function (layer) {
                 if (found === true) {
                     return;
@@ -221,6 +221,7 @@
                 marker2.addTo(newlayer);
             }
             // genauere Übernahme
+
             for (let geopoint of geopoints) {
                 let geoparms = {
                     id: geopoint.source + "_" + geopoint.stationid + "_" + geopoint.variable,
@@ -247,8 +248,20 @@
                     }
                 };
                 // radius, color, fill: true berechnen aus source, variable
-                geoparms.radius = 3;
-                geoparms.fill = true;
+                if (geopoint.source === "ICOSCO2H") {
+                    geoparms.color = "red";
+                    geoparms.fillColor = "green";
+                    geoparms.fillOpacity = 1;
+                    geoparms.radius = 5;
+                    geoparms.fill = true;
+                } else {
+                    geoparms.color = "blue";
+                    geoparms.fillColor = "blue";
+                    geoparms.fillOpacity = 1;
+                    geoparms.radius = 3;
+                    geoparms.fill = true;
+                }
+
                 //L.circleMarker([geopoint.latitude, geopoint.longitude]).addTo(newlayer);
                 let marker2 = L.circleMarker([geopoint.latitude, geopoint.longitude], geoparms);
 
@@ -256,7 +269,7 @@
                 if (typeof geopoint.variable !== "undefined") {
                     geopointtitle += " (" + geopoint.variable + ")";
                 }
-                let html = '<div class="kli1000Btip" style="font-size:8px;padding:1px !important;">' + geopointtitle + '</div>';
+                let html = '<div class="kli1000Btip" style="font-size:10px;padding:1px !important;">' + geopointtitle + '</div>';
                 marker2.bindTooltip(html, {
                     interactive: true,
                     background: "green",

@@ -233,6 +233,38 @@
                 }
             }));
 
+
+        $("#kli1000locbuttons")
+            .append($("<button/>", {
+                class: "btn btn-sm btn-success",
+                html: "Mein Standort",
+                title: "je nach Rechtesetzung wird der Standort ermittelt",
+                click: async function (evt) {
+                    evt.preventDefault();
+                    let localization = await kli1000.getLocalization();
+                    if (localization.locname === "unknown") {
+                        //<button class="btn btn-sm btn-primary  kli1000sel" basefield="kli1000_lat,kli1000_lon" target="GEONAMES">Ortssuche mit latitude/longitude</button>
+                        $("#kli1000_latitude").val(localization.latitude);
+                        $("#kli1000_longitude").val(localization.longitude);
+                        $("button.kli1000sel[basefield='kli1000_lat,kli1000_lon'][target=GEONAMES]").trigger("click");
+                    }
+                    debugger;
+                    /*
+                    source: "ip",
+                    locname: data.city + " " + data.region + " " + data.country_code,
+                    latitude: data.latitude,
+                    longitude: data.longitude,
+                    accuracy: null,
+                    city: data.city,
+                    region: data.region,
+                    country: data.country_code
+                    */
+                    alert("soon to come");
+                    //dialog.close();
+                    //$("#kli1000locdialog").remove();
+                }
+            }));
+
         $(document).on("click", "button.kli1000sel", async function (evt) {
             evt.preventDefault();
             let basefield = $(this).attr("basefield");
@@ -748,9 +780,16 @@
             }
         }
         geo = kli6900.lincoordinates(parseFloat(localization.latitude), parseFloat(localization.longitude), selparms.distancekm);
+        geo.distancekm = selparms.distancekm;
+        let status = $("#kli1000selprecision").find("span").first().text();
+        selparms.precision = false;
+        selparms.pkorr = 2;
+        if (status === okletter) {
+            selparms.precision = true;
+            selparms.pkorr = 0;
+        }
         console.log(selparms);
         for (let source of selparms.source) {
-
             let sql = kli1000A.buildSQLfromButtons(localization, geo, source, selparms, categorycontrol);
             if (typeof sql === "undefined" || sql === null || sql === "") {
                 kli6900.putMessage("no SQL build, check categories and ranges", 3);
@@ -806,10 +845,16 @@
                     let variable = variables[i];
                     let fromyear = parseInt(fromyears[i]);
                     let toyear = parseInt(toyears[i]);
-                    // gezielte Terminprüfung
-                    if (variable === "TMAX" || variable === "TMIN") {
+                    // gezielte Terminprüfung - auch bei CO2 - muss auf category temperatur und CO2 gehen
+                    // wenn es
+                    if (["TMAX", "TMIN"].includes(variable)) {
                         if (fromyear <= selparms.fromyear - pkorr && toyear >= selparms.toyear + pkorr) {
                             console.log(record.source, record.stationid, variable, fromyear, toyear, record.stationname);
+                            found = true;
+                            break;
+                        }
+                    } else {
+                        if (variable === "CO2H") {
                             found = true;
                             break;
                         }
