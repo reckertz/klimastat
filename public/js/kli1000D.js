@@ -34,7 +34,7 @@
                 cbtitle,
                 cblabel
             };
-
+            debugger;
             bubblewrapperid = wrapperid;
             /*
             layerdata = layercontrol[source] = {
@@ -54,16 +54,23 @@
             }
 
             bubblerecords = ret.records;
+            debugger;
             let datacontrol = await getDataControl();
             // datacontrol[key].source
             // datacontrol[key].stationid
             // datacontrol[key].variables[variable].yeardata[year][values, , , , ]
 
-            let datasets = await getDatasets(datacontrol);
+            let datasets = await getDatasets4vars(datacontrol, ["TMIN", "TMAX"]);
             // bubbleparms und datasets sind die Vorgaben
-            await putBubbleChart(datasets, "default", true);
+            debugger;
+            await putBubbleChart(datasets, "default", false, {
+                title: layerdata.source + " " + "TMAX vs. TMIN",
+                xlabel: "TMIN",
+                ylabel: "TMAX"
+            });
 
-            let datasets01 = await getDatasets(datacontrol, "height");
+            //let datasets01 = await getDatasets(datacontrol, "height");
+            let datasets01 = await getDatasets4attrvars(datacontrol, layerdata, height, ["TMIN", "TMAX"]);
             // bubbleparms und datasets sind die Vorgaben
             await putBubbleChart(datasets01, "default", false, {
                 title: layerdata.source + " " + "height vs" + "TMAX/TMIN",
@@ -168,6 +175,7 @@
                                     ];
                                 }
                                 */
+                                //label: ctx => ctx.raw.tooltip,
                                 label: function (context) {
                                     let text = parms.cblabel(context);
                                     return text;
@@ -310,6 +318,7 @@
                     datacontrol[key] = {
                         source: record.source,
                         stationid: record.stationid,
+                        ranges: [],
                         variables: {
                             TMAX: {
                                 yeardata: {}
@@ -331,6 +340,7 @@
                 }
                 for (let i = 0; i < 2; i++) {
                     let { fromyear, toyear } = bubbleselparms.range[i];
+                    datacontrol[key].ranges.push(structuredClone(bubbleselparms.range[i]));
                     // year-Verdichtung
                     for (let iyear = fromyear; iyear <= toyear; iyear++) {
                         let yeardata = record.years["" + iyear];
@@ -351,6 +361,167 @@
 
             return datacontrol;
         }
+
+        //let datasets01 = await getDatasets4attrvars(datacontrol,height, ["TMIN", "TMAX"]);
+        async function getDatasets4attrvars(datacontrol, layerdata, attrname, variables) {
+            // datacontrol auswerten mit height und TMAX/TMIN auf Jahre bezogen
+            // mit Einfärbung der Range
+            // Aufbereitung layerdata
+            let stationcontrol = {};
+            for (let geopoint of layerdata.geopoints) {
+                let key = geopoint.source + "_" + geopoint.stationid;
+                stationcontrol[key] = structuredClone(geopoint); // für stationname
+            }
+            /*
+                datacontrol[key] = {
+                    source: record.source,
+                    stationid: record.stationid,
+                    variables: {
+                        TMAX: {
+                            yeardata: {}
+                        },
+                        TMIN: {
+                            yeardata: {}
+                        }
+                        // Bereitstellung bubbles je Jahr
+                        TMAXmax: [],
+                        TMAXavg: [],
+                        TMINmin: [],
+                        TMINavg: [],        
+                    },
+                    attributes: {}  // Felder aus KLISTATIONS in 
+                }
+            */
+            let p1fromyear = bubbleselparms.range[0].fromyear;
+            let p1toyear = bubbleselparms.range[0].toyear;
+            let p2fromyear = bubbleselparms.range[1].fromyear;
+            let p2toyear = bubbleselparms.range[1].toyear;
+            let anz = p1toyear - p1fromyear + 1;
+            let datasets = [];
+            for (let key of Object.keys(datacontrol)) {
+                let icolor = -1;
+                let colors = ["blue", "red"]
+                for (let fromyear of [p1fromyear, p2fromyear]) {
+                    icolor++;
+                    fromyear = parseInt(fromyear);
+                    let toyear = fromyear + 30 - 1;
+                    let dataset = {
+                        label: fromyear + "-" + toyear,
+                        data: [],
+                        backgroundColor: colors[icolor],  // "rgba(54, 162, 235, 0.35)",
+                        borderColor: colors[icolor],      // "rgba(54, 162, 235, 0.8)",
+                        borderWidth: 1
+                    };
+
+                    for (let iyear = fromyear; iyear <= toyear; iyear++) {
+                        let TMAX = null;
+                        let TMIN = null;
+                        try {
+                            TMAX = datacontrol[key].variables["TMAX"].yeardata["" + iyear].avg;
+                            TMIN = datacontrol[key].variables["TMIN"].yeardata["" + iyear].avg;
+                        } catch (err) { };
+                        if (typeof TMAX !== "undefined" && TMAX !== null &&
+                            typeof TMIN !== "undefined" && TMIN !== null) {
+                            let bubble = {
+                                x: TMIN,
+                                y: TMAX,
+                                r: 3,
+                                tooltip: key,
+                                raw: {
+                                    source: datacontrol[key].source,
+                                    stationid: datacontrol[key].stationid,
+                                    stationname: stationcontrol[key].stationname,
+                                    year: iyear
+                                }
+                            };
+                            dataset.data.push(bubble);
+                        }
+                    }
+                    datasets.push(dataset);
+                }
+            }
+            return datasets;
+        }
+
+        async function getDatasets4vars(datacontrol, variables) {
+            // datacontrol auswerten als TMAX/TMIN auf Jahre bezogen
+            // mit Einfärbung der Range
+            let stationcontrol = {};
+            for (let geopoint of layerdata.geopoints) {
+                let key = geopoint.source + "_" + geopoint.stationid;
+                stationcontrol[key] = structuredClone(geopoint); // für stationname
+            }
+            /*
+                datacontrol[key] = {
+                    source: record.source,
+                    stationid: record.stationid,
+                    variables: {
+                        TMAX: {
+                            yeardata: {}
+                        },
+                        TMIN: {
+                            yeardata: {}
+                        }
+                        // Bereitstellung bubbles je Jahr
+                        TMAXmax: [],
+                        TMAXavg: [],
+                        TMINmin: [],
+                        TMINavg: [],        
+                    },
+                    attributes: {}  // Felder aus KLISTATIONS in 
+                }
+            */
+            let p1fromyear = bubbleselparms.range[0].fromyear;
+            let p1toyear = bubbleselparms.range[0].toyear;
+            let p2fromyear = bubbleselparms.range[1].fromyear;
+            let p2toyear = bubbleselparms.range[1].toyear;
+            let anz = p1toyear - p1fromyear + 1;
+            let datasets = [];
+            for (let key of Object.keys(datacontrol)) {
+                let icolor = -1;
+                let colors = ["blue", "red"]
+                for (let fromyear of [p1fromyear, p2fromyear]) {
+                    icolor++;
+                    fromyear = parseInt(fromyear);
+                    let toyear = fromyear + 30 - 1;
+                    let dataset = {
+                        label: fromyear + "-" + toyear,
+                        data: [],
+                        backgroundColor: colors[icolor],  // "rgba(54, 162, 235, 0.35)",
+                        borderColor: colors[icolor],      // "rgba(54, 162, 235, 0.8)",
+                        borderWidth: 1
+                    };
+
+                    for (let iyear = fromyear; iyear <= toyear; iyear++) {
+                        let TMAX = null;
+                        let TMIN = null;
+                        try {
+                            TMAX = datacontrol[key].variables["TMAX"].yeardata["" + iyear].avg;
+                            TMIN = datacontrol[key].variables["TMIN"].yeardata["" + iyear].avg;
+                        } catch (err) { };
+                        if (typeof TMAX !== "undefined" && TMAX !== null &&
+                            typeof TMIN !== "undefined" && TMIN !== null) {
+                            let bubble = {
+                                x: TMIN,
+                                y: TMAX,
+                                r: 3,
+                                tooltip: key,
+                                raw: {
+                                    source: datacontrol[key].source,
+                                    stationid: datacontrol[key].stationid,
+                                    stationname: stationcontrol[key].stationname,
+                                    year: iyear
+                                }
+                            };
+                            dataset.data.push(bubble);
+                        }
+                    }
+                    datasets.push(dataset);
+                }
+            }
+            return datasets;
+        }
+
 
         async function getDatasets(datacontrol, attribute) {
             // records aufbereiten zu datasets
@@ -481,15 +652,21 @@
                     if (typeof datacontrol[key] === "undefined") {
                         continue;
                     }
-                    for (let variable of ["TMAX", "TMIN"]) {
-                        let dataset = {
-                            label: "Daten",
-                            data: datacontrol[key].variables[variable + "avg"],
-                            backgroundColor: "rgba(54, 162, 235, 0.35)",
-                            borderColor: "rgba(54, 162, 235, 0.8)",
-                            borderWidth: 1
-                        };
-                        datasets.push(dataset);
+                    let icolor = -1;
+                    let colors = ["blue", "red"]
+                    for (let fromyear of [p1fromyear, p2fromyear]) {
+                        icolor++;
+                        let toyear = fromyear + 30 - 1;
+                        for (let variable of ["TMAX", "TMIN"]) {
+                            let dataset = {
+                                label: fromyear + "-" + toyear,
+                                data: datacontrol[key].variables[variable + "avg"],
+                                backgroundColor: colors[icolor],  // "rgba(54, 162, 235, 0.35)",
+                                borderColor: colors[icolor],      // "rgba(54, 162, 235, 0.8)",
+                                borderWidth: 1
+                            };
+                            datasets.push(dataset);
+                        }
                     }
                 }
             }

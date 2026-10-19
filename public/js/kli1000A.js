@@ -103,7 +103,6 @@ GHCNMETH	TT60	895
     * @returns {any} - ret mit error, message, sql
     */
     kli1000A.buildSQLfromButtons = function (localization, geo, source, selparms, categorycontrol) {
-        debugger;
         // 1. es kann nur eine source geben!!!
         // 2. es mehrere categories geben, die nach variable IN umzusetzen sind mit counter
         let sourcedata = categorycontrol[source];

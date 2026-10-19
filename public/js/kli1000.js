@@ -248,7 +248,6 @@
                         $("#kli1000_longitude").val(localization.longitude);
                         $("button.kli1000sel[basefield='kli1000_lat,kli1000_lon'][target=GEONAMES]").trigger("click");
                     }
-                    debugger;
                     /*
                     source: "ip",
                     locname: data.city + " " + data.region + " " + data.country_code,

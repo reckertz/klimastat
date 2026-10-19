@@ -111,7 +111,6 @@
             payload.structurecontrol[structure.name] = istruct;
         }
         relationcontrol = {};
-        debugger;
         for (let structure of structures) {
             /*
             Strukturbeispiel

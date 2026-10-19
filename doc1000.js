@@ -342,7 +342,7 @@
             name: m[1],
             pos: m.index
         }));
-        debugger;
+
         let fromName = fromPos + mName.index;   // name: mName[1],
         let fromDef = fromPos + mDef.index;  // name: mDef[1]
         if (fromDef <= fromName) {
