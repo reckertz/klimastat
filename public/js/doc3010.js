@@ -53,7 +53,10 @@
         mermaid.run();
         let ui = doc3010.create();
         let payload = await ui.getPayload(args);
-
+        if (payload.error === true) {
+            alert(payload.message);
+            return;
+        }
         // payload.structures vorbereiten für mermaid-Regeln
         // mermaidcontrols = {}; und  let namecontrols = {};
         for (let structure of payload.structures) {

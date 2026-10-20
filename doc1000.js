@@ -29,66 +29,79 @@
      * @returns 
      */
     // let { res1, ret } = await doc1000.getsourceanalysis(req, null, res); 
-    doc1000.getsourceanalysis = function (req, reqparm, res) {
-        return new Promise(async function (resolve, reject) {
-            res.ret = {};
-            let ret = res.ret;
-            ret.filename = req.query.filename;
-            ret.srcpath = req.query.srcpath;
-            ret.modus = req.query.modus;
-            if (typeof ret.filename === "undefined" || ret.filename == null) {
-                ret.filename = "doc6010.js";
-            }
-            if (typeof ret.srcpath === "undefined" || ret.srcpath == null) {
-                ret.srcpath = path.join(__dirname, "public", "js");
+    doc1000.getsourceanalysis = async function (req, reqparm, res) {
+        res.ret = {};
+        let ret = res.ret;
+        ret.filename = req.query.filename;
+        ret.srcpath = req.query.srcpath;
+        ret.modus = req.query.modus;
+        if (typeof ret.filename === "undefined" || ret.filename == null) {
+            ret.filename = "doc6010.js";
+        }
+        if (typeof ret.srcpath === "undefined" || ret.srcpath == null) {
+            ret.srcpath = path.join(__dirname, "public", "js");
+            ret.fullfilename = path.join(ret.srcpath, ret.filename);
+            if (!fs.existsSync(ret.fullfilename)) {
+                ret.srcpath = __dirname;
                 ret.fullfilename = path.join(ret.srcpath, ret.filename);
                 if (!fs.existsSync(ret.fullfilename)) {
-                    ret.srcpath = __dirname;
-                    ret.fullfilename = path.join(ret.srcpath, ret.filename);
-                    if (!fs.existsSync(ret.fullfilename)) {
-                        // source nicht gefunden
-                        resolve(res, {
-                            error: true,
-                            message: "Source nicht gefunden"
-                        });
-                    }
+                    // source nicht gefunden
+                    ret.error = true;
+                    ret.message = "Source nicht gefunden";
+                    return ({ res, ret });
                 }
             }
-            let ret1 = {
-                srcpath: ret.srcpath,
-                filename: ret.filename,
-                fullfilename: ret.fullfilename
+        }
+        let ret1 = {
+            srcpath: ret.srcpath,
+            filename: ret.filename,
+            fullfilename: ret.fullfilename
+        };
+        // TODO: Fehler wenn ret.fullfilename === null abfangen
+        if (ret1.error === true || typeof ret1.fullfilename === "undefined") {
+            let ret = {
+                error: true,
+                message: ret1.message
             };
-            // TODO: Fehler wenn ret.fullfilename === null abfangen
-            if (ret1.error === true || typeof ret1.fullfilename === "undefined") {
-                resolve(res, {
+            return ({ res, ret });
+        } else {
+            ret.fullfilename = ret1.fullfilename;
+        }
+        ret.moduleName = ret.filename.substring(0, ret.filename.indexOf(".js"));
+        // ret mit filename, moduleName, fullfilename
+        if (ret.modus === "new") {
+            let ergs = await doc1000.prepareSource2(ret);
+            if (ergs.error === true) {
+                let ret = {
                     error: true,
-                    message: ret1.message
-                });
-            } else {
-                ret.fullfilename = ret1.fullfilename;
+                    message: ergs.message,
+                    results: {}
+                };
+                return ({ res, ret });
+
             }
-            ret.moduleName = ret.filename.substring(0, ret.filename.indexOf(".js"));
-            // ret mit filename, moduleName, fullfilename
-            if (ret.modus === "new") {
-                let ergs = await doc1000.prepareSource2(ret);
-                ret.structures = ergs.structures;
-                ret.structurecontrol = {};
-                for (let fname of Object.keys(ergs.structurecontrol)) {
-                    ret.structurecontrol[fname] = {
-                        name: fname,
-                        type: "function",
-                        index: ergs.structurecontrol[fname]
-                    };
-                }
-                doc1000.analysisReport(ret);
-                resolve(res, {
-                    error: false,
-                    message: "OK",
-                    results: ret
-                });
+            ret.structures = ergs.structures;
+            ret.structurecontrol = {};
+            for (let fname of Object.keys(ergs.structurecontrol)) {
+                ret.structurecontrol[fname] = {
+                    name: fname,
+                    type: "function",
+                    index: ergs.structurecontrol[fname]
+                };
             }
-        });
+            doc1000.analysisReport(ret);
+
+            //ret.error: false,
+            //ret.message: "OK",
+            //ret.results: ret
+            return ({ res, ret });
+        } else {
+            let ret = {
+                error: true,
+                message: "unklar"
+            }
+            return ({ res, ret });
+        }
     };
 
 
@@ -101,6 +114,14 @@
     doc1000.prepareSource2 = function (ret) {
 
         let moduleName = ret.moduleName;
+        if (!fs.existsSync(ret.fullfilename)) {
+            return ({
+                error: true,
+                message: moduleName + "source not found",
+                structures: {},
+                structurecontrol: {}
+            });
+        }
         let data = fs.readFileSync(ret.fullfilename, 'utf8');
         // jetzt kommentare, literale, regex und templates neutralisieren
         let { literals, source } = doc1000.getLiterals(data, moduleName);

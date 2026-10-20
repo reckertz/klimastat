@@ -66,8 +66,11 @@
             }
 
             mapid = containerid;
-            let pw = $("#" + mapid).parent().width();
+            let pw = $("#kli1000projects").width();
+            //debugger;
+            //let pw = $("#" + mapid).parent().width();
             $("#" + mapid).width(pw * 0.9);
+
             let h = $("#" + mapid).height();
             if (h === null) {
                 let navh = $("nav.header").height();

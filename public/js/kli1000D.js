@@ -34,7 +34,7 @@
                 cbtitle,
                 cblabel
             };
-            debugger;
+
             bubblewrapperid = wrapperid;
             /*
             layerdata = layercontrol[source] = {
@@ -54,35 +54,154 @@
             }
 
             bubblerecords = ret.records;
-            debugger;
+
             let datacontrol = await getDataControl();
             // datacontrol[key].source
             // datacontrol[key].stationid
             // datacontrol[key].variables[variable].yeardata[year][values, , , , ]
 
-            let datasets = await getDatasets4vars(datacontrol, ["TMIN", "TMAX"]);
+            let datasets = await getDatasets4vars(datacontrol, layerdata, ["TMIN", "TMAX"]);
             // bubbleparms und datasets sind die Vorgaben
-            debugger;
-            await putBubbleChart(datasets, "default", false, {
+
+            // containerid: wrapper des Charts, suffixe: btns, canvas
+            let containerid = await putBubbleChart(datasets, "default", false, {
                 title: layerdata.source + " " + "TMAX vs. TMIN",
                 xlabel: "TMIN",
-                ylabel: "TMAX"
+                ylabel: "TMAX",
+                fixed: true,
+                harmonizedXY: true
             });
+            let parms = {};
+            await addFilterButtons(containerid + "canvas", containerid + "btns", "label", "variable", parms);
+            let graph = Chart.getChart(containerid + "canvas");
+
+
 
             //let datasets01 = await getDatasets(datacontrol, "height");
-            let datasets01 = await getDatasets4attrvars(datacontrol, layerdata, height, ["TMIN", "TMAX"]);
+            let datasets01 = await getDatasets4attrvars(datacontrol, layerdata, "height", ["TMIN", "TMAX"]);
             // bubbleparms und datasets sind die Vorgaben
-            await putBubbleChart(datasets01, "default", false, {
+            let containerid01 = await putBubbleChart(datasets01, "default", false, {
                 title: layerdata.source + " " + "height vs" + "TMAX/TMIN",
                 xlabel: "height",
                 ylabel: "Celsius"
             });
+            await addFilterButtons(containerid01 + "canvas", containerid01 + "btns", "label", "variable", parms);
+            /*
             await putLineChart(datasets01, "default", false, {
                 title: layerdata.source + " " + "height vs" + "TMAX/TMIN",
                 xlabel: "height",
                 ylabel: "Celsius"
             });
+            */
         }
+
+        async function addFilterButtons(canvasid, buttonsid, variable, vartype, selparms) {
+            let varvalues = [];
+
+            let graph = Chart.getChart(canvasid);
+            for (let dataset of graph.data.datasets) {
+                if (typeof dataset[variable] !== "undefined") {
+                    if (!varvalues.includes(dataset[variable])) {
+                        varvalues.push(dataset[variable])
+                    }
+                }
+            }
+            varvalues = varvalues.sort();
+            for (let varvalue of varvalues) {
+                $("#" + buttonsid)
+                    .append($("<button/>", {
+                        class: "btn btn-sm btn-primary kli1000dsfilter",
+                        css: {
+                            padding: "1px",
+                            margin: "5px"
+                        },
+                        canvasid: canvasid,
+                        buttonsid: buttonsid,
+                        varname: variable,
+                        varvalue: varvalue,
+                        vartype: vartype,
+                        // variable, attribute, xvariable (in bubble), yvariable (in bubble), raw (in bubble), xlabel
+                        html: "<span>" + oksign + "</span><span> " + varvalue + "</span>",
+                        title: variable + "=" + varvalue
+                    }));
+            }
+
+            // nochmal prüfen - container - buttons
+            $("#" + buttonsid).off(".kli1000dsfilter");
+            $("#" + buttonsid).on("click", ".kli1000dsfilter", function (evt) {
+                evt.preventDefault();
+                debugger;  // initiale Prüfung
+                let status = $(this).find("span").first().text();
+                if (status === okletter) {
+                    $(this).find("span").first().html(cancelsign);
+                    status = "";
+                } else {
+                    $(this).find("span").first().html(oksign);
+                    status = okletter;
+                }
+                let okvalues = [];
+                let buttonsid = $(this).attr("buttonsid");
+                // es kann button-Vorgaben und input-Vorgaben geben
+                // daher immer .kli1000filter als Vorgabe
+                let buttons = $("#" + buttonsid).find(".kli1000dsfilter").toArray();
+
+                // let varname = $(this).attr("varname");
+                // let varvalue = $(this).attr("varvalue");
+                // let vartype = $(this).attr("vartype"); 
+                // variable, attribute, xvariable (in bubble), yvariable (in bubble), raw (in bubble), xlabel
+                // steuert den scope der Anzeigeauswirkung: dataset oder element in data oder column
+                let canvasid = $(this).attr("canvasid");
+                // Aufbereiten der User-Vorgaben
+                let selparms = {};
+                for (let button of buttons) {
+                    let varname = $(button).attr("varname")
+                    let varvalue = $(button).attr("varvalue");
+                    let vartype = $(button).attr("vartype");
+                    let tagName = $(button).prop("tagName");
+                    if (tagName === "BUTTON") {
+                        // der button-varvalue muss aktiv sein durch oksign
+                        let status = $(button).find("span").first().text();
+                        if (status !== okletter) {
+                            continue;
+                        }
+                    } else if (tagName === "INPUT") {
+                        // bei input den val nehmen
+                        varvalue = $(button).val("varvalue");
+                    }
+                    if (typeof selparms[varname] === "undefined") {
+                        selparms[varname] = {
+                            varvalues: [],
+                            vartype: vartype
+                        };
+                    }
+                    selparms[varname].varvalues.push(varvalue);
+                }
+                let graph = Chart.getChart(canvasid);
+                //for (let dataset of graph.data.datasets) {
+                for (let idataset = 0; idataset < graph.data.datasets.length; idataset++) {
+                    let dataset = graph.data.datasets[idataset];
+                    graph.setDatasetVisibility(idataset, true);  // initialisierung
+                    let showdataset = true;
+                    let showcolumn = false;
+                    for (let varname of Object.keys(selparms)) {
+                        let varvalues = selparms[varname].varvalues;
+                        let vartype = selparms[varname].vartype;
+                        if (vartype === "variable") {
+                            let varvalue = dataset[variable];
+                            if (!selparms[varname].varvalues.includes(varvalue)) {
+                                showdataset = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (showdataset === false) {
+                        graph.setDatasetVisibility(idataset, false);  // rücksetzung
+                    }
+                }
+                graph.update("none");
+            });
+        };
+
 
         async function putLineChart(datasets, title, doline, parms) {
             //title: layerdata.source + " " + "height vs" + "TMAX/TMIN",
@@ -91,14 +210,11 @@
         }
 
 
-
-
-
-
         async function putBubbleChart(datasets, attribute, doDiagonale, parms) {
-            //title: layerdata.source + " " + "height vs" + "TMAX/TMIN",
+            // title: layerdata.source + " " + "height vs" + "TMAX/TMIN",
             // xlabel: "height",
             // ylabel
+            // fixed: false/true, ; harmonizedXY: false/true
             if (typeof parms === "undefined") {
                 parms = bubbleparms;
             } else {
@@ -146,36 +262,10 @@
                         tooltip: {
                             enabled: true,
                             callbacks: {
-                                /*
-                                title: function (items) {
-                                    if (!items.length) {
-                                        return "";
-                                    }
-                                    const row = items[0].raw.raw;
-                                    return row.stationid ?? "";
-                                },
-                                */
                                 title: function (items) {
                                     let text = parms.cbtitle(items);
                                     return text;
                                 },
-                                /*
-                                label: function (context) {
-                                    const point = context.raw;
-                                    const row = point.raw;
-                                    // Trick der mehrzeiligen Ausgabe
-                                    return [
-                                        "stationid: " + row.stationid,
-                                        "name: " + row.stationname
-                                        //"Temperatur: " + point.x + " °C",
-                                        //"CO₂: " + point.y + " ppm",
-                                        //"Land: " + (row.country ?? ""),
-                                        //"Höhe: " + (row.altitude ?? "") + " m",
-                                        //"Wind: " + (row.windSpeed ?? "") + " m/s"
-                                    ];
-                                }
-                                */
-                                //label: ctx => ctx.raw.tooltip,
                                 label: function (context) {
                                     let text = parms.cblabel(context);
                                     return text;
@@ -223,26 +313,93 @@
                     }
                 })
                     .append($("<canvas/>", {
-                        id: containerid + "l"
+                        id: containerid + "canvas"
                     }))
                 );
-            let canvasid = containerid + "l";
+            let canvasid = containerid + "canvas";
             let canvas = document.getElementById(canvasid);
             let ctx = canvas.getContext("2d");
             let chart = new Chart(ctx, chartConfig);
             chart.options.responsive = false;
             chart.update("none");
-            requestAnimationFrame(async function () {
-                let ccontainer = $("#" + canvasid).parent();
-                $(ccontainer)
-                    .prepend($("<div/>", {
-                        class: containerid + "btns",
-                        id: containerid + "btns"
-                    }));
-
-                await addChartStandardButtons(containerid, canvasid)
+            await new Promise(async function (resolve, reject) {
+                requestAnimationFrame(async function () {
+                    let ccontainer = $("#" + canvasid).parent();
+                    $(ccontainer)
+                        .prepend($("<div/>", {
+                            class: containerid + "btns",
+                            id: containerid + "btns"
+                        }));
+                    await addChartStandardButtons(containerid, canvasid)
+                    resolve(true);
+                });
             });
-            return containerid;   // wrapper des Charts
+            //parms.fixed: true, ; parms.harmonizedXY: true
+            if (parms.fixed === true) {
+                fixChartScales(chart);
+            }
+            if (parms.harmonizedXY === true) {
+                harmonizeXYChartScales(chart);
+            }
+            return containerid;   // containerid: wrapper des Charts, suffixe: btns, canvas
+        }
+
+        function fixChartScales(graph) {
+            let scales = Object.keys(graph.scales);
+            for (let scale of scales) {
+                if (graph.scales[scale].type === "category") {
+                    continue;
+                }
+                let min = graph.scales[scale].min;
+                let max = graph.scales[scale].max;
+                delete graph.scales[scale].min;
+                delete graph.scales[scale].max;
+                delete graph.options.scales[scale].min;
+                delete graph.options.scales[scale].max;
+                graph.options.scales[scale].suggestedMin = min;
+                graph.options.scales[scale].suggestedMax = max;
+                graph.update();
+            }
+        }
+
+
+        function harmonizeXYChartScales(graph) {
+            let scales = Object.keys(graph.scales);
+            for (let scale of scales) {
+                if (graph.scales["x"].type === "category" || graph.scales["y"].type === "category") {
+                    continue;
+                }
+                let minx = graph.scales["x"].min;
+                let maxx = graph.scales["x"].max;
+                let miny = graph.scales["y"].min;
+                let maxy = graph.scales["y"].max;
+                if (minx < miny) {
+                    miny = minx
+                } else {
+                    minx = miny
+                }
+                if (maxx > maxy) {
+                    maxy = maxx
+                } else {
+                    maxx = maxy
+                }
+                delete graph.scales["x"].min;
+                delete graph.scales["x"].max;
+                delete graph.options.scales["x"].min;
+                delete graph.options.scales["x"].max;
+
+                delete graph.scales["y"].min;
+                delete graph.scales["y"].max;
+                delete graph.options.scales["y"].min;
+                delete graph.options.scales["y"].max;
+
+                graph.options.scales["x"].suggestedMin = minx;
+                graph.options.scales["x"].suggestedMax = maxx;
+                graph.options.scales["y"].suggestedMin = miny;
+                graph.options.scales["y"].suggestedMax = maxy;
+
+                graph.update();
+            }
         }
 
 
@@ -399,51 +556,56 @@
             let anz = p1toyear - p1fromyear + 1;
             let datasets = [];
             for (let key of Object.keys(datacontrol)) {
-                let icolor = -1;
-                let colors = ["blue", "red"]
-                for (let fromyear of [p1fromyear, p2fromyear]) {
-                    icolor++;
-                    fromyear = parseInt(fromyear);
-                    let toyear = fromyear + 30 - 1;
-                    let dataset = {
-                        label: fromyear + "-" + toyear,
-                        data: [],
-                        backgroundColor: colors[icolor],  // "rgba(54, 162, 235, 0.35)",
-                        borderColor: colors[icolor],      // "rgba(54, 162, 235, 0.8)",
-                        borderWidth: 1
-                    };
+                for (let variable of variables) {
+                    let icolor = -1;
+                    let colors = ["blue", "red"]
+                    for (let fromyear of [p1fromyear, p2fromyear]) {
+                        icolor++;
+                        fromyear = parseInt(fromyear);
+                        let toyear = fromyear + 30 - 1;
+                        let dataset = {
+                            label: fromyear + "-" + toyear,
+                            data: [],
+                            backgroundColor: colors[icolor],  // "rgba(54, 162, 235, 0.35)",
+                            borderColor: colors[icolor],      // "rgba(54, 162, 235, 0.8)",
+                            borderWidth: 1
+                        };
 
-                    for (let iyear = fromyear; iyear <= toyear; iyear++) {
-                        let TMAX = null;
-                        let TMIN = null;
-                        try {
-                            TMAX = datacontrol[key].variables["TMAX"].yeardata["" + iyear].avg;
-                            TMIN = datacontrol[key].variables["TMIN"].yeardata["" + iyear].avg;
-                        } catch (err) { };
-                        if (typeof TMAX !== "undefined" && TMAX !== null &&
-                            typeof TMIN !== "undefined" && TMIN !== null) {
-                            let bubble = {
-                                x: TMIN,
-                                y: TMAX,
-                                r: 3,
-                                tooltip: key,
-                                raw: {
-                                    source: datacontrol[key].source,
-                                    stationid: datacontrol[key].stationid,
-                                    stationname: stationcontrol[key].stationname,
-                                    year: iyear
-                                }
-                            };
-                            dataset.data.push(bubble);
+                        for (let iyear = fromyear; iyear <= toyear; iyear++) {
+                            let attrval = null;
+                            let varival = null;
+                            try {
+                                //TMAX = datacontrol[key].variables[].yeardata["" + iyear].avg;
+                                attrval = stationcontrol[key][attrname];
+                                varival = datacontrol[key].variables[variable].yeardata["" + iyear].avg;
+                            } catch (err) { };
+                            if (typeof attrval !== "undefined" && attrval !== null &&
+                                typeof varival !== "undefined" && varival !== null) {
+                                let bubble = {
+                                    x: attrval,
+                                    y: varival,
+                                    r: 3,
+                                    tooltip: key,
+                                    raw: {
+                                        source: datacontrol[key].source,
+                                        stationid: datacontrol[key].stationid,
+                                        stationname: stationcontrol[key].stationname,
+                                        attrname: attrname,
+                                        variable: variable,
+                                        year: iyear
+                                    }
+                                };
+                                dataset.data.push(bubble);
+                            }
                         }
+                        datasets.push(dataset);
                     }
-                    datasets.push(dataset);
                 }
             }
             return datasets;
         }
 
-        async function getDatasets4vars(datacontrol, variables) {
+        async function getDatasets4vars(datacontrol, layerdata, variables) {
             // datacontrol auswerten als TMAX/TMIN auf Jahre bezogen
             // mit Einfärbung der Range
             let stationcontrol = {};
@@ -486,6 +648,9 @@
                     let toyear = fromyear + 30 - 1;
                     let dataset = {
                         label: fromyear + "-" + toyear,
+                        key: key,
+                        source: stationcontrol[key].source,
+                        stationid: stationcontrol[key].stationid,
                         data: [],
                         backgroundColor: colors[icolor],  // "rgba(54, 162, 235, 0.35)",
                         borderColor: colors[icolor],      // "rgba(54, 162, 235, 0.8)",
@@ -1020,7 +1185,9 @@
         return {
             showOneDataBubbleChart,
             addBubbleLineButton,
-            getDataControl
+            getDataControl,
+            fixChartScales,
+            harmonizeXYChartScales
         };
     }
 

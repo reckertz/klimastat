@@ -16,6 +16,7 @@
     let gblLayerControl = null;
     let localization = null;
     let geo = null;
+    let locs = [];
 
     kli1000.show = async function (parms) {
         debugger;
@@ -605,6 +606,53 @@
         }
         console.log("localization", localization);
         kli6900.setCookie("localization", JSON.stringify(localization));
+        debugger;
+        for (let i = 1; i <= 10; i++) {
+            let lcookie = kli6900.getCookie("loc" + ("00" + i).slice(-2));
+            if (typeof lcookie !== "undefined" && lcookie !== null) {
+                let cookielocs = lcookie;
+                for (let j = 0; j < cookielocs.length; j++) {
+                    locs.push(cookielocs[j]);
+                }
+            }
+        }
+
+        if (locs.length === 0) {
+            // Initialisierung ist notwendig
+            // <button class="btn btn-sm btn-primary kli1000selbtn kli1000selrange" 
+            // varname="range" fromyear="1931" toyear="1960" 
+            // style="margin-bottom: 3px; margin-left: 5px;">
+            // <span> ✕</span><span> 1931-1960</span></button>
+            let buttons = $("#kli1000commands").find("button.kli1000selrange[varname=range]").toArray();
+            let ranges = [];
+            let lastrange = [1990, 2019];
+            for (let button of buttons) {
+                let status = $(button).find("span").first().text();
+                if (status === okletter) {
+                    let fromyear = $(button).attr("fromyear");
+                    let toyear = $(button).attr("toyear");
+                    lastrange = [fromyear, toyear];
+                    ranges.push[lastrange];
+                }
+            }
+            let locdata = {
+                source: localization.source,
+                stationid: localization.stationid,  // auch bei GEONAMES
+                locname: localization.locname,
+                latitude: localization.latitude,
+                longitude: localization.longitude,
+                distancekm: localization.distancekm || 50
+            }
+            locdata.range = lastrange;  // Default
+            if (ranges.length === 1 || ranges.length === 2) {
+                locdata.range = ranges[0];
+            } else if (ranges.length > 2) {
+                locdata.range = ranges[ranges.length - 2];
+            }
+            locs.push(locdata);
+        }
+
+
 
         let metadata = kli1000A.getMeta();
         parms.metadata = metadata;
@@ -612,14 +660,25 @@
 
         $(".kli1000matrix")
             .append($("<div/>", {
-                class: "col col-11 kli1000projects",
+                class: "col col-10 kli1000projects",
                 id: "kli1000projects",
+            }))
+            .append($("<div/>", {
+                class: "col col-2 kli1000profilter",
+                id: "kli1000profilter",
             }));
 
         let h = $("#kli1000projects").parent().height();
         $("#kli1000projects").height(h + "px");
+        $("#kli1000profilter").height(h + "px");
 
         await kli1000.calculateAutoHeight("#kli1000projects");
+
+        //locs nach den Buttons in profilter
+        for (let loc of locs) {
+            kli1000.addLocButton("kli1000profilter", loc);
+        }
+
 
         maps = kli1000B.mapService();
 
@@ -654,6 +713,63 @@
         await kli1000.updateLayers();
     };
 
+    kli1000.addLocButton = function (containerid, loc) {
+        let fromyear = "1990";
+        let toyear = "2019";
+        if (loc.range.length === 2) {
+            fromyear = loc.range[0];
+            toyear = loc.range[1];
+        }
+        $("#" + containerid)
+            .append($("<button/>", {
+                class: "btn btn-sm btn-primary kli1000locbtn",
+                css: {
+                    padding: "1px",
+                    margin: "5px"
+                },
+                containerid: containerid,
+                source: loc.source,
+                stationid: loc.stationid,
+                locname: loc.locname,
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+                distancekm: loc.distancekm,
+                fromyear: fromyear,
+                toyear: toyear,
+                html: "<span>" + cancelsign + "</span><span> " + loc.locname + " " + fromyear + "-" + toyear + "</span>"
+            }));
+    }
+
+    $(document).on("click", ".kli1000locbtn", function (evt) {
+        evt.preventDefault();
+        let status = $(this).find("span").first().text();
+        if (status === okletter) {
+            $(this).find("span").first().html(cancelsign);
+            return;
+        } else {
+            $(this).find("span").first().html(oksign);
+        }
+        let containerid = $(this).attr("containerid");
+        let source = $(this).attr("source");
+        let stationid = $(this).attr("stationid");
+        let locname = $(this).attr("locname");
+        let latitude = $(this).attr("latitude");
+        let longitude = $(this).attr("longitude");
+        let distancekm = $(this).attr("distancekm");
+        let fromyear = $(this).attr("fromyear");
+        let toyear = $(this).attr("toyear");
+        // Treffer bisher
+        // <li class="kli1000candidate" table="GEONAMES" source="GEONAMES" geonameid="2821102" locname="Trippelsdorf" latitude="50.7806" longitude="6.91505">Trippelsdorf (Germany) </li>
+        // distancekm: distancekm und range über Button-Setzung!!!
+        let localization = {
+            source: source,
+            locname: locname,
+            latitude: latitude,
+            longitude: longitude,
+        }
+        kli6900.setCookie("localization", JSON.stringify(localization));
+        $("#kli1000app").trigger("click");
+    });
 
     /**
      * kli1000.updateLayers - Buttons abfragen und countrypolygons für countrylayer bereitstellen
@@ -1745,13 +1861,13 @@
                         css: {
                             "background-color": "navyblue",
                             height: h,
-                            width: w + "px"
+                            //width: w + "px"
                         },
                     }))
                     .append($("<div/>", {
                         css: {
                             "background-color": "mistyrose",
-                            width: w + "px"
+                            //width: w + "px"
                         },
                         class: "row kli1000parms",
                     }))

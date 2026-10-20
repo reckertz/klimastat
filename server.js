@@ -152,9 +152,9 @@ app.get('/getsourceanalysis', async function (req, res) {
     }
     // var rootdir = path.dirname(require.main.filename);
     let doc1000 = require("./doc1000.js");
-    let { res1, ret } = await doc1000.getsourceanalysis(req, null, res);  //, function (res, ret) {
+    let result = await doc1000.getsourceanalysis(req, null, res);  //, function (res, ret) {
     // in ret liegen error, message und record
-    var smsg = JSON.stringify(ret);
+    var smsg = JSON.stringify(result.ret);
     res.writeHead(200, {
         'Content-Type': 'application/text',
         "Access-Control-Allow-Origin": "*"
