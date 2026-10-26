@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HTML5-Elemente – interaktive Demo</title>
+    <link rel="stylesheet" type="text/css" href="/node_modules/bootstrap/dist/css/bootstrap.css" />
+    <script src="lib/jquery.min.js"></script>
+    <script src="/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+</head>
+
+<body>
+
+    <details name="X">
+        <summary>Erweiterte Einstellungen</summary>
+        <label>
+            Stationsradius:
+            <input type="number" min="1" max="500" value="50">
+        </label>
+        <label>
+            <input type="checkbox" checked>
+            Nur aktive Stationen
+        </label>
+    </details>
+
+    <details name="X">
+        <summary>Erweiterte Einstellungen/2</summary>
+        <label>
+            Stationsradius/2:
+            <input type="number" min="1" max="500" value="50">
+        </label>
+        <label>
+            <input type="checkbox" checked>
+            Nur aktive Stationen/2
+        </label>
+    </details>
+
+    <hr>
+
+    <button popovertarget="info">
+        Informationen
+    </button>
+    <div id="info" popover>
+        Stationsinformationen
+    </div>
+
+    <hr>
+
+    <button commandfor="meinDialog" command="show-modal">
+        Öffnen
+    </button>
+    <dialog id="meinDialog">
+        <p>Stationsauswahl</p>
+        <button commandfor="meinDialog" command="close">
+            Schließen
+        </button>
+    </dialog>
+
+    <hr>
+
+    <fieldset>
+        <legend>Stationsfilter</legend>
+        <label>
+            <input type="checkbox" checked>
+            Temperatur
+        </label>
+        <label>
+            <input type="checkbox">
+            Niederschlag
+        </label>
+    </fieldset>
+
+    <hr>
+
+    <ul id="stations">
+        <li>
+            <data value="GHCND:GM000010147">
+                Hamburg
+            </data>
+        </li>
+    </ul>
+
+
+
+    <hr>
+
+    <menu id="stationMenu">
+        <li>
+            <button type="button" data-action="show">
+                Station anzeigen
+            </button>
+        </li>
+        <li>
+            <button type="button" data-action="edit">
+                Station bearbeiten
+            </button>
+        </li>
+        <li>
+            <button type="button" data-action="remove">
+                Station entfernen
+            </button>
+        </li>
+    </menu>
+
+    <hr>
+
+    <select id="station">
+        <optgroup label="Deutschland">
+            <option value="DE_BONN">Bonn</option>
+            <option value="DE_KOELN">Köln</option>
+        </optgroup>
+
+        <optgroup label="Norwegen">
+            <option value="NO_OSLO">Oslo</option>
+            <option value="NO_BERGEN">Bergen</option>
+        </optgroup>
+    </select>
+
+
+</body>
+
+</html>

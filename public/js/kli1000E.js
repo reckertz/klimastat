@@ -47,6 +47,7 @@
         * @returns {any} - This function does not return a value but performs assertions on the input data.
         */
         async function showLineChart(wrapperid, title, xlabels, datasets, parms) {
+            debugger;
             let i = 1;
             let config = kli6900.cloneObject(getLineChartTemplate(title, xlabels, datasets));
             config.options.plugins.title.text = title;

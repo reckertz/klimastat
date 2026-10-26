@@ -28,6 +28,8 @@
         "editor.defaultFormatter": "vscode.json-language-features"
     },
     // 🔹 Keine alten Formatter (Prettier/Beautify) mehr
+    "editor.renderGutterMenu": false,
+    "editor.guides.bracketPairs": false,
     "editor.defaultFormatter": null,
     "editor.minimap.enabled": false,
     "editor.fontSize": 18,

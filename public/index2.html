@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Klima-Mobil</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="lib/jquery.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+
+            height: 50px;
+            padding: 15px;
+
+            background: #263238;
+            color: white;
+        }
+
+        main {
+            width: 100%;
+        }
+
+        .welcome {
+            min-height: calc(100dvh - 50px);
+            padding: 20px;
+        }
+
+        .welcome ul {
+            max-height: calc((100dvh - 50px) * 0.5);
+            overflow-y: auto;
+        }
+
+        .place-slider {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+
+            scroll-snap-type: x mandatory;
+            overscroll-behavior-x: contain;
+            scrollbar-width: none;
+        }
+
+        .place-page {
+            flex: 0 0 100%;
+            min-width: 0;
+
+            min-height: calc(100dvh - 50px);
+            padding: 20px;
+
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+
+            border-bottom: 1px solid #ccc;
+        }
+
+        .place-page h2 {
+            margin-top: 0;
+        }
+
+        .test-content {
+            margin-top: 30px;
+            padding: 30px;
+            background: #e3f2fd;
+            border-radius: 8px;
+        }
+
+        .inline-details {
+            display: inline;
+        }
+
+        .inline-details summary {
+            display: inline;
+            color: blue;
+            cursor: pointer;
+        }
+
+        .inline-details summary::marker {
+            content: "";
+        }
+
+        .inline-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .inline-details summary::after {
+            content: "more";
+        }
+
+        .inline-details[open] summary::after {
+            content: "less";
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>Klima-Mobil
+        <span id="headertext"></span>
+    </nav>
+
+    <main id="application">
+
+        <section class="welcome">
+            <h1>Welcome</h1>
+            <p>Wetterdaten entdecken und vergleichen.</p>
+            <button id="selectPlace">Ort auswählen</button>
+        </section>
+
+    </main>
+
+    <script type="module">
+        import * as kli2000 from "/modules/kli2000.js";
+        kli2000.show();
+    </script>
+
+</body>
+
+</html>

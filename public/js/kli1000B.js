@@ -168,7 +168,7 @@
             //let { worldmap, worldmapid, layerControl } = maps.getWorldmap();
             let found = false;
             let newlayer = null;
-
+            debugger;
             map.eachLayer(function (layer) {
                 if (found === true) {
                     return;

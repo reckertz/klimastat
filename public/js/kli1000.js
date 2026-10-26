@@ -30,6 +30,7 @@
             });
         }
         kli1000.initUI("kli1000", "Basis", "Analyse Standort und weitere");
+
         kli6900.putMessage("kli1000 Standort etc.", 1);
         let ret = await kli6900.getScriptA("kli1000A");
         console.log("kli1000A", ret.error, ret.message);
@@ -73,6 +74,23 @@
         $("nav.navbar").find("button").last()
             .after(
                 $("<button/>", {
+                    class: "btn btn-primary",
+                    id: "kli1000supapp",
+                    style: "float: left; margin-left: 20px;",
+                    title: "Komplette Anzeige für Smartphones",
+                    html: "Super-Anwendung",
+                    click: async function (evt) {
+                        evt.preventDefault();
+                        let gurl = "index2.html?target=kli2000";
+                        let wname = "_blank";
+                        let kli2000handle2 = window.open(gurl, wname); // , wparms
+                        kli2000handle2.focus();
+                    }
+                }));
+
+        $("nav.navbar").find("button").last()
+            .after(
+                $("<button/>", {
                     class: "btn btn-danger",
                     style: "float: left; margin-left: 20px;",
                     title: "Metadaten über table, source, variable",
@@ -102,6 +120,7 @@
         if (localization === null) {
             localization = {
                 source: "dialog",
+                isoday: new Date().toISOString().substring(0, 10),
                 locname: "",
                 latitude: 0,
                 longitude: 0,
@@ -147,6 +166,20 @@
         $("#kli1000locform").children().remove();
         $("#kli1000locbuttons").children().remove();
         $("#kli1000locliste").children().remove();
+
+        $("#kli1000locform")
+            .append($("<label/>", {
+                for: "",
+                html: "Fokus-Datum"
+            }))
+            .append($("<input/>", {
+                id: "kli1000_isoday",
+                type: "date",
+                min: "1850-01-01",
+                max: new Date().toISOString().substring(0, 10),
+                // required: "required",
+                value: localization.isoday
+            }));
 
         $("#kli1000locform")
             .append($("<label/>", {
@@ -284,6 +317,7 @@
                     error: false,
                     message: "found",
                     source: "GEONAMES",
+                    isoday: $("#kli1000_isoday").val(),
                     locname: locname,
                     latitude: latitude,
                     longitude: longitude,
@@ -300,6 +334,7 @@
                     error: false,
                     message: "found",
                     source: "KLISTATIONS",
+                    isoday: $("#kli1000_isoday").val(),
                     locname: locname,
                     latitude: latitude,
                     longitude: longitude,
@@ -595,6 +630,7 @@
      * eigentliche Anwendung
      */
     kli1000.initApp = async function (parms) {
+        debugger;
         $("#kli1000commands").children().remove();
         $(".kli1000matrix").children().remove();
 
@@ -637,6 +673,7 @@
             }
             let locdata = {
                 source: localization.source,
+                isoday: localization.isoday,
                 stationid: localization.stationid,  // auch bei GEONAMES
                 locname: localization.locname,
                 latitude: localization.latitude,
@@ -728,6 +765,7 @@
                     margin: "5px"
                 },
                 containerid: containerid,
+                isoday: loc.isoday,
                 source: loc.source,
                 stationid: loc.stationid,
                 locname: loc.locname,
@@ -750,6 +788,7 @@
             $(this).find("span").first().html(oksign);
         }
         let containerid = $(this).attr("containerid");
+        let isoday = $(this).attr("isoday");
         let source = $(this).attr("source");
         let stationid = $(this).attr("stationid");
         let locname = $(this).attr("locname");
@@ -766,6 +805,7 @@
             locname: locname,
             latitude: latitude,
             longitude: longitude,
+            isoday: $("#kli1000_isoday").val(),
         }
         kli6900.setCookie("localization", JSON.stringify(localization));
         $("#kli1000app").trigger("click");
@@ -1304,14 +1344,14 @@
                 title: "Auswertung Jahres- und Periodendaten mit Bubble-Charts",
                 click: async function (evt) {
                     evt.preventDefault();
-                    // es müsste ALLES aus #kli1000databubblewrapper entfernt werden
+                    // es müsste ALLES aus #kli1000bubble entfernt werden
                     // auch die factory instanzen
 
-                    $("#kli1000databubblewrapper").empty();
+                    $("#kli1000bubble").empty();
                     $(".klicontainer")
                         .append($("<div/>", {
                             class: "row",
-                            id: "kli1000databubblewrapper"
+                            id: "kli1000bubble"
                         }));
                     // für alle sichtbaren layer, nicht nur für einen Layer
                     let { worldmap, worldmapid, layerControl } = maps.getWorldmap();
@@ -1339,7 +1379,7 @@
                             };
                         }
                     }
-                    //"kli1000databubblewrapper"
+                    //"kli1000bubble"
                     let metadata = kli1000A.getMeta();
                     for (let meta of metadata.varmeta) {
                         let layername = meta.source;
@@ -1383,7 +1423,7 @@
                     }
                     let bubbles = kli1000D.createBubbleChart();  // factory
                     for (let source of Object.keys(layercontrol)) {
-                        let wrapperid = "kli1000databubblewrapper";
+                        let wrapperid = "kli1000bubble";
                         let layerdata = layercontrol[source];
                         let title = source + " " + "Temperature";
                         let xlabel = "Celsius";
@@ -1419,7 +1459,7 @@
                         await rankchart.showAllRanks(wrapperid, layercontrol[source].geopoints, layerdata.source, dataControl);
                     }
                     await kli1000.calculateAutoHeight("#kli1000matrix");
-                    let elmnt = document.getElementById("kli1000databubblewrapper");
+                    let elmnt = document.getElementById("kli1000bubble");
                     $(elmnt).css({
                         border: "3px solid red"
                     });
