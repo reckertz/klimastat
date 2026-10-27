@@ -5,7 +5,13 @@
     <meta charset="UTF-8">
     <title>Klima-Mobil</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/node_modules/leaflet/dist/leaflet.css" rel="stylesheet">
+    <script src="/node_modules/leaflet/dist/leaflet.js" charset="utf-8" crossorigin=""></script>
+    <script src="/node_modules/leaflet.control.select/dist/leaflet.control.select.js"></script>
+
+
     <script src="lib/jquery.min.js"></script>
+    <script src="js/kli6900.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -76,6 +82,17 @@
             border-radius: 8px;
         }
 
+        .place-content {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .myleaflet-map {
+            width: 100%;
+            height: 50dvh;
+            min-height: 250px;
+        }
+
         .inline-details {
             display: inline;
         }
@@ -111,15 +128,16 @@
     </nav>
 
     <main id="application">
-
-        <section class="welcome">
+        <!--section class="welcome">
             <h1>Welcome</h1>
             <p>Wetterdaten entdecken und vergleichen.</p>
             <button id="selectPlace">Ort auswählen</button>
-        </section>
-
+        </section-->
     </main>
 
+    <main id="statistics">
+
+    </main>
     <script type="module">
         import * as kli2000 from "/modules/kli2000.js";
         kli2000.show();
