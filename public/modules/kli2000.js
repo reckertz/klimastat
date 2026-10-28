@@ -30,11 +30,13 @@ let topics = [
     ["Zeitreihe", "yeardata", "TMIN", "avg", "min", "max"],
     ["Zeitreihe", "yeardata", "PRCP", "kum", "", ""],
     ["Zeitreihe", "yeardata", "SNOW", "kum", "", ""],
+    ["Zeitreihe", "yeardata", "SNWD", "kum", "", ""],
 
     ["Trendanalyse", "yeardata", "TMAX", "avg_reg", "", ""],
     ["Trendanalyse", "yeardata", "TMIN", "avg_reg", "", ""],
     ["Trendanalyse", "yeardata", "PRCP", "kum_reg", "", ""],
     ["Trendanalyse", "yeardata", "SNOW", "kum_reg", "", ""],
+    ["Trendanalyse", "yeardata", "SNWD", "kum_reg", "", ""],
 
     ["Höhenanalyse", "yeardata", "TMAX", "avg", "min", "max", "height"],
     ["Höhenanalyse", "yeardata", "TMIN", "avg", "min", "max", "height"],
@@ -107,14 +109,14 @@ async function show() {
     <p class="eyebrow">Dein Klima. Deine Umgebung.</p>
     <h1>Wie hat sich das Klima bei dir verändert?</h1>
     <p>Vergleiche historische Temperaturen von Wetterstationen in deiner Nähe – verständlich und auf Grundlage von Messdaten.</p>
-    <button type="button" class="primary" data-action="location">Klima hier entdecken</button>
+    <button type="button" class="btn btn-primary btn-sm primary" data-action="location">Klima hier entdecken</button>
     <br><br>
     <details>
-      <summary>Lieber einen Ort eingeben?</summary>
+      <summary>Lieber einen Ort eingeben und dann auswählen?</summary>
       <form class="place-form">
         <label for="place">Ortsname</label>
         <input id="place" name="place" required autocomplete="address-level2" placeholder="z.B. Bonn">
-        <button class="primary" data-action="searchlocation">Ort auswählen</button>
+        <button class="btn btn-primary btn-sm primary" data-action="searchlocation">Ort auswählen</button>
       </form>
     </details>
     <p class="hint">Keine Anmeldung nötig. Dein Standort wird nur nach deiner Zustimmung abgefragt.</p>`;
@@ -124,6 +126,11 @@ async function show() {
         class: "welcome",
         html: html
     }));
+
+    let oldlocations = await getOldLocations(sectionid);
+    // cookie für frühere Auswahl
+
+
 
 
     $("#" + sectionid).on("click", "button.primary", async function (evt) {
@@ -156,42 +163,6 @@ async function show() {
             await showCandidates(sectionid, "", geolocation.lat, geolocation.lon, 10);
         }
     });
-    // es wird ernst, es sind die Orte bekannt (erst mal nur einer)
-    // und es sind die Auswertungsmodule zu erstellen und zu integrieren
-
-    if (1 === 1) return;
-    /*
-    for (const [topicIndex, topic] of topics.entries()) {
-        const $slider = $("<section>", {
-            class: "place-slider",
-            "data-topic": topic
-        });
-        for (const [placeIndex, place] of places.entries()) {
-            const $page = $("<article>", {
-                class: "place-page",
-                "data-place": place,
-                "data-topic": topic
-            });
-            $page.append(
-                $("<h2>").text(`${topic} – ${place}`)
-            );
-            $page.append(
-                $("<div>", {
-                    class: "test-content",
-                    html: `
-                        <p>Thema: ${topicIndex + 1} / 10</p>
-                        <p>Standort: ${placeIndex + 1} / 3</p>
-                        <p>Hier erscheint später die Auswertung.</p>
-                    `
-                })
-            );
-            $slider.append($page);
-        }
-        $main.append($slider);
-    }
-    document.querySelectorAll(".place-page")
-        .forEach(page => observer.observe(page));
-    */
 }
 
 
@@ -241,162 +212,204 @@ async function getGeoPermission() {
 }
 
 
-async function showCandidates(sectionid, searchstring, latitude, longitude, distance) {
-    let ret = {};
-    let sql = "";
-    sql += " SELECT GEONAMES.geonameid, GEONAMES.name, GEONAMES.latitude, GEONAMES.longitude,";
-    sql += " GEONAMES.population, GEONAMES.elevation,";
-    sql += " GEONAMES.admin1_code,";
-    sql += " GEONAMES.country_code, KLICOUNTRYCODES.name as country,";
-    sql += " KLISTATES.statename"
-    sql += " FROM GEONAMES";
-    sql += " LEFT JOIN KLICOUNTRYCODES";
-    sql += " ON GEONAMES.country_code = KLICOUNTRYCODES.alpha2";
-    sql += " LEFT JOIN KLISTATES";
-    sql += " ON GEONAMES.country_code || '.' || GEONAMES.admin1_code = KLISTATES.statekey";
 
-    if (typeof searchstring === "string" && searchstring.trim().length > 0) {
-        let such = searchstring;
-        let frags = such.split(" ");
-        if (frags.length > 0) {
-            let ands = [];
-            for (let frag of frags) {
-                ands.push(" lower(GEONAMES.name) LIKE '%" + frag + "%'");
-            }
-            sql += " WHERE " + ands.join(" AND ");
-        } else {
-            sql += " WHERE lower(GEONAMES.name) LIKE('" + frags[0] + "%'";
-        }
-    } else if (typeof latitude !== "undefined" && latitude !== null &&
-        typeof longitude !== "undefined" && longitude !== null) {
-        if (typeof distance === "undefined") {
-            distance = 50;
-        }
-
-        let sellatitude = latitude;
-        let sellongitude = longitude;
-
-        let coords = kli6900.lincoordinates(sellatitude, sellongitude, distance);
-        if (coords.error === true) {
-            // und raus - später
-            ret.error = true;
-            ret.message += " Lokation nicht möglich";
-            return;
-        }
-
-        let latN = parseFloat(coords.latN);
-        let latS = parseFloat(coords.latS);
-        let lonW = parseFloat(coords.lonW);
-        let lonE = parseFloat(coords.lonE);
-
-        let where1 = "";
-        if (latN > latS) {
-            if (where1.length > 0) where1 += " AND ";
-            where1 += " CAST(latitude as DECIMAL(4,5)) <= " + latN;
-            where1 += " AND CAST(latitude as DECIMAL(4,5)) >= " + latS;
-        } else {
-            if (where1.length > 0) where1 += " AND ";
-            where1 += " CAST(latitude as DECIMAL(4,5)) >= " + latN;
-            where1 += " AND CAST(latitude as DECIMAL(4,5)) <= " + latS;
-        }
-        if (lonW > lonE) {
-            if (where1.length > 0) where1 += " AND ";
-            where1 += " CAST(longitude as DECIMAL(4,5)) <= " + lonW;
-            where1 += " AND CAST(longitude as DECIMAL(4,5)) >= " + lonE;
-        } else {
-            if (where1.length > 0) where1 += " AND ";
-            where1 += " CAST(longitude as DECIMAL(4,5)) >= " + lonW;
-            where1 += " AND CAST(longitude as DECIMAL(4,5)) <= " + lonE;
-        }
-        sql += " WHERE " + where1;
-    }
-    sql += " ORDER BY GEONAMES.name, GEONAMES.latitude DESC";  // GEONAMES.geonameid";
-    // Zugriff auf SQL
-    console.log(sql);
-    let startTime = new Date();
-    let response = await fetch("/getallrecordsx", {
-        method: "post",
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        //make sure to serialize your JSON body - nur bei POST, dann einfache url
-        body: JSON.stringify({
-            sel: sql,
-            timeout: 10 * 60 * 1000,
-            skip: 0,
-            limit: 0
-        })
-    });
-    let ret1 = await response.json();
-    //let perf = kli6900.getPerformance(startTime);
-    if (ret1.error === false && ret1.records !== "undefined" && ret1.records !== null &&
-        Array.isArray(ret1.records)) {
-
-        if (typeof latitude !== "undefined" && latitude !== null &&
-            typeof longitude !== "undefined" && longitude !== null) {
-            // Distanz berechnen, Sortieren, Ausgabezahl begrenzen
-            let lat1 = latitude;
-            let lon1 = longitude;
-            for (let record of ret1.records) {
-                let lat2 = record.latitude;
-                let lon2 = record.longitude;
-                let distance = kli6900.lindistance(lat1, lon1, lat2, lon2);
-                record.distance = distance;
-            }
-            ret1.records = ret1.records.sort(function (a, b) {
-                if (a.distance > b.distance) {
-                    return 1;
-                } else if (a.distance < b.distance) {
-                    return - 1;
-                } else if (a.name > b.name) {
-                    return 1;
-                } else if (a.name < b.name) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            });
-        }
-
-
-        let icountry = 0;
+/**
+* getOldLocations - vereinfachte showCandidantes Lösung aus cookie
+* @param {any} sectionid - Container mit der Liste
+*
+* @returns {any} - This function does not return a value but performs assertions on the input data.
+*/
+async function getOldLocations(sectionid) {
+    let oldlocations = kli6900.getCookie("oldlocations");
+    if (oldlocations !== null) {
+        // popup zur Bestätigung
+        // {"2821102":{"locname":"Trippelsdorf","latitude":"50.7806","longitude":"6.91505","tsupd":"2026-10-28T19:52:26.798Z"}}
         let ulid = "kli2000locliste";
         $("#" + ulid).remove();
         $("#" + sectionid)
             .append($("<ul/>", {
                 id: "kli2000locliste",
             }));
-        let oldname = "";
-        let count = 0;
-        for (let record of ret1.records) {
-            count++;
-            // population und elevation als weitere Kriterien
-            let html = "<span>";
-            html += "<a href='#' class='kli2000sel kli2000name'>" + record.name + "</a>";
-            html += " (" + "<a href='#' class='kli2000sel kli2000country_code'>" + record.country_code + "</a>";
-            html += "; " + record.statename + ") ";
-            // zusatzinfos falls Duplette
-            html += "<details class='inline-details'>";
-            html += "<summary></summary>";
-            html += " population: " + record.population;
-            html += " height:" + record.elevation;
-            html += "<br> lat/lon" + record.latitude + "/" + record.longitude;
-            html += "</details> ";
-            html += "</span>";
-            $("#" + ulid)
-                .append($("<li/>", {
-                    id: ulid + "_" + count,
-                    class: "kli2000candidate",
-                    "data-table": "GEONAMES",
-                    "data-source": "GEONAMES",
-                    "data-geonameid": record.geonameid,
-                    "data-locname": record.name,
-                    "data-latitude": record.latitude,
-                    "data-longitude": record.longitude,
-                    "data-country_code": record.country_code, // entspricht "ISO_A2" in GEOJSON
-                    html: html
+        let $liste = $("#kli2000locliste");
+        for (let geonameid of Object.keys(oldlocations)) {
+            let oldlocation = oldlocations[geonameid];
+            let html = "<span><a href='#' class='kli2000sel kli2000name'>";
+            html += oldlocation.locname + " (" + oldlocation.country_code + ")";
+            html += "</a></span>";
+            $liste.append($("<li/>", {
+                html: html,
+                origin: "dialog",
+                "data-geonameid": oldlocation.geonameid,
+                "data-locname": oldlocation.locname,
+                "data-latitude": oldlocation.latitude,
+                "data-longitude": oldlocation.longitude,
+                "data-country_code": oldlocation.country_code,
+                "data-tsupd": oldlocation.tsupd
+            }));
+        }
+        await showCandidates(sectionid, "*cookie");
+    }
+}
+
+
+async function showCandidates(sectionid, searchstring, latitude, longitude, distance) {
+    if (!(typeof searchstring === "string" && searchstring === "*cookie")) {
+        let ret = {};
+        let sql = "";
+        sql += " SELECT GEONAMES.geonameid, GEONAMES.name, GEONAMES.latitude, GEONAMES.longitude,";
+        sql += " GEONAMES.population, GEONAMES.elevation,";
+        sql += " GEONAMES.admin1_code,";
+        sql += " GEONAMES.country_code, KLICOUNTRYCODES.name as country,";
+        sql += " KLISTATES.statename"
+        sql += " FROM GEONAMES";
+        sql += " LEFT JOIN KLICOUNTRYCODES";
+        sql += " ON GEONAMES.country_code = KLICOUNTRYCODES.alpha2";
+        sql += " LEFT JOIN KLISTATES";
+        sql += " ON GEONAMES.country_code || '.' || GEONAMES.admin1_code = KLISTATES.statekey";
+
+        if (typeof searchstring === "string" && searchstring.trim().length > 0) {
+            let such = searchstring;
+            let frags = such.split(" ");
+            if (frags.length > 0) {
+                let ands = [];
+                for (let frag of frags) {
+                    ands.push(" lower(GEONAMES.name) LIKE '%" + frag + "%'");
+                }
+                sql += " WHERE " + ands.join(" AND ");
+            } else {
+                sql += " WHERE lower(GEONAMES.name) LIKE('" + frags[0] + "%'";
+            }
+        } else if (typeof latitude !== "undefined" && latitude !== null &&
+            typeof longitude !== "undefined" && longitude !== null) {
+            if (typeof distance === "undefined") {
+                distance = 50;
+            }
+
+            let sellatitude = latitude;
+            let sellongitude = longitude;
+
+            let coords = kli6900.lincoordinates(sellatitude, sellongitude, distance);
+            if (coords.error === true) {
+                // und raus - später
+                ret.error = true;
+                ret.message += " Lokation nicht möglich";
+                return;
+            }
+
+            let latN = parseFloat(coords.latN);
+            let latS = parseFloat(coords.latS);
+            let lonW = parseFloat(coords.lonW);
+            let lonE = parseFloat(coords.lonE);
+
+            let where1 = "";
+            if (latN > latS) {
+                if (where1.length > 0) where1 += " AND ";
+                where1 += " CAST(latitude as DECIMAL(4,5)) <= " + latN;
+                where1 += " AND CAST(latitude as DECIMAL(4,5)) >= " + latS;
+            } else {
+                if (where1.length > 0) where1 += " AND ";
+                where1 += " CAST(latitude as DECIMAL(4,5)) >= " + latN;
+                where1 += " AND CAST(latitude as DECIMAL(4,5)) <= " + latS;
+            }
+            if (lonW > lonE) {
+                if (where1.length > 0) where1 += " AND ";
+                where1 += " CAST(longitude as DECIMAL(4,5)) <= " + lonW;
+                where1 += " AND CAST(longitude as DECIMAL(4,5)) >= " + lonE;
+            } else {
+                if (where1.length > 0) where1 += " AND ";
+                where1 += " CAST(longitude as DECIMAL(4,5)) >= " + lonW;
+                where1 += " AND CAST(longitude as DECIMAL(4,5)) <= " + lonE;
+            }
+            sql += " WHERE " + where1;
+        }
+        sql += " ORDER BY GEONAMES.name, GEONAMES.latitude DESC";  // GEONAMES.geonameid";
+        // Zugriff auf SQL
+        console.log(sql);
+        let startTime = new Date();
+        let response = await fetch("/getallrecordsx", {
+            method: "post",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            //make sure to serialize your JSON body - nur bei POST, dann einfache url
+            body: JSON.stringify({
+                sel: sql,
+                timeout: 10 * 60 * 1000,
+                skip: 0,
+                limit: 0
+            })
+        });
+        let ret1 = await response.json();
+        //let perf = kli6900.getPerformance(startTime);
+        if (ret1.error === false && ret1.records !== "undefined" && ret1.records !== null &&
+            Array.isArray(ret1.records)) {
+
+            if (typeof latitude !== "undefined" && latitude !== null &&
+                typeof longitude !== "undefined" && longitude !== null) {
+                // Distanz berechnen, Sortieren, Ausgabezahl begrenzen
+                let lat1 = latitude;
+                let lon1 = longitude;
+                for (let record of ret1.records) {
+                    let lat2 = record.latitude;
+                    let lon2 = record.longitude;
+                    let distance = kli6900.lindistance(lat1, lon1, lat2, lon2);
+                    record.distance = distance;
+                }
+                ret1.records = ret1.records.sort(function (a, b) {
+                    if (a.distance > b.distance) {
+                        return 1;
+                    } else if (a.distance < b.distance) {
+                        return - 1;
+                    } else if (a.name > b.name) {
+                        return 1;
+                    } else if (a.name < b.name) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                });
+            }
+
+
+            let icountry = 0;
+            let ulid = "kli2000locliste";
+            $("#" + ulid).remove();
+            $("#" + sectionid)
+                .append($("<ul/>", {
+                    id: "kli2000locliste",
                 }));
+            let oldname = "";
+            let count = 0;
+            for (let record of ret1.records) {
+                count++;
+                // population und elevation als weitere Kriterien
+                let html = "<span>";
+                html += "<a href='#' class='kli2000sel kli2000name'>" + record.name + "</a>";
+                html += " (" + "<a href='#' class='kli2000sel kli2000country_code'>" + record.country_code + "</a>";
+                html += "; " + record.statename + ") ";
+                // zusatzinfos falls Duplette
+                html += "<details class='inline-details'>";
+                html += "<summary></summary>";
+                html += " population: " + record.population;
+                html += " height:" + record.elevation;
+                html += "<br> lat/lon" + record.latitude + "/" + record.longitude;
+                html += "</details> ";
+                html += "</span>";
+                $("#" + ulid)
+                    .append($("<li/>", {
+                        id: ulid + "_" + count,
+                        class: "kli2000candidate",
+                        "data-table": "GEONAMES",
+                        "data-source": "GEONAMES",
+                        "data-geonameid": record.geonameid,
+                        "data-locname": record.name,
+                        "data-latitude": record.latitude,
+                        "data-longitude": record.longitude,
+                        "data-country_code": record.country_code, // entspricht "ISO_A2" in GEOJSON
+                        html: html
+                    }));
+            }
         }
     }
     $("#" + sectionid).off("click", "a.kli2000name");
@@ -406,7 +419,7 @@ async function showCandidates(sectionid, searchstring, latitude, longitude, dist
         let li = $(this).closest("li");
         let location = $(li)[0].dataset;
         // Anzeige der Worldmap geordnet in slider
-        let { maps, pageid } = await showMap($main, location);
+        let { maps, pageid, toolbar0 } = await showMap($main, location);
         // Aufbringen der Marker für DWD-Layer und für GHCND-Layer
         let distancekm = 50;
         let geopoints = await searchStations(location, distancekm);
@@ -442,11 +455,12 @@ async function showCandidates(sectionid, searchstring, latitude, longitude, dist
         }
         //await maps.addMarkerLayer("stationlayer", "GHCND", location, geopoints, {});
         await maps.addMarkerLayer("stationlayer", "Good,near", location, geosets[0], {});
-        await maps.addMarkerLayer("stationlayer", "Good,far", location, geosets[1], {});
-        await maps.addMarkerLayer("stationlayer", "Bad Data", location, geosets[2], {});
+        await maps.addMarkerLayer("stationlayer", "Good,far", location, geosets[1], { hide: true });
+        await maps.addMarkerLayer("stationlayer", "Bad Data", location, geosets[2], { hide: true });
         // countrypolygons holen vom Server über alpha3s
         await maps.addCountryLayer(alpha3s);
         // jetzt wird es ernst, der User wird gefragt, ob er die Daten analysieren möchte
+        toolbar0.focusMarkers();
         $("#" + pageid)
             .append($("<button/>", {
                 css: {
@@ -501,8 +515,10 @@ async function startStatistics(location, geosets) {
         if ($statistics.children().length === 0) {
             doslider = true;
         }
-        // komplette Initialisierung
+        // komplette Initialisierung - vertikale logik
+        let itopic = -1;
         for (let topic of topics) {
+            itopic++;
             for (let i = 0; i < 7; i++) {
                 if (typeof topic[i] === "undefined") {
                     topic[i] = "";
@@ -557,7 +573,7 @@ async function startStatistics(location, geosets) {
             // $page ist definiert, das ist der Container, dazu kommt
             // title, datasource, variable, method, altmethod1, altmethod2, hydevar
             // und in locations[key] = {} stehen key, colindex, location, geosets bereit
-            await showStatisticPage($page, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar);
+            await showStatisticPage($page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar);
         }
     } else {
         // Auswertung ist bereits vorhanden
@@ -573,7 +589,7 @@ async function startStatistics(location, geosets) {
         .forEach(page => observer.observe(page));
 }
 
-async function showStatisticPage($page, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar) {
+async function showStatisticPage($page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar) {
     // in locations[key] = {} stehen key, colindex, location, geosets bereit
     // topics
 
@@ -585,13 +601,24 @@ async function showStatisticPage($page, key, locations, title, datasource, varia
     // title, datasource, variable, method, altmethod1, altmethod2, hydevar
     let gbldatasets = {};
     // ["Zeitreihe", "yeardata", "TMAX", "avg", "max", "min",""],  // fehlende Werte sind durch "" ersetzt
+    // ["Zeitreihe", "yeardata", "PRCP", "kum", "", ""],
+    // ["Trendanalyse", "yeardata", "TMAX", "avg_reg", "", ""],
+    // mehrere method denkbar
+    let doregression = "";
+    let methods = method.split("_");
+    if (methods.length === 2) {
+        method = methods[0];
+        if (methods[1] === "reg") {
+            doregression = methods[0];
+        }
+    }
     let datasets = [];
-    if (datasource === "yeardata" && ["TMAX", "TMIN"].includes(variable) && method === "avg" && hydevar === "") {
+    if (datasource === "yeardata" && ["TMAX", "TMIN", "PRCP", "SNOW", "SNWD"].includes(variable) && ["avg", "kum"].includes(method) && hydevar === "") {
         let stations = locations[key].geosets[0];
         // Loop über die Stations
         for (let station of stations) {
-            // mehrere method denkbar
             for (let setmethod of [method, altmethod1, altmethod2]) {
+                if (setmethod === "") continue;
                 let dataset = {
                     label: station.locname,
                     source: station.source,
@@ -625,16 +652,42 @@ async function showStatisticPage($page, key, locations, title, datasource, varia
                                 dataset.data.push(record.yeardata["" + iyear].min); // evtl. runden
                                 continue
                             }
+                            if (setmethod === "kum") {
+                                dataset.data.push(record.yeardata["" + iyear].sum); // evtl. runden
+                                continue
+                            }
                         }
                     }
                 }
                 datasets.push(dataset);
+                if (doregression.length > 0 && dataset.method === doregression) {
+                    // Daten des vorherigen Datensatzes für Regressionsanalyse nehmen
+                    let regdataset = structuredClone(dataset);
+                    let corrval = 273.15;
+                    let regdata = [];
+                    let xlabels = regdataset.data.labels;
+                    for (let i = 0; i < regdataset.data.length; i++) {
+                        let value = regdataset.data[i];
+                        if (value !== null) {
+                            regdata.push([value, i + 1]);
+                        }
+                    }
+                    let result = getregression(regdataset.data, corrval);
+                    regdataset.data = result.regdata;
+                    regdataset.method = method + "_reg";
+                    datasets.push(regdataset);
+                }
             }
         }
         // hier sind xlabels und datasets bekannt
         let thistitle = title + " " + variable + " " + locations[key].location.locname;
         let xtitle = "years";
         let ytitle = "Temperature";
+        if (variable === "PRCP") {
+            ytitle = "Niederschlag kumuliert";
+        } else if (["SNOW", "SNWD"].includes(variable)) {
+            ytitle = "Schnee kumuliert";
+        }
         let config = getConfig4lineChart(thistitle, xlabels, datasets, xtitle, ytitle);
         let pageid = $page.attr("id");
         let container = $page.find("div.mychart");  // ist bereits definiert als container!!!
@@ -653,6 +706,132 @@ async function showStatisticPage($page, key, locations, title, datasource, varia
         });
     }
 };
+
+// von ChatGPT nach Lehrbuch, years als 1950 etc.!
+function newgetregression(years, values) {
+    let points = [];
+    for (let i = 0; i < years.length; i++) {
+        let y = values[i];
+        if (y === null || y === undefined || !Number.isFinite(y)) {
+            continue;
+        }
+        points.push({
+            x: years[i],
+            y: y
+        });
+    }
+
+    let n = points.length;
+
+    if (n < 2) return null;
+
+    let meanX = points.reduce((s, p) => s + p.x, 0) / n;
+    let meanY = points.reduce((s, p) => s + p.y, 0) / n;
+
+    let sxx = 0;
+    let sxy = 0;
+    let syy = 0;
+
+    for (let p of points) {
+        let dx = p.x - meanX;
+        let dy = p.y - meanY;
+
+        sxx += dx * dx;
+        sxy += dx * dy;
+        syy += dy * dy;
+    }
+
+    if (sxx === 0) return null;
+
+    let slope = sxy / sxx;
+    let intercept = meanY - slope * meanX;
+
+    let r2 = syy > 0
+        ? (sxy * sxy) / (sxx * syy)
+        : null;
+
+    let result = {
+        slope,  // gradient
+        intercept,
+        r2,
+        count: n,
+        trendDecade: slope * 10,
+        trendPeriod: slope * (2019 - 1950)
+    };
+    // Hinweis: die Ausgabe im Chart kann vereinfacht werden
+    /*
+    type: "line", 
+    data: [
+        { x: 1950, y: intercept + slope * 1950 },
+        { x: 2019, y: intercept + slope * 2019 }
+    ],
+    */
+
+
+    return result;
+
+}
+
+
+/**
+ * getregression - data ist array der Ausgangsdaten, regdata wird zurückgegeben mit anderen Werten!!!
+ * @param {*} row 
+ * @param {*} corrval - verhindert negative Zahlen, dann muss nicht normalisiert werden, Default: 0
+ * für Temperaturen corrval = 273.15; zur Umrechnung in Kelvin und Retransformation
+ * return result mit regdata, gradient, yIntercept, r2; regdata sind die neuen Werte im Array.
+ */
+function getregression(data, corrval) {
+    // das gewählte Verfahren hat eine Schwäche bei negativen Zahlen, daher Transformation entsprechend
+    // regressionsrechnung durchführen
+    if (typeof corrval === "undefined") {
+        corrval = 0;
+    }
+    let minval = 0;
+    if (corrval === 0) {
+        // loop über alle Werte
+        data.forEach(function (value, ival) {
+            if (value !== null && value !== "") {
+                if (value < minval) {
+                    minval = value;
+                }
+            }
+        });
+    }
+    if (minval < 0) {
+        corrval = minval * -1;
+    }
+    let regvals = [];
+    for (let i = 0; i < data.length; i++) {
+        if (data[i] !== null) {
+            regvals.push([
+                i,
+                parseFloat(data[i]) + corrval
+            ]);
+        }
+    }
+    let regresult = regression.linear(regvals, {
+        order: 2,
+        precision: 3,
+    });
+    let gradient = regresult.equation[0];
+    let yIntercept = regresult.equation[1] - corrval;
+    let r2 = regresult.r2; // the coefficient of determination
+    let newpoints = regresult.points;
+    // Punkte der Regressionsgeraden
+    let newvalues = new Array(data.length).fill(null);
+    // dann dynamisch füllen
+    for (let i = 0; i < newvalues.length; i++) {
+        newvalues[i] = (regresult.predict(i)[1] - corrval).toFixed(2);
+    }
+    let result = {
+        regdata: newvalues,
+        gradient: gradient,
+        yIntercept: yIntercept,
+        r2: r2
+    };
+    return result;
+};
+
 
 function showChartButtons($page, canvasid) {
     let containerid = $page.attr("id") + "buttons";
@@ -858,7 +1037,7 @@ function getConfig4lineChart(title, xlabels, datasets, xtitle, ytitle) {
             elements: {
                 line: {
                     tension: 0.2,
-                    borderWidth: 2
+                    borderWidth: 3
                 },
                 point: {
                     radius: 0,
@@ -1151,8 +1330,9 @@ async function showMap($main, location) {
     // let centerlocation = localization;
     let imagetype = "natural";
     let { worldmap, worldmapid, layerControl } = await maps.showWorldMap(containerid, imagetype);
-    let toolbar0 = maps.createLeafletToolbar();
 
+    let toolbar0 = maps.createLeafletToolbar();
+    toolbar0.focusMarkers();
     let target = document.getElementById(pageid);
     target.scrollIntoView({
         behavior: "smooth",
@@ -1162,7 +1342,8 @@ async function showMap($main, location) {
 
     return {
         maps: maps,
-        pageid: pageid
+        pageid: pageid,
+        toolbar0: toolbar0
     };
 }
 
@@ -1174,6 +1355,19 @@ async function addWorldmapSlider($main, location) {
             "data-topic": "locationmap"
         });
         $main.append($slider);
+        let oldlocations = kli6900.getCookie("oldlocations");
+        if (oldlocations === null) {
+            oldlocations = {};
+        }
+        oldlocations[location.geonameid] = {
+            geonameid: location.geonameid,
+            locname: location.locname,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            country_code: location.country_code,
+            tsupd: new Date().toISOString()
+        }
+        kli6900.setCookie("oldlocations", JSON.stringify(oldlocations));
     } else {
         $slider = $(".place-slider.locationmap");
     }
@@ -1210,10 +1404,6 @@ async function addWorldmapSlider($main, location) {
     return pageid;
 }
 
-//$main.append($slider);
-//}
-//document.querySelectorAll(".place-page")
-//    .forEach(page => observer.observe(page));
 
 
 

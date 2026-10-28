@@ -301,6 +301,9 @@ function mapService() {
                 padding: "0 !important"
             });
         }
+        if (typeof parms !== "undefined" && parms.hide === true) {
+            map.removeLayer(newlayer);
+        }
     }
 
     async function addCountryLayer(alpha3) {
@@ -500,14 +503,18 @@ function mapService() {
         }
         const toolbar = new Toolbar();
         toolbar.addTo(map);
-        return toolbar;
+        return {
+            toolbar,
+            focusMarkers
+        };
     } // Toolbar
     return {
         showWorldMap,
         getWorldmap,
         addMarkerLayer,
         addCountryLayer,
-        createLeafletToolbar
+        createLeafletToolbar,
+
     };
 }
 export {

@@ -882,6 +882,11 @@
         let config = {};
         if (cookiename !== "config") {
             config = kli6900.getCookie("config");
+            if (config === null) {
+                config = {
+                    nocookie: false
+                }
+            }
         } else {
             config.nocookie = false;
         }
