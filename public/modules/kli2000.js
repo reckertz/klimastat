@@ -587,6 +587,15 @@ async function startStatistics(location, geosets) {
     });
     document.querySelectorAll(".place-page")
         .forEach(page => observer.observe(page));
+    document.querySelectorAll(".place-slider")
+        .forEach(slider => {
+            slider.addEventListener("scroll", function () {
+                const index = Math.round(
+                    slider.scrollLeft / slider.clientWidth
+                );
+                console.log("Standortindex:", index);
+            }, { passive: true });
+        });
 }
 
 async function showStatisticPage($page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar) {
@@ -1017,6 +1026,7 @@ function getConfig4lineChart(title, xlabels, datasets, xtitle, ytitle) {
                 mode: "index",
                 intersect: false
             },
+            spangaps: false,
             plugins: {
                 title: {
                     display: true,
@@ -1399,8 +1409,8 @@ async function addWorldmapSlider($main, location) {
                 width: "100%"
             }
         }));
-    document.querySelectorAll(".place-page")
-        .forEach(page => observer.observe(page));
+    //document.querySelectorAll(".place-page")
+    //    .forEach(page => observer.observe(page));
     return pageid;
 }
 
