@@ -79,10 +79,18 @@ let locations = {};
 let maps = null;
 
 let $main = $("#application");
-let $statistics = $("#statistics");
+let $statistics = $("#place-container");
+
+let currentPlace = 0;
+let syncing = false;
+let sliders;
+
+import { placeScroller } from "./placeScroller.js";
+
+let scroller;
 
 
-
+/*
 const observer = new IntersectionObserver(
     function (entries) {
         for (const entry of entries) {
@@ -100,11 +108,38 @@ const observer = new IntersectionObserver(
         threshold: 0.6
     }
 );
-
-
+*/
 
 
 async function show() {
+    // starten des scroller
+    scroller = placeScroller({
+        container: "#place-container",
+        onChange: function (state) {
+            console.log(
+                "Topic:", state.islider,
+                "Location:", state.ipage
+            );
+        }
+    });
+
+    $("#navigation")
+        .append($("<button/>", {
+            class: "btn btn-sm btn-primary",
+            style: "margin-left:auto;",
+            html: "+Location",
+            click: async function (evt) {
+                evt.preventDefault();
+                let target = document.getElementById("application");
+                target.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                    inline: "nearest"
+                });
+            }
+        }));
+
+
     let html = `
     <p class="eyebrow">Dein Klima. Deine Umgebung.</p>
     <h1>Wie hat sich das Klima bei dir verändert?</h1>
@@ -126,12 +161,15 @@ async function show() {
         class: "welcome",
         html: html
     }));
+    let target = document.getElementById("application");
+    target.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest"
+    });
 
     let oldlocations = await getOldLocations(sectionid);
     // cookie für frühere Auswahl
-
-
-
 
     $("#" + sectionid).on("click", "button.primary", async function (evt) {
         evt.preventDefault();
@@ -493,14 +531,18 @@ async function showCandidates(sectionid, searchstring, latitude, longitude, dist
     });
 }
 
-async function startStatistics(location, geosets) {
 
+
+async function startStatistics(location, geosets) {
+    // startStatistics muss die erste Einrichtung vornehmen mit sliders und jeweils erster page
+    // und das Zufügen einer Spalte für eine location mit allen pages
     let key = location.geonameid;
     let colindex = 0;
     if (typeof locations[key] === "undefined") {
         let keys = Object.keys(locations);
         if (keys.length >= 3) {
             alert("es gibt bereits zu viele Orte in der Auswertung");
+            return;
         }
         colindex = keys.length;
         locations[key] = {
@@ -579,12 +621,17 @@ async function startStatistics(location, geosets) {
         // Auswertung ist bereits vorhanden
         return;
     }
-    let target = document.getElementById("statistics");
+
+    scroller.refresh();
+    let target = document.getElementById($statistics.attr("id"));
     target.scrollIntoView({
         behavior: "smooth",
         block: "nearest",
         inline: "start"
     });
+
+    //TODO: neue Lösung
+    /*
     document.querySelectorAll(".place-page")
         .forEach(page => observer.observe(page));
     document.querySelectorAll(".place-slider")
@@ -596,12 +643,12 @@ async function startStatistics(location, geosets) {
                 console.log("Standortindex:", index);
             }, { passive: true });
         });
+    */
 }
 
 async function showStatisticPage($page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar) {
     // in locations[key] = {} stehen key, colindex, location, geosets bereit
     // topics
-
     let xlabels = [];
     for (let iyear = 1950; iyear <= 2019; iyear++) {
         xlabels.push("" + iyear);
@@ -941,7 +988,7 @@ function showChartButtons($page, canvasid) {
     updateChart(canvasid);
 };
 
-$(".statistics").on("click", ".datasetfilter", function (evt) {
+$statistics.on("click", ".datasetfilter", function (evt) {
     evt.preventDefault();
     let status = $(this).find("span").first().text();
     if (status === okletter) {
@@ -1026,7 +1073,7 @@ function getConfig4lineChart(title, xlabels, datasets, xtitle, ytitle) {
                 mode: "index",
                 intersect: false
             },
-            spangaps: false,
+            spanGaps: false,
             plugins: {
                 title: {
                     display: true,
@@ -1041,7 +1088,7 @@ function getConfig4lineChart(title, xlabels, datasets, xtitle, ytitle) {
                     }
                 },
                 tooltip: {
-                    enabled: true
+                    enabled: false
                 }
             },
             elements: {
@@ -1175,6 +1222,15 @@ async function getKLIDATA(key, locations) {
             }
         }
         locations[key].records = structuredClone(ret1.records);
+        return {
+            error: false,
+            message: "records:" + ret1.records.length
+        };
+    } else {
+        return {
+            error: true,
+            message: ret1.message
+        };
     }
 }
 
@@ -1346,8 +1402,8 @@ async function showMap($main, location) {
     let target = document.getElementById(pageid);
     target.scrollIntoView({
         behavior: "smooth",
-        block: "nearest",
-        inline: "start"
+        block: "start",
+        inline: "nearest"
     });
 
     return {
@@ -1361,7 +1417,7 @@ async function addWorldmapSlider($main, location) {
     let $slider = null;
     if ($(".place-slider.locationmap").length === 0) {
         $slider = $("<section>", {
-            class: "place-slider locationmap",
+            class: "app-slider locationmap",
             "data-topic": "locationmap"
         });
         $main.append($slider);
@@ -1379,23 +1435,23 @@ async function addWorldmapSlider($main, location) {
         }
         kli6900.setCookie("oldlocations", JSON.stringify(oldlocations));
     } else {
-        $slider = $(".place-slider.locationmap");
+        $slider = $(".app-slider.locationmap");
     }
     let place = location.locname + " " + location.geonameid;
     let $page = null;
     let pageid = null;
-    if ($(".place-page.locationmap[data-place='" + place + "']").length === 0) {
+    if ($(".app-page.locationmap[data-place='" + place + "']").length === 0) {
         pageid = "p" + (Math.floor(Math.random() * 1000000) + 1000000);
         $page = $("<article>", {
             id: pageid,
-            class: "place-page locationmap",
+            class: "app-page locationmap",
             "data-place": place,
             "data-topic": "locationmap"
         });
         $slider.append($page);
     } else {
-        $(".place-page.locationmap[data-place='" + place + "']").children().remove();
-        pageid = $(".place-page.locationmap[data-place='" + place + "']").attr("pageid");
+        $(".app-page.locationmap[data-place='" + place + "']").children().remove();
+        pageid = $(".app-page.locationmap[data-place='" + place + "']").attr("pageid");
         $page = $("#" + pageid);
     }
     $page.append(

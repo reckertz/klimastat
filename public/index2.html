@@ -59,7 +59,7 @@
             overflow-y: auto;
         }
 
-        .place-slider {
+        .app-slider {
             display: flex;
             overflow-x: auto;
             overflow-y: hidden;
@@ -69,18 +69,81 @@
             scrollbar-width: none;
         }
 
-        .place-page {
+        .app-page {
             flex: 0 0 100%;
             min-width: 0;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
 
             min-height: calc(100dvh - 50px);
             padding: 10px;
 
+            border-bottom: 1px solid #ccc;
+            scroll-margin-top: 50px;
+        }
+
+        /* Horizontale Ebene: Topics */
+        #place-container {
+            display: block;
+            width: 100%;
+            height: calc(100dvh - 50px);
+
+            overflow-x: hidden;
+            overflow-y: auto;
+
+            scroll-snap-type: y mandatory;
+            overscroll-behavior-y: contain;
+            /*
+            height: calc(100dvh - 50px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-snap-type: y mandatory;
+            */
+        }
+
+
+        /* ein Topic */
+        .place-slider {
+            display: flex;
+            width: 100%;
+            height: 100%;
+
+            overflow-x: auto;
+            overflow-y: hidden;
+
+            scroll-snap-type: x mandatory;
+            overscroll-behavior-x: contain;
+
+            /*
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+
+            scroll-snap-type: x mandatory;
+            overscroll-behavior-x: contain;
+            scrollbar-width: none;
+            */
+        }
+
+        /* eine location */
+        .place-page {
+            flex: 0 0 100%;
+            min-width: 0;
+            height: 100%;
+            scroll-snap-align: start;
+            scroll-margin-top: 50px;
+            /*
+            flex: 0 0 100%;
+            min-width: 0;
             scroll-snap-align: start;
             scroll-snap-stop: always;
 
+            min-height: calc(100dvh - 50px);
+            padding: 10px;
+
             border-bottom: 1px solid #ccc;
             scroll-margin-top: 50px;
+            */
         }
 
         .place-page h2 {
@@ -141,8 +204,8 @@
 
 <body>
 
-    <nav>Klima-Mobil
-        <span id="headertext"></span>
+    <nav id="navigation" style="display: flex;align-items:center;">
+        Klima-Mobil<span id="headertext"></span>
     </nav>
 
     <main id="application">
@@ -151,9 +214,12 @@
             <p>Wetterdaten entdecken und vergleichen.</p>
             <button id="selectPlace">Ort auswählen</button>
         </section-->
+
+
+
     </main>
 
-    <main id="statistics" class="statistics">
+    <main id="place-container" class="statistics">
 
     </main>
     <script type="module">
