@@ -64,7 +64,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 app.use(function (req, res, next) {
-    console.log("REQUEST: " + req.clientIp + "=>" + req.protocol + "://" + req.headers.host + " path: " + req.path);
+    let ip = req.ip;
+    if (ip.startsWith("::ffff:")) {
+        ip = ip.substring(7);
+    }
+    console.log("REQUEST: " + ip + " => " + req.protocol + "://" + req.headers.host + " path: " + req.path);
+
     if (req.path.startsWith("/images")) {
         let imagefilename = path.basename(req.path);
         let imagepath = path.join(__dirname, "public", "css", "images", imagefilename);

@@ -5,6 +5,30 @@ let cancelsign = "&#10005;"; // x oder &#x25CF;
 let okletter = "✓";
 let cancelletter = "✕"; // soll font-abhängig sein, also Vorsicht
 
+let dashPatterns = [
+    [],             // 0: durchgezogen
+    [6, 4],         // 1: klassisch gestrichelt
+    [2, 2],         // 2: fein gepunktet
+    [10, 5],        // 3: lange Striche
+    [8, 3, 2, 3],   // 4: dash-dot
+    [1, 3],         // 5: sehr fein gepunktet
+    [12, 4],        // 6: sehr lange Striche
+    [3, 6],         // 7: kurze Striche, große Lücke
+    [5, 2, 1, 2],   // 8: unregelmäßig
+    [2, 4, 8, 4]    // 9: wechselnd
+];
+
+let methodShades = {
+    avg: 0,
+    min: 1,
+    max: 2,
+    kum: 0,
+    "avg_reg": [0, 3],
+    "kum_reg": [0, 3],
+    val: 0,
+    ext: 0
+}
+
 const places = [
     "Bonn",
     "Bornheim",
@@ -470,6 +494,7 @@ async function showCandidates(sectionid, searchstring, latitude, longitude, dist
         geosets[2] = [];
         let alpha3s = [];
         for (let station of geopoints) {
+            station.stationkey = station.source + "_" + station.stationid;
             console.log(station.locname, station.fromyear, station.toyear);
             if (!alpha3s.includes(station.alpha3)) {
                 alpha3s.push(station.alpha3)
@@ -501,6 +526,7 @@ async function showCandidates(sectionid, searchstring, latitude, longitude, dist
         toolbar0.focusMarkers();
         $("#" + pageid)
             .append($("<button/>", {
+                class: "btn btn-sm btn-primary",
                 css: {
                     margin: "10px"
                 },
@@ -513,6 +539,7 @@ async function showCandidates(sectionid, searchstring, latitude, longitude, dist
 
         $("#" + pageid)
             .append($("<button/>", {
+                class: "btn btn-sm btn-primary",
                 css: {
                     margin: "10px"
                 },
@@ -705,7 +732,7 @@ async function showStatisticPage($page, itopic, key, locations, title, datasourc
                                 continue
                             }
                             if (setmethod === "max") {
-                                dataset.data.push(record.yeardata["" + iyear].min); // evtl. runden
+                                dataset.data.push(record.yeardata["" + iyear].max); // evtl. runden
                                 continue
                             }
                             if (setmethod === "kum") {
@@ -895,8 +922,7 @@ function showChartButtons($page, canvasid) {
         id: containerid,
         class: "chartbuttons",
         css: {
-            width: "100%",
-            backgroundColor: "lime"
+            width: "100%"
         }
     }));
     let graph = Chart.getChart(canvasid);
@@ -926,6 +952,8 @@ function showChartButtons($page, canvasid) {
 
         let skey = dataset.source + "_" + dataset.stationid;
         if (typeof vcontrol.stations[skey] === "undefined") {
+            //let borderDash = dashPatterns[count - 1];
+            //let dashImg = getBorderDashThumb(borderDash);
             vcontrol.stations[skey] = {
                 source: dataset.source,
                 stationid: dataset.stationid,
@@ -935,6 +963,14 @@ function showChartButtons($page, canvasid) {
         }
         vcontrol.stations[skey].count += 1;
     }
+    // dashPatternsIndex zuordnen zu vcontrol.stations und dann vererben
+    let sortedkeys = Object.keys(vcontrol.stations).sort();
+    let ind = 0;
+    for (let key of sortedkeys) {
+        vcontrol.stations[key].dashPatternsIndex = ind;
+        ind++;
+    }
+
     // Buttons erzeugen
     for (let crit of ["variables", "methods", "hydes"]) {
         let values = Object.keys(vcontrol[crit])
@@ -948,9 +984,10 @@ function showChartButtons($page, canvasid) {
             if (count > 1) {
                 sign = cancelsign;
             }
+
             $("#" + containerid)
                 .append($("<button/>", {
-                    class: "datasetfilter",
+                    class: "btn btn-sm btn-success datasetfilter",
                     css: {
                         margin: "5px",
                         padding: "0px"
@@ -970,6 +1007,12 @@ function showChartButtons($page, canvasid) {
         for (let value of values) {
             let sign = oksign;
             count++;
+            let dashPatternsIndex = vcontrol.stations[value].dashPatternsIndex;
+            let borderDash = dashPatterns[dashPatternsIndex];
+            let color = kli6900.getOneOf20ColorShades(dashPatternsIndex, 1).color
+            let dashImg = getBorderDashThumb(borderDash, 3, color); // , borderWidth, borderColor) {
+            let html = dashImg;
+            html += "<span>" + sign + "</span><span> " + vcontrol["stations"][value].locname + "</span>"
             $("#" + containerid)
                 .append($("<button/>", {
                     class: "datasetfilter",
@@ -978,18 +1021,46 @@ function showChartButtons($page, canvasid) {
                         padding: "0px"
                     },
                     canvasid: canvasid,
+                    dashPatternsIndex: dashPatternsIndex,
                     varname: "stationkey",
                     varvalue: value,
-                    html: "<span>" + sign + "</span><span> " + vcontrol["stations"][value].locname + "</span>",
+                    html: html,
                     title: "Station " + value + " " + vcontrol["stations"][value].locname
                 }));
         }
+    }
+    // Vererben dashPatterns auf die datasets
+    for (let dataset of graph.data.datasets) {
+        if (dataset.method === "avg_reg" || dataset.method.indexOf("reg") >= 0) {
+            //debugger;
+        }
+        let key = dataset.source + "_" + dataset.stationid;
+        let dashPatternsIndex = vcontrol["stations"][key].dashPatternsIndex;
+        dataset.borderDash = dashPatterns[dashPatternsIndex];
+        dataset.borderWidth = 3;  // 1, 2, 3 kann genutzt werden
+        let colorIndex = dashPatternsIndex;
+        //methodShades = { avg: 0, min: 1, max: 2, kum: 0, "avg_reg": 3, "kum_reg": 3, val: 0, ext: 0 };
+        // 0.7 – 1.4 (hell ↔ dunkel)
+        let methodShadeFactors = { avg: 1, min: 0.7, max: 1.4, kum: 1, "avg_reg": 1.2, "kum_reg": 1.2, val: 1, ext: 1 };
+        let shadeFactor = methodShadeFactors[dataset.method];
+        if (typeof shadeFactor === "number") {
+            dataset.color = kli6900.getOneOf20ColorShades(colorIndex, shadeFactor).color;
+            dataset.backgroundColor = dataset.color;
+            dataset.borderColor = dataset.color;
+            dataset.fill = false;
+        } else {
+            // TODO
+
+
+        }
+
     }
     updateChart(canvasid);
 };
 
 $statistics.on("click", ".datasetfilter", function (evt) {
     evt.preventDefault();
+    let that = this;
     let status = $(this).find("span").first().text();
     if (status === okletter) {
         $(this).find("span").first().html(cancelsign);
@@ -998,10 +1069,12 @@ $statistics.on("click", ".datasetfilter", function (evt) {
         $(this).find("span").first().html(oksign);
         status = "ok";
     }
-    let canvasid = $(this).attr("canvasid");
-    let varname = $(this).attr("varname");
-    let varvalue = $(this).attr("varvalue");
-    updateChart(canvasid);
+    requestAnimationFrame(function () {
+        let canvasid = $(that).attr("canvasid");
+        let varname = $(that).attr("varname");
+        let varvalue = $(that).attr("varvalue");
+        updateChart(canvasid);
+    });
 });
 
 function updateChart(canvasid) {
@@ -1470,7 +1543,25 @@ async function addWorldmapSlider($main, location) {
     return pageid;
 }
 
-
+function getBorderDashThumb(borderDash, borderWidth, borderColor) {
+    let canvas = document.createElement('canvas');
+    canvas.width = 50;
+    canvas.height = 14;
+    let ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = borderColor || "#000";
+    ctx.lineWidth = borderWidth || 2;
+    if (typeof borderDash !== "undefined" && borderDash.length > 0) {
+        ctx.setLineDash(borderDash);
+    }
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+    let src = canvas.toDataURL();
+    let html = "<img src='" + src + "' alt='no borderDash' style='margin-left:5px'></img> ";
+    return html;
+};
 
 
 

@@ -490,7 +490,146 @@
     };
 
     /**
-    * kla6900.harmonizeDecimalPrecision
+      * kli6900.getOneOf20ColorShades - Farben und Shades holen, colorname und Kontrastfarbe
+      * von ChatGPT
+      *
+      * @param {any} colorIndex - 0 bis 20 für die Grundfarben
+      * @param {any} shadefactor = Bleibe im Bereich 0.7 – 1.4 (hell ↔ dunkel).
+      *
+      * @returns {any} - color, colorname, colorshade, fontcolor (black oder white je nach Kontrast)
+      */
+    kli6900.getOneOf20ColorShades = function (colorIndex, shadefactor = 1) {
+        //Hex Beschreibung
+        let newcolors = [
+            ["#4477AA", "Blau (Basis, neutral)"],
+            ["#66CCEE", "Hellblau / Cyan"],
+            ["#228833", "Grün"],
+            ["#44AA99", "Türkisgrün"],
+            ["#117733", "Dunkelgrün"],
+            ["#999933", "Oliv"],
+            ["#DDCC77", "Sand / Gelblich"],
+            ["#CC6677", "Altrosa / Rötlich"],
+            ["#882255", "Purpur"],
+            ["#AA4499", "Magenta"],
+            ["#332288", "Tiefviolett"],
+            ["#88CCEE", "Hellcyan (kühle Linie)"],
+            ["#EE7733", "Orange"],
+            ["#FF9900", "Leuchtend Orange"],
+            ["#E69F00", "Goldgelb (Okabe & Ito)"],
+            ["#56B4E9", "Sky Blue"],
+            ["#009E73", "Smaragdgrün"],
+            ["#F0E442", "Zitronengelb"],
+            ["#D55E00", "Rostrot"],
+            ["#CC79A7", "Pinkviolett"]
+        ];
+
+        let cindex = colorIndex % 20;  // macht Plaus ziemlich überflüssig
+        let color = newcolors[cindex][0];
+        let colorname = newcolors[cindex][1];
+        let colorshade = shadeColor(color, shadefactor);
+        let fontcolor = kli6900.getContrastYIQ(colorshade);  // vorher  cellcolor
+        return ({
+            color: color,
+            colorname: colorname,
+            colorshade: colorshade,
+            fontcolor: fontcolor
+        });
+        /*
+        for (let i = 0; i < 20; i++) {
+            $("#colortable2")
+                .append($("<tr/>", {
+                    id: "colorrow2_" + i
+                }));
+            let color = newcolors[i][0];
+            let fontcolor = kla6900.getContrastYIQ(color);
+            $("#colorrow2_" + i)
+                .append($("<td/>", {
+                    css: {
+                        color: fontcolor,
+                        "background-color": color
+                    },
+                    html: i + " '" + color + "'"
+                }));
+            for (let j = 0.7; j <= 1.4; j += 0.1) {
+                let factor = j;
+                let cellcolor = shadeColor(color, factor)  // {(color, j);
+                let fontcolor = kla6900.getContrastYIQ(cellcolor);
+                $("#colorrow2_" + i)
+                    .append($("<td/>", {
+                        css: {
+                            color: fontcolor,
+                            "background-color": cellcolor
+                        },
+                        html: "'" + cellcolor + "'"
+                    }));
+            }
+        }
+        */
+
+        function shadeColor(hex, lightFactor = 1.0) {
+            // Convert hex → HSL
+            // Bleibe im Bereich 0.7 – 1.4 (hell ↔ dunkel).
+            const h = hex.replace('#', '');
+            let r = parseInt(h.substring(0, 2), 16) / 255;
+            let g = parseInt(h.substring(2, 4), 16) / 255;
+            let b = parseInt(h.substring(4, 6), 16) / 255;
+
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let hDeg, s, l;
+            l = (max + min) / 2;
+
+            if (max === min) {
+                hDeg = s = 0; // Grauwerte
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: hDeg = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: hDeg = (b - r) / d + 2; break;
+                    case b: hDeg = (r - g) / d + 4; break;
+                }
+                hDeg /= 6;
+            }
+
+            // Apply lightness scaling safely
+            l = Math.max(0, Math.min(1, l * lightFactor));
+
+            // Convert HSL → RGB
+            let rOut, gOut, bOut;
+            if (s === 0) {
+                rOut = gOut = bOut = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1 / 6) return p + (q - p) * 6 * t;
+                    if (t < 1 / 2) return q;
+                    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                rOut = hue2rgb(p, q, hDeg + 1 / 3);
+                gOut = hue2rgb(p, q, hDeg);
+                bOut = hue2rgb(p, q, hDeg - 1 / 3);
+            }
+
+            return (
+                "#" +
+                Math.round(rOut * 255).toString(16).padStart(2, "0") +
+                Math.round(gOut * 255).toString(16).padStart(2, "0") +
+                Math.round(bOut * 255).toString(16).padStart(2, "0")
+            );
+        }
+    };
+
+
+
+
+
+    /**
+    * kli6900.harmonizeDecimalPrecision
     *
     * @param {any} value - string oder number oder null/"null"/undefined/NaN
     * @param {any} maxprecision -

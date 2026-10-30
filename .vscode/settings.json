@@ -3,13 +3,18 @@
     // ChatGPT - Minimalausstattung "old school"
     // UMGEBUNGSFARBE
     // ============================================================
+    "window.titleBarStyle": "custom",
     "workbench.colorCustomizations": {
         "editor.background": "#4f06f811", //  "#20242A",
         "sideBar.background": "#1C2025",
         "activityBar.background": "#181C20",
-        "titleBar.activeBackground": "#20242A",
-        "titleBar.activeForeground": "#E0E0E0",
-        "statusBar.background": "#20242A"
+        /* "titleBar.activeBackground": "#20242A", */
+        /* "titleBar.activeForeground": "#E0E0E0", */
+        "statusBar.background": "#20242A",
+        "titleBar.activeForeground": "#FFFFFF",
+        "titleBar.inactiveForeground": "#FFFFFF", /* "#AAAAAA", */
+        "titleBar.activeBackground": "#252526",
+        "titleBar.inactiveBackground": "#333333"
     },
     // 🔹 Tabs & Einrückung
     "editor.tabSize": 4,
