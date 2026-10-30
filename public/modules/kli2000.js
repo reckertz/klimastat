@@ -653,8 +653,8 @@ async function startStatistics(location, geosets) {
     let target = document.getElementById($statistics.attr("id"));
     target.scrollIntoView({
         behavior: "smooth",
-        block: "nearest",
-        inline: "start"
+        block: "start",
+        inline: "nearest"
     });
 
     //TODO: neue Lösung
@@ -686,6 +686,7 @@ async function showStatisticPage($page, itopic, key, locations, title, datasourc
     // ["Zeitreihe", "yeardata", "TMAX", "avg", "max", "min",""],  // fehlende Werte sind durch "" ersetzt
     // ["Zeitreihe", "yeardata", "PRCP", "kum", "", ""],
     // ["Trendanalyse", "yeardata", "TMAX", "avg_reg", "", ""],
+    // ["Höhenanalyse", "yeardata", "TMAX", "avg", "min", "max", "height"],
     // mehrere method denkbar
     let doregression = "";
     let methods = method.split("_");
@@ -696,6 +697,19 @@ async function showStatisticPage($page, itopic, key, locations, title, datasourc
         }
     }
     let datasets = [];
+    if (typeof hydevar === "undefined") {
+        debugger;
+    }
+    if (hydevar !== "") {
+        //debugger;
+    }
+    if (datasource === "yeardata" && ["TMAX", "TMIN", "PRCP", "SNOW", "SNWD"].includes(variable) && ["avg", "kum"].includes(method) && hydevar !== "") {
+        let hparms = { $page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar };
+        datasets = await showStatisticPageWithHydevar(hparms, xlabels, doregression);
+        return;
+    }
+
+
     if (datasource === "yeardata" && ["TMAX", "TMIN", "PRCP", "SNOW", "SNWD"].includes(variable) && ["avg", "kum"].includes(method) && hydevar === "") {
         let stations = locations[key].geosets[0];
         // Loop über die Stations
@@ -789,6 +803,132 @@ async function showStatisticPage($page, itopic, key, locations, title, datasourc
         });
     }
 };
+
+function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
+    let { $page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar } = hparms;
+    let datasets = [];
+    debugger;
+    if (!(datasource === "yeardata" && ["TMAX", "TMIN", "PRCP", "SNOW", "SNWD"].includes(variable) && ["avg", "kum"].includes(method) && hydevar !== "")) {
+        return {};
+    }
+    let stations = locations[key].geosets[0];
+    // Loop über die Stations
+    for (let station of stations) {
+        for (let setmethod of [method, altmethod1, altmethod2]) {
+            if (setmethod === "") continue;
+            let dataset = {
+                label: station.locname,
+                source: station.source,
+                stationid: station.stationid,
+                locname: station.locname,
+                stationkey: station.source + "_" + station.stationid,
+                datakey: station.source + "_" + station.stationid + "_" + variable,
+                variable: variable,
+                method: setmethod,
+                hydevar: hydevar,
+                fromyear: 1950,
+                toyear: 2019,
+                data: []
+            }
+            for (let record of locations[key].records) {
+                if (dataset.datakey === record.key) {
+                    // hydevar => hydeval bereitstellen
+                    let hydeval = null;
+                    if (hydevar === "height") {
+                        hydeval = record[hydevar];
+                        dataset.hydevar = hydevar;   // Feld bzw. Feldtyp
+                        dataset[hydevar] = hydeval;  // Wert
+                        dataset.label = station.locname + " (" + hydeval + ")";
+                    } else {
+                        dataset.hydevar = hydevar;
+                        let hydevar1 = hydevar + "_1950";
+                        if (hydevar.startsWith("zind")) {
+                            hydevar1 += "AD"
+                        }
+                        let hydevar2 = hydevar + "_2019";
+                        if (hydevar.startsWith("zind")) {
+                            hydevar2 += "AD"
+                        }
+                        let hydeval_1950 = record[hydevar1];
+                        let hydeval_2019 = record[hydevar2];
+                        dataset[hydevar1] = hydeval_1950;
+                        dataset[hydevar2] = hydeval_2019;
+                        dataset.label = station.locname + " (" + hydeval_1950 + "/" + hydeval_2019 + ")";
+                    }
+                    // Daten übernehmen
+                    for (let iyear = dataset.fromyear; iyear <= dataset.toyear; iyear++) {
+                        if (typeof record.yeardata["" + iyear] === "undefined" || record.yeardata["" + iyear] === null) {
+                            dataset.data.push(null);
+                            continue;
+                        }
+                        if (setmethod === "avg") {
+                            dataset.data.push(record.yeardata["" + iyear].avg); // evtl. runden
+                            continue
+                        }
+                        if (setmethod === "min") {
+                            dataset.data.push(record.yeardata["" + iyear].min); // evtl. runden
+                            continue
+                        }
+                        if (setmethod === "max") {
+                            dataset.data.push(record.yeardata["" + iyear].max); // evtl. runden
+                            continue
+                        }
+                        if (setmethod === "kum") {
+                            dataset.data.push(record.yeardata["" + iyear].sum); // evtl. runden
+                            continue
+                        }
+                    }
+                }
+            }
+            datasets.push(dataset);
+            if (doregression.length > 0 && dataset.method === doregression) {
+                // Daten des vorherigen Datensatzes für Regressionsanalyse nehmen
+                let regdataset = structuredClone(dataset);
+                let corrval = 273.15;
+                let regdata = [];
+                let xlabels = regdataset.data.labels;
+                for (let i = 0; i < regdataset.data.length; i++) {
+                    let value = regdataset.data[i];
+                    if (value !== null) {
+                        regdata.push([value, i + 1]);
+                    }
+                }
+                let result = getregression(regdataset.data, corrval);
+                regdataset.data = result.regdata;
+                regdataset.method = method + "_reg";
+                datasets.push(regdataset);
+            }
+        }
+    }
+    // hier sind xlabels und datasets bekannt
+    let thistitle = title + " " + variable + " " + locations[key].location.locname;
+    let xtitle = "years";
+    let ytitle = "Temperature";
+    if (variable === "PRCP") {
+        ytitle = "Niederschlag kumuliert";
+    } else if (["SNOW", "SNWD"].includes(variable)) {
+        ytitle = "Schnee kumuliert";
+    }
+    let config = getConfig4lineChart(thistitle, xlabels, datasets, xtitle, ytitle);
+    let pageid = $page.attr("id");
+    let container = $page.find("div.mychart");  // ist bereits definiert als container!!!
+    $(container)
+        .append($("<canvas/>", {
+            id: pageid + "canvas"
+        }));
+    requestAnimationFrame(async function () {
+        let canvasid = pageid + "canvas";
+        let canvas = document.getElementById(canvasid);
+        let ctx = canvas.getContext("2d");
+        let chart = new Chart(ctx, config);
+        chart.options.responsive = false;
+        chart.update("none");
+        showChartButtons($page, canvasid);
+    });
+
+
+}
+
 
 // von ChatGPT nach Lehrbuch, years als 1950 etc.!
 function newgetregression(years, values) {
@@ -958,6 +1098,7 @@ function showChartButtons($page, canvasid) {
                 source: dataset.source,
                 stationid: dataset.stationid,
                 locname: dataset.locname,
+                label: dataset.label,
                 count: 0
             };
         }
@@ -1012,7 +1153,7 @@ function showChartButtons($page, canvasid) {
             let color = kli6900.getOneOf20ColorShades(dashPatternsIndex, 1).color
             let dashImg = getBorderDashThumb(borderDash, 3, color); // , borderWidth, borderColor) {
             let html = dashImg;
-            html += "<span>" + sign + "</span><span> " + vcontrol["stations"][value].locname + "</span>"
+            html += "<span>" + sign + "</span><span> " + vcontrol["stations"][value].label + "</span>"
             $("#" + containerid)
                 .append($("<button/>", {
                     class: "datasetfilter",
@@ -1118,7 +1259,7 @@ function getConfig4lineChart(title, xlabels, datasets, xtitle, ytitle) {
     /*
     let xlabels = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
         "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-
+ 
     let datasets = [
         {
             label: "TMAX",

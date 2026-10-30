@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: linear-gradient(160deg, #123456, #287d91);
+            color: white;
+        }
+
+        #splash {
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .globe {
+            font-size: 72px;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            50% {
+                transform: scale(1.08);
+                opacity: 0.7;
+            }
+        }
+
+        .loading {
+            width: 120px;
+            height: 3px;
+            background: #ffffff40;
+            overflow: hidden;
+        }
+
+        .loading::after {
+            content: "";
+            display: block;
+            width: 40%;
+            height: 100%;
+            background: white;
+            animation: load 1.5s linear infinite alternate;
+        }
+
+        @keyframes load {
+            to {
+                transform: translateX(180%);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="splash">
+        <div class="globe">🌍</div>
+        <h1>Klima-Mobil</h1>
+        <p>Das Klima vor deiner Haustür</p>
+        <div id="performance"></div>
+        <div class="loading"></div>
+        <small id="status">Anwendung wird geladen …</small>
+    </div>
+
+    <script type="module">
+        try {
+            //let app = await import("./app.js");
+            //await app.start();
+            let ms = await speedTest();
+            let p = document.getElementById("performance");
+            p.textContent = "Durchlauf: " + ms;
+
+            await new Promise(resolve => {
+                setTimeout(resolve, 3000);
+            });
+            let gurl = "index2.html?target=kli2000";
+            let wname = "_self";
+            let kli2000handle2 = window.open(gurl, wname); // , wparms
+            kli2000handle2.focus();
+            document.querySelector("#splash").remove();
+        } catch (error) {
+            document.querySelector("#status").textContent =
+                "Laden fehlgeschlagen. Bitte erneut versuchen.";
+            console.error(error);
+        }
+
+
+        async function speedTest() {
+            let start = performance.now();
+            try {
+                let response = await fetch("/ping", {
+                    cache: "no-store"
+                });
+                let duration = performance.now() - start;
+                console.log("Response:", response.status);
+                console.log("Dauer:", duration.toFixed(1), "ms");
+                return duration;
+            } catch (error) {
+                console.error("Speedtest fehlgeschlagen:", error);
+                return null;
+            }
+        }
+    </script>
+</body>
+
+</html>

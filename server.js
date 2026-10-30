@@ -60,8 +60,6 @@ db = new sqlite3.Database(dbfilename);
 
 console.log(dbfilename);
 
-app.use(express.static(path.join(__dirname, 'public')));
-
 
 app.use(function (req, res, next) {
     let ip = req.ip;
@@ -83,6 +81,17 @@ app.use(function (req, res, next) {
         return;
     }
     next();
+});
+
+app.get("/", function (req, res) {
+    let startpage = "start.html";
+    res.sendFile(startpage, { root: "public" });
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get("/ping", (req, res) => {
+    res.sendStatus(204);
 });
 
 // registrierung der express-Event-Handler - module - command Mimik
@@ -167,6 +176,10 @@ app.get('/getsourceanalysis', async function (req, res) {
     res.end(smsg);
     return;
 });
+
+
+
+
 
 let httpsServer;
 async function startServer() {
