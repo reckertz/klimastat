@@ -60,6 +60,54 @@ db = new sqlite3.Database(dbfilename);
 
 console.log(dbfilename);
 
+(async function () {
+    let dbpath = null;
+    dbpath = path.join("E:", "Projekte");
+    if (!fs.existsSync(dbpath)) {
+        fs.mkdirSync(dbpath);
+    }
+    dbpath = path.join(dbpath, "klimastatistik");
+    if (!fs.existsSync(dbpath)) {
+        fs.mkdirSync(dbpath);
+    }
+    dbpath = path.join(dbpath, "statdb.db3");
+    let astatement = "ATTACH DATABASE '" + dbpath + "' AS statdb";
+    let ret = await new Promise(function (resolve, reject) {
+        db.run(astatement, err => {
+            if (err && !err.message.includes('already attached')) {
+                throw err;
+            } else {
+                console.log(dbpath + " ATTACH AS statdb");
+            }
+            resolve();
+        });
+    });
+})().catch(console.error);
+
+/*
+// ATTACH der Statistikdatenbank für komfortablen JOIN
+let ret = await new Promise(function (resolve, reject) {
+    let dbpath = null;
+    dbpath = path.join("E:", "Projekte");
+    if (!fs.existsSync(dbpath)) {
+        fs.mkdirSync(dbpath);
+    }
+    dbpath = path.join(dbpath, "klimastatistik");
+    if (!fs.existsSync(dbpath)) {
+        fs.mkdirSync(dbpath);
+    }
+    dbpath = path.join(dbpath, "statdb.db3");
+    let astatement = "ATTACH DATABASE '" + dbpath + "' AS statdb";
+    db.run(astatement, err => {
+        if (err && !err.message.includes('already attached')) {
+            throw err;
+        } else {
+            console.log(dbpath + " ATTACH AS statdb");
+        }
+        resolve();
+    });
+});
+*/
 
 app.use(function (req, res, next) {
     let ip = req.ip;

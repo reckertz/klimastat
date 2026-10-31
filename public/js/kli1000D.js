@@ -322,7 +322,7 @@
             let chart = new Chart(ctx, chartConfig);
             chart.options.responsive = false;
             chart.update("none");
-            await new Promise(async function (resolve, reject) {
+            await new Promise(function (resolve, reject) {
                 requestAnimationFrame(async function () {
                     let ccontainer = $("#" + canvasid).parent();
                     $(ccontainer)

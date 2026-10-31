@@ -192,7 +192,7 @@ export function placeScroller(args = {}) {
     // Horizontales Scrollende
     // --------------------------------------------------
     function handleHorizontalScrollEnd(event) {
-        console.log("***handleHorizontalScrollEnd");
+        //console.log("***handleHorizontalScrollEnd");
         if (destroyed) return;
         const slider = event.currentTarget;
         if (event.target !== slider) return;
@@ -226,7 +226,7 @@ export function placeScroller(args = {}) {
     // Vertikales Scrollende
     // --------------------------------------------------
     function handleVerticalScrollEnd(event) {
-        console.log("***handleVerticalScrollEnd");
+        //console.log("***handleVerticalScrollEnd");
         if (destroyed) return;
         if (event.target !== container) return;
         const islider = nearestIndex(
@@ -284,7 +284,7 @@ export function placeScroller(args = {}) {
     // --------------------------------------------------
 
     function refresh() {
-        console.log("***refresh");
+        //console.log("***refresh");
         if (destroyed) return;
         // Alte Listener entfernen
         sliders.forEach(slider => {
