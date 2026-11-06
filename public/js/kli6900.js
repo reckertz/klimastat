@@ -625,7 +625,15 @@
     };
 
 
-
+    /**
+     * Schaltjahr bzw. leapyear
+     * Vorgabe djahr als numeric oder string, return true/false
+     */
+    kli6900.isleapyear = function (djahr) {
+        if (typeof djahr === "string") djahr = parseInt(djahr);
+        var isleapy = (djahr % 4 === 0 && djahr % 100 !== 0) || djahr % 400 === 0;
+        return isleapy;
+    };
 
 
     /**

@@ -81,26 +81,31 @@ let topics = [
     ["Urbanisierung", "yeardata", "TMIN", "avg_reg", "", "", "zind"],
     ["Urbanisierung", "yeardata", "PRCP", "kum_reg", "", "", "zind"],
     ["Urbanisierung", "yeardata", "SNOW", "kum_reg", "", "", "zind"],
-
-    ["Tagesreihe", "years", "TMAX", "val", "", ""],
-    ["Tagesreihe", "years", "TMIN", "val", "", ""],
-    ["Tagesreihe", "years", "PRCP", "val", "", ""],
-    ["Tagesreihe", "years", "SNOW", "val", "", ""],
-
+    /*
     ["Hitzewellen", "years", "TMAX", "ext", "", ""],
     ["Kältewellen", "years", "TMIN", "ext", "", ""],
     ["Starkregen", "years", "PRCP", "ext", "", ""],
     ["Schnee", "years", "SNOW", "ext", "", ""],
-
-    ["Korrelation", "yeardata", "TMAX-TMIN", "avg-korr", "", ""],
-    ["Korrelation", "yeardata", "TMAX-PRCP", "avg-korr", "", ""],
-    ["Korrelation", "yeardata", "PRCP-SNOW", "kum-korr", "", ""],
-    ["Korrelation", "yeardata", "TMAX-EXT", "avg-cnt-korr", "", ""],
-
+    */
+    /*
+     ["Korrelation", "yeardata", "TMAX-TMIN", "avg-korr", "", ""],
+     ["Korrelation", "yeardata", "TMAX-PRCP", "avg-korr", "", ""],
+     ["Korrelation", "yeardata", "PRCP-SNOW", "kum-korr", "", ""],
+     ["Korrelation", "yeardata", "TMAX-EXT", "avg-cnt-korr", "", ""],
+     */
 ];
 
+let detailtopics = [
+    ["Tagesreihe", "years", "TMAX", "val", "", ""],
+    ["Tagesreihe", "years", "TMIN", "val", "", ""],
+    ["Tagesreihe", "years", "PRCP", "val", "", ""],
+    ["Tagesreihe", "years", "SNOW", "val", "", ""]
+]
+
 let locations = {};
+let extdays = {};
 let maps = null;
+let vcontrol = {};
 
 let $main = $("#application");
 let $statistics = $("#place-container");
@@ -576,6 +581,10 @@ async function showCandidates(sectionid, searchstring, latitude, longitude, dist
 async function startStatistics(location, geosets) {
     // startStatistics muss die erste Einrichtung vornehmen mit sliders und jeweils erster page
     // und das Zufügen einer Spalte für eine location mit allen pages
+    let doslider = false;
+    if ($statistics.children().length === 0) {
+        doslider = true;
+    }
     let key = location.geonameid;
     let colindex = 0;
     if (typeof locations[key] === "undefined") {
@@ -593,10 +602,7 @@ async function startStatistics(location, geosets) {
         }
         // Daten holen aus KLIDATA
         let ret = await getKLIDATA(key, locations); // key, colindex, location, geosets
-        let doslider = false;
-        if ($statistics.children().length === 0) {
-            doslider = true;
-        }
+
         // komplette Initialisierung - vertikale logik
         let itopic = -1;
         for (let topic of topics) {
@@ -662,6 +668,7 @@ async function startStatistics(location, geosets) {
         // Auswertung ist bereits vorhanden
         return;
     }
+    await showBarStatistics(doslider, colindex, key, locations);
 
     scroller.refresh();
     let target = document.getElementById($statistics.attr("id"));
@@ -685,6 +692,177 @@ async function startStatistics(location, geosets) {
             }, { passive: true });
         });
     */
+}
+
+
+async function showBarStatistics(doslider, colindex, locationkey, locations) {
+    let records = locations[locationkey].records;
+    let recindex = new Map(records.map((rec, i) => [rec.key, i]));
+    let testindex = recindex.get("GHCND_GME00120934_TMAX");
+    let testrecord = records[testindex];
+
+    let location = locations[locationkey].location;
+
+    let xlabels = [];
+    for (let iyear = 1950; iyear <= 2019; iyear++) {
+        xlabels.push("" + iyear);
+    }
+    let anz = xlabels.length;
+
+    let extremtopics = [
+        ["Hitzewellen", "years", "TMAX", "ext", "", ""],
+        ["Kältewellen", "years", "TMIN", "ext", "", ""],
+        ["Starkregen", "years", "PRCP", "ext", "", ""],
+        ["Schnee", "years", "SNOW", "ext", "", ""]
+    ];
+    let $slider = null;
+    let itopic = 0;
+
+    for (let topicdata of extremtopics) {
+
+        itopic++;
+        for (let i = 0; i < 7; i++) {
+            if (typeof topicdata[i] === "undefined") {
+                topicdata[i] = "";
+            }
+        }
+        let [title, datasource, variable, method, altmethod1, altmethod2, hydevar] = topicdata;
+        console.log("*** ", title, " ****");
+
+        let topicstring = title + "_" + datasource + "_" + variable + "_" + method;
+        if (doslider === true) {
+            let topicstring = title + "_" + datasource + "_" + variable + "_" + method;
+            $slider = $("<section>", {
+                id: "sl" + (Math.floor(Math.random() * 1000000) + 1000000),
+                class: "place-slider",
+                "data-topic": title,
+                "data-title": title,
+                "data-datasource": "extdays",
+                "data-variable": variable,
+                "data-method": "ext",
+                "data-altmethod1": "",
+                "data-altmethod2": "",
+                "data-hydevar": "",
+            });
+            $statistics.append($slider);
+        }
+        // Map auf records setzen
+
+        let datasets = [];
+        /*
+            TMAX_hot: {
+                title: "Hitzewelle",
+                conditions: [
+                    { days: 3, min: 30 }
+                ],
+                variable: "TMAX",
+                color: "#FF0000",
+                stations: {}  // mit <station>:[<isoday>...]
+            },
+            */
+        // extdays[variable][critical].stations[stationkey].data[iyear - fromyear] += bucket.length;
+        // extdays[variable][critical].stations[stationkey].rawdata.push([iyear, bucket]);
+        for (let topic of Object.keys(extdays[variable])) {
+            // topic = critical, z.B. TMAX_hot
+            console.log(">>> topic:", topic, variable, " <<<");
+            for (let stationkey of Object.keys(extdays[variable][topic].stations)) {
+                //let stations = locations[key].geosets[0];
+                let index = recindex.get(stationkey + "_" + variable);
+                let station = records[index];
+                let data = extdays[variable][topic].stations[stationkey].data;
+                let sum = ss.sum(data);
+                if (sum === 0) {
+                    continue;
+                }
+                let dataset = {
+                    label: station.stationname,
+                    source: station.source,
+                    stationid: station.stationid,
+                    locname: station.stationname,
+                    stationkey: station.source + "_" + station.stationid,
+                    datakey: station.source + "_" + station.stationid + "_" + variable + "_" + topic,
+                    topic: topic,
+                    variable: variable,
+                    method: "ext",
+                    fromyear: 1950,
+                    toyear: 2019,
+                    data: data
+                };
+                let key = dataset.source + "_" + dataset.stationid;
+                let dashPatternsIndex = vcontrol["stations"][key].dashPatternsIndex;
+                dataset.borderDash = dashPatterns[dashPatternsIndex];
+                dataset.borderWidth = 3;  // 1, 2, 3 kann genutzt werden
+                let colorIndex = dashPatternsIndex;
+                let shadeFactor = 1;  // methodShadeFactors[dataset.method];
+                if (typeof shadeFactor === "number") {
+                    dataset.color = kli6900.getOneOf20ColorShades(colorIndex, shadeFactor).color;
+                    dataset.backgroundColor = dataset.color;
+                    dataset.borderColor = dataset.color;
+                    dataset.fill = false;
+                }
+                datasets.push(dataset);
+            }
+        }
+
+        let $page = $("<article>", {
+            id: "dp" + (Math.floor(Math.random() * 1000000) + 1000000),
+            class: "place-page",
+            "data-colindex": colindex,
+            "data-topic": topicstring,
+            "data-place": locationkey,
+            "data-title": title,
+            "data-datasource": datasource,
+            "data-variable": variable,
+            "data-method": method,
+            "data-altmethod1": altmethod1,
+            "data-altmethod2": altmethod2,
+            "data-hydevar": hydevar
+        });
+        $page.append(
+            $("<span style='font-weight: bold;margin:5px;'>").text(`${location.locname} ${variable} ${title}`),
+            $("<span style='margin:5px'>").text(`(${locationkey})`)
+        );
+        if (datasets.length === 0) {
+            $page.append(
+                $("<div>", {
+                    html: "keine Daten"
+                }));
+            continue;
+        }
+        $page.append(
+            $("<div>", {
+                class: "mychart",
+                css: {
+                    backgroundColor: "lightyellow"
+                }
+            })
+        );
+        $slider.append($page);
+        let thistitle = title + " " + variable + " " + location.locname;
+        let xtitle = "years";
+        let ytitle = "count of days";
+        let config = getConfig4lineChart(thistitle, xlabels, datasets, xtitle, ytitle);
+        let pageid = $page.attr("id");
+        let container = $page.find("div.mychart");  // ist bereits definiert als container!!!
+        $(container)
+            .append($("<canvas/>", {
+                id: pageid + "canvas"
+            }));
+        let ret = new Promise(function (resolve, reject) {
+            requestAnimationFrame(async function () {
+                let canvasid = pageid + "canvas";
+                let canvas = document.getElementById(canvasid);
+                let ctx = canvas.getContext("2d");
+                let chart = new Chart(ctx, config);
+                chart.options.responsive = false;
+                chart.update("none");
+                showChartButtons($page, canvasid, ["topics", "stations"]);
+                resolve({ error: false, message: "" });
+            });
+        });
+
+        console.log("page fertig");
+    }
 }
 
 async function showStatisticPage($page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar) {
@@ -739,6 +917,7 @@ async function showStatisticPage($page, itopic, key, locations, title, datasourc
                     datakey: station.source + "_" + station.stationid + "_" + variable,
                     variable: variable,
                     method: setmethod,
+                    check: "data",
                     fromyear: 1950,
                     toyear: 2019,
                     data: []
@@ -770,6 +949,9 @@ async function showStatisticPage($page, itopic, key, locations, title, datasourc
                         }
                     }
                 }
+                const summe = dataset.data.reduce((sum, zahl) => sum + Math.abs(zahl), 0);
+                if (summe === 0) continue;
+
                 datasets.push(dataset);
                 if (doregression.length > 0 && dataset.method === doregression) {
                     // Daten des vorherigen Datensatzes für Regressionsanalyse nehmen
@@ -789,6 +971,13 @@ async function showStatisticPage($page, itopic, key, locations, title, datasourc
                     datasets.push(regdataset);
                 }
             }
+        }
+        if (datasets.length === 0) {
+            $page.append(
+                $("<div>", {
+                    html: "keine Daten"
+                }));
+            return;
         }
         // hier sind xlabels und datasets bekannt
         let thistitle = title + " " + variable + " " + locations[key].location.locname;
@@ -841,6 +1030,7 @@ async function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
                 datakey: station.source + "_" + station.stationid + "_" + variable,
                 variable: variable,
                 method: setmethod,
+                check: "data",
                 hydevar: hydevar,
                 fromyear: 1950,
                 toyear: 2019,
@@ -909,6 +1099,8 @@ async function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
             if (referencedataset === null) {
                 referencedataset = structuredClone(dataset);
             }
+            const summe = dataset.data.reduce((sum, zahl) => sum + Math.abs(zahl), 0);
+            if (summe === 0) continue;
             datasets.push(dataset);
             //if (doregression.length > 0 && dataset.method === doregression) {
             // Daten des vorherigen Datensatzes für Regressionsanalyse nehmen
@@ -926,9 +1118,8 @@ async function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
             regdataset.data = result.regdata;
             regdataset.method = setmethod + "_reg";
             datasets.push(regdataset);
-            //}
-
         }
+
         // jetzt die reinen hydevar-dataset ergänzen!!!
         // es gibt nur einen Datensatz mit zwei Datenpunkten je station
         // dataset mit hydevar, hydevars, hydeval1, hydeval2
@@ -944,9 +1135,25 @@ async function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
         hydedataset.borderColor = "red";
         hydedataset.pointRadius = 0;
         hydedataset.borderWidth = 2;
+        hydedataset.check = "hyde";
         hydedataset.yAxisID = referencedataset.hydevar;
         datasets.push(hydedataset);
     }
+
+    let icount = 0;
+    for (let dataset of datasets) {
+        if (dataset.check === "data") {
+            icount++;
+        }
+    }
+    if (icount === 0) {
+        $page.append(
+            $("<div>", {
+                html: "keine Daten"
+            }));
+        return;
+    }
+
 
     // hier sind xlabels und datasets bekannt
     let thistitle = title + " " + variable + " " + locations[key].location.locname;
@@ -963,8 +1170,13 @@ async function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
     config.options.scales.x.type = "category";
     config.options.scales[hydevar] = {
         axis: "y",
+        type: "linear",
+        position: "right",
+        grid: {
+            drawOnChartArea: false
+        },
         title: {
-            display: true,
+            display: false,
             text: hydevar
         },
         ticks: {
@@ -972,8 +1184,6 @@ async function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
             font: { size: 10 }
         }
     };
-
-
     let pageid = $page.attr("id");
     let container = $page.find("div.mychart");  // ist bereits definiert als container!!!
     $(container)
@@ -988,7 +1198,7 @@ async function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
             let chart = new Chart(ctx, config);
             chart.options.responsive = false;
             chart.update("none");
-            showChartButtons($page, canvasid);
+            showChartButtons($page, canvasid, null, hydevar);
             resolve();
         });
     });
@@ -1122,7 +1332,7 @@ function getregression(data, corrval) {
 };
 
 
-function showChartButtons($page, canvasid) {
+function showChartButtons($page, canvasid, vcontrolfields, hydevar) {
     let containerid = $page.attr("id") + "buttons";
     $page.append($("<div/>", {
         id: containerid,
@@ -1131,29 +1341,72 @@ function showChartButtons($page, canvasid) {
             width: "100%"
         }
     }));
+
     let graph = Chart.getChart(canvasid);
-    let vcontrol = {
-        variables: {},
-        methods: {},
-        stations: {},
-        hydevars: {}  // spezialfall
-    };
-    for (let dataset of graph.data.datasets) {
-        if (typeof vcontrol.variables[dataset.variable] === "undefined") {
-            vcontrol.variables[dataset.variable] = 0;
-        }
-        vcontrol.variables[dataset.variable] += 1;
 
-        if (typeof vcontrol.methods[dataset.method] === "undefined") {
-            vcontrol.methods[dataset.method] = 0;
-        }
-        vcontrol.methods[dataset.method] += 1;
-
-        if (typeof dataset.hydevar !== "undefined" && dataset.hydevar === dataset.variable) {
-            if (typeof vcontrol.hydevars[dataset.hydevar] === "undefined") {
-                vcontrol.hydevars[dataset.hydevar] = 0;
+    // zuerst links und u.U. rechts die titles der scales unterhalb des Chart
+    let ltitle = graph.options.scales.y.title.text;
+    let rtitle = "";
+    if (typeof hydevar === "string") {
+        rtitle = hydevar;
+    }
+    $("#" + containerid)
+        .append($("<div/>", {
+            id: containerid + "labels",
+            css: {
+                display: "flex",
+                "justify-content": "space-between",
+                padding: "4px 8px",
+                "font-size": "12px"
             }
-            vcontrol.hydevars[dataset.hydevar] += 1;
+        })
+            .append($("<span/>", {
+                html: ltitle
+            }))
+            .append($("<span/>", {
+                html: rtitle
+            }))
+        );
+
+    if (typeof vcontrolfields === "undefined" || vcontrolfields === null) {
+        vcontrol = {
+            variables: {},
+            methods: {},
+            stations: {},
+            hydevars: {}  // spezialfall
+        };
+    } else {
+        vcontrol = {};
+        for (let field of vcontrolfields) {
+            vcontrol[field] = {};
+        }
+    }
+    for (let dataset of graph.data.datasets) {
+        if (typeof vcontrol.variables !== "undefined") {
+            if (typeof vcontrol.variables[dataset.variable] === "undefined") {
+                vcontrol.variables[dataset.variable] = 0;
+            }
+            vcontrol.variables[dataset.variable] += 1;
+        }
+        if (typeof vcontrol.methods !== "undefined") {
+            if (typeof vcontrol.methods[dataset.method] === "undefined") {
+                vcontrol.methods[dataset.method] = 0;
+            }
+            vcontrol.methods[dataset.method] += 1;
+        }
+        if (typeof vcontrol.hydevars !== "undefined") {
+            if (typeof dataset.hydevar !== "undefined" && dataset.hydevar === dataset.variable) {
+                if (typeof vcontrol.hydevars[dataset.hydevar] === "undefined") {
+                    vcontrol.hydevars[dataset.hydevar] = 0;
+                }
+                vcontrol.hydevars[dataset.hydevar] += 1;
+            }
+        }
+        if (typeof vcontrol.topics !== "undefined") {
+            if (typeof vcontrol.topics[dataset.topic] === "undefined") {
+                vcontrol.topics[dataset.topic] = 0;
+            }
+            vcontrol.topics[dataset.topic] += 1;
         }
 
         let skey = dataset.source + "_" + dataset.stationid;
@@ -1182,7 +1435,11 @@ function showChartButtons($page, canvasid) {
     }
 
     // Buttons erzeugen
-    for (let crit of ["variables", "methods"]) {
+    let crits = Object.keys(vcontrol);
+    for (let crit of crits) {
+        if (crit === "stations") {
+            continue;
+        }
         let values = Object.keys(vcontrol[crit])
         if (values === "hydes" && values.length === 0) {
             continue;
@@ -1273,22 +1530,24 @@ function showChartButtons($page, canvasid) {
     }
     // hier wäre der Ort für die HYDE-Vorbesetzungen:
     let sortarray = [];
-    for (let dataset of graph.data.datasets) {
-        if (typeof vcontrol.hydevars[dataset.variable] !== "undefined") {
-            // der dataset steht für eine hyde-Variable selbst, daher kann hier die Sortierung eingreifen
-            dataset.stationkey = dataset.source + "_" + dataset.stationid;
-            sortarray.push([
-                parseFloat(dataset.hydeval2),
-                parseFloat(dataset.hydeval1),
-                dataset.hydevar,
-                dataset.stationkey,
-                dataset.label,
-                dataset.source,
-                dataset.stationid,
-                dataset.variable,
-                dataset.method,
-                dataset.varname
-            ]);
+    if (typeof vcontrol.hydevars !== "undefined") {
+        for (let dataset of graph.data.datasets) {
+            if (typeof vcontrol.hydevars[dataset.variable] !== "undefined") {
+                // der dataset steht für eine hyde-Variable selbst, daher kann hier die Sortierung eingreifen
+                dataset.stationkey = dataset.source + "_" + dataset.stationid;
+                sortarray.push([
+                    parseFloat(dataset.hydeval2),
+                    parseFloat(dataset.hydeval1),
+                    dataset.hydevar,
+                    dataset.stationkey,
+                    dataset.label,
+                    dataset.source,
+                    dataset.stationid,
+                    dataset.variable,
+                    dataset.method,
+                    dataset.varname
+                ]);
+            }
         }
     }
     if (sortarray.length > 0) {
@@ -1342,7 +1601,221 @@ function showChartButtons($page, canvasid) {
         $(button1).hide();
     }
     updateChart(canvasid);
+    // ergänzende Buttons für Copy
+    $("#" + containerid)
+        .append($("<hr/>"));
+    $("#" + containerid)
+        .append($("<button/>", {
+            class: "btn btn-sm btn-danger kli2000copydata",
+            css: {
+                margin: "5px",
+                padding: "0px"
+            },
+            containerid: containerid,
+            canvasid: canvasid,
+            html: "Data",
+            title: "Copy label and data to Clipboard"
+        }));
+
+    $("#" + containerid)
+        .append($("<button/>", {
+            class: "btn btn-sm btn-danger kli2000copychart",
+            css: {
+                margin: "5px",
+                padding: "0px"
+            },
+            containerid: containerid,
+            canvasid: canvasid,
+            html: "Chart",
+            title: "Copy Chart to Clipboard"
+        }));
+
+
+    $("#" + containerid)
+        .append($("<button/>", {
+            class: "btn btn-sm btn-danger kli2000sumtable",
+            css: {
+                margin: "5px",
+                padding: "0px"
+            },
+            containerid: containerid,
+            canvasid: canvasid,
+            html: "Table",
+            title: "Show table with summary data"
+        }));
+
+
+    // jetzt werden erläuternde Kommentare zu den datasets generiert => Details
+    // und dann Tabellen => Tabellen, adaptiv je 
+    // $page, canvasid, vcontrolfields
+    /*
+    let containerid = $page.attr("id") + "buttons";
+    $page.append($("<div/>", {
+        id: containerid,
+        class: "chartbuttons",
+        css: {
+            width: "100%"
+        }
+    }));
+    */
 };
+
+$(document).on("click", "button.kli2000sumtable", async function (evt) {
+    evt.preventDefault();
+    let canvasid = $(this).attr("canvasid");
+    let containerid = $(this).attr("containerid");
+    let graph = Chart.getChart(canvasid);
+    await showTable4Chart(graph, containerid, canvasid);
+});
+
+async function showTable4Chart(chart, containerid, canvasid) {
+    const datasets = chart.data.datasets.filter(
+        (ds, i) => chart.isDatasetVisible(i)
+    );
+    // calculate row-header, first columns before data
+    let rows = [];
+    let headerfields = ["label", "variable", "method"];
+    if (typeof datasets[0]["topic"] !== "undefined") {
+        headerfields.push("topic");
+    }
+    let header = [];
+    header = header.concat(headerfields);
+    header.push("vals");
+    header.push("min");
+    header.push("avg");
+    header.push("max");
+    header.push("sum");
+    header.push("grad");
+    header.push("r2");
+    rows.push(header);
+    debugger;
+    for (let dataset of datasets) {
+        // Ausschließen x,y Bubbles  oder short-line definitions
+        if (typeof dataset.data[0] === "object" && dataset.data[0] !== null) {
+            continue;
+        }
+        if (dataset.method.includes("reg")) {
+            continue;
+        }
+        let result = kli6900.getTrivial(dataset.data, false, false);   // doround, korr
+        let row = [];
+        for (let field of headerfields) {
+            row.push(dataset[field]);
+        }
+        row.push(result.realcounted);
+        row.push(result.min);
+        row.push(result.avg.toFixed(3));
+        row.push(result.max);
+        row.push(result.sum);
+        // Regression über die Jahre und Ausgabe hier
+        let erg = getregression(dataset.data, 0);
+        row.push(erg.gradient.toFixed(2));
+        row.push(erg.r2);
+        //gradient: 0.032
+        //r2: 0.425
+        //regdata: (70) ['14.28', '14.31', '14.35', '14.38', '14.41', '14.44', '14.47', '14.51', '14.54', '14.57', '14.60', '14.63', '14.67', '14.70', '14.73', '14.76', '14.79', '14.83', '14.86', '14.89', '14.92', '14.95', '14.99', '15.02', '15.05', '15.08', '15.11', '15.15', '15.18', '15.21', '15.24', '15.27', '15.31', '15.34', '15.37', '15.40', '15.43', '15.47', '15.50', '15.53', '15.56', '15.59', '15.63', '15.66', '15.69', '15.72', '15.75', '15.79', '15.82', '15.85', '15.88', '15.91', '15.95', '15.98', '16.01', '16.04', '16.07', '16.11', '16.14', '16.17', '16.20', '16.23', '16.27', '16.30', '16.33', '16.36', '16.39', '16.43', '16.46', '16.49']
+        //yIntercept: 14.282
+        rows.push(row);
+    }
+    let html = rowsToTable(rows);
+    let tid = "tbl" + (Math.floor(Math.random() * 1000000) + 1000000);
+    $("#" + containerid)
+        .append($("<hr/>"));
+    $("#" + containerid)
+        .append($("<div/>", {
+            id: tid
+        }));
+    $("#" + tid)
+        .append(html);
+}
+
+function rowsToTable(rows) {
+    if (!rows.length) return "";
+
+    const header = rows[0]
+        .map(value => `<th>${value}</th>`)
+        .join("");
+
+    const body = rows.slice(1)
+        .map(row =>
+            `<tr>${row.map(value => `<td>${value ?? ""}</td>`).join("")}</tr>`
+        )
+        .join("");
+
+    return `
+        <table>
+            <thead><tr>${header}</tr></thead>
+            <tbody>${body}</tbody>
+        </table>
+    `;
+}
+
+$(document).on("click", "button.kli2000copydata", async function (evt) {
+    evt.preventDefault();
+    let canvasid = $(this).attr("canvasid");
+    let graph = Chart.getChart(canvasid);
+    await copyChartCSV(graph);
+});
+
+$(document).on("click", "button.kli2000copychart", async function (evt) {
+    evt.preventDefault();
+    let canvasid = $(this).attr("canvasid");
+    const canvas = document.getElementById(canvasid); // Replace with your canvas element ID
+    await copyCanvasToClipboard(canvas);
+});
+
+async function copyChartCSV(chart) {
+    const labels = chart.data.labels;
+    //const datasets = chart.data.datasets;
+    const datasets = chart.data.datasets.filter(
+        (ds, i) => chart.isDatasetVisible(i)
+    );
+    // Kopfzeile
+    const rows = [
+        ["Label", ...datasets.map(ds => ds.label + " " + ds.variable + " " + ds.method)]
+    ];
+    // Datenzeilen
+    labels.forEach((label, i) => {
+        rows.push([
+            label,
+            ...datasets.map(ds => ds.data[i] ?? "")
+        ]);
+    });
+    // CSV erzeugen
+    const csv = rows
+        .map(row => row.join(";"))
+        .join("\r\n");
+    await navigator.clipboard.writeText(csv);
+}
+
+async function copyCanvasToClipboard(canvas) {
+    // Temporäres Canvas
+    const temp = document.createElement("canvas");
+    temp.width = canvas.width;
+    temp.height = canvas.height;
+
+    const ctx = temp.getContext("2d");
+
+    // Weißer Hintergrund
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, temp.width, temp.height);
+
+    // Original-Canvas darüber zeichnen
+    ctx.drawImage(canvas, 0, 0);
+
+    // Als PNG in die Zwischenablage
+    const blob = await new Promise(resolve =>
+        temp.toBlob(resolve, "image/png")
+    );
+
+    await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob })
+    ]);
+}
+
+// Usage: Get your canvas and pass it to the function
+//const canvas = document.getElementById('yourCanvasId'); // Replace with your canvas element ID
+//copyImageToClipboard(canvas);
 
 $statistics.on("click", ".datasetfilter", function (evt) {
     evt.preventDefault();
@@ -1441,6 +1914,7 @@ function getConfig4lineChart(title, xlabels, datasets, xtitle, ytitle) {
                 legend: {
                     display: false,
                     position: "bottom",
+                    align: "center",
                     labels: {
                         boxWidth: 12,
                         font: { size: 11 }
@@ -1477,8 +1951,10 @@ function getConfig4lineChart(title, xlabels, datasets, xtitle, ytitle) {
                     }
                 },
                 y: {
+                    type: "linear",
+                    position: "left",
                     title: {
-                        display: true,
+                        display: false,
                         text: ytitle
                     },
                     ticks: {
@@ -1499,6 +1975,8 @@ function getConfig4lineChart(title, xlabels, datasets, xtitle, ytitle) {
 // Querzugriff notwendig, um die x/y scales zu Harmonisieren
 async function getKLIDATA(key, locations) {
 
+    //extdays: {GHCND_GM000001153: {2018-07-05: extevts:{ GHCND_GM000001153: {TMAX_hot: 30.5}, …}, 
+    // dayindex: 1234 (Tagesindex) im Jahr, year: 2018 als Jahr }}
     let sels = {};
     for (let record of locations[key].geosets[0]) {
         if (typeof sels[record.source] === "undefined") {
@@ -1564,6 +2042,7 @@ async function getKLIDATA(key, locations) {
     //let perf = kli6900.getPerformance(startTime);
     if (ret1.error === false && ret1.records !== "undefined" && ret1.records !== null &&
         Array.isArray(ret1.records)) {
+
         for (let record of ret1.records) {
             record.key = record.source + "_" + record.stationid + "_" + record.variable;
             if (typeof record.years === "string") {
@@ -1575,12 +2054,16 @@ async function getKLIDATA(key, locations) {
             for (let iyear = fromyear; iyear <= toyear; iyear++) {
                 let yeardata = record.years["" + iyear];
                 if (typeof yeardata !== "undefined") {
-                    let result = kli6900.getTrivial(yeardata, false, false);   // doround, korr)
+                    let result = kli6900.getTrivial(record.years["" + iyear], false, true);   // doround, korr)
                     result.year = "" + iyear;
                     record.yeardata[result.year] = result;
                 }
             }
         }
+        // es sind die Werte jetzt auf float umgestellt, Rechnungen müssten also schneller gehen
+        extdays = getExtdays(ret1.records);
+        //extdays: {GHCND_GM000001153: {2018-07-05: extevts:{ GHCND_GM000001153: {TMAX_hot: 30.5}, …}, 
+        // dayindex: 1234 (Tagesindex) im Jahr, year: 2018 als Jahr }}
         locations[key].records = structuredClone(ret1.records);
         return {
             error: false,
@@ -1593,6 +2076,345 @@ async function getKLIDATA(key, locations) {
         };
     }
 }
+
+let criticalDays = {
+    TMAX_hot: {
+        title: "Hitzewelle",
+        conditions: [
+            { days: 3, min: 30 }
+        ],
+        variable: "TMAX",
+        color: "#FF0000",
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    TMIN_tropic: {
+        title: "Tropische Nächte",
+        conditions: [
+            { days: 3, min: 20 }
+        ],
+        variable: "TMIN",
+        color: "#ff9d00",
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    TMIN_cold: {
+        title: "Frostwelle",
+        conditions: [
+            { days: 5, max: 0 }
+        ],
+        variable: "TMIN",
+        color: "#0000FF",
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    TMIN_cold1: {
+        title: "Kältewelle",
+        conditions: [
+            { days: 3, max: -10 },
+        ],
+        variable: "TMIN",
+        color: "#0000FF",
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    TMIN_danger1: {
+        title: "Frosttage",
+        conditions: [
+            { days: 1, variable: "TMIN", max: 0 }
+        ],
+        variable: "TMIN",
+        color: "#9000ff",
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+
+    TMIN_danger: {
+        title: "Vereisungsgefahr",
+        conditions: [
+            { days: 1, variable: "TMIN", max: 0 },
+            { days: 1, variable: "PRCP", min: 0.5 },
+            { days: 1, variable: "SNWD", max: 1 }
+        ],
+        variable: "TMIN",
+        color: "#9000ff",
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    /*
+    TMIN_danger2: {
+        conditions: [
+            { days: 1, variable: "PRCP", min: 0.5 }
+        ],
+        variable: "PRCP",
+        color: "#9000ff",
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    TMIN_danger3: {
+        conditions: [
+            { days: 1, variable: "SNWD", max: 1 }
+        ],
+        variable: "SNWD",
+        color: "#9000ff",
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    */
+    PRCP_rain: {
+        title: "Starkregen",
+        conditions: [
+            { days: 1, min: 30 }
+        ],
+        variable: "PRCP",
+        color: "#108cff", // neon-#FF1493
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    PRCP_rain2: {
+        title: "Dauerregen",
+        conditions: [
+            { days: 3, minsum: 60 }
+        ],
+        variable: "PRCP",
+        color: "#108cff", // neon-#FF1493
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    SNWD_snow: {
+        title: "Schneedecke-1",
+        conditions: [
+            { days: 1, min: 20 },
+        ],
+        variable: "SNWD",
+        color: "#FF10F0", // neon-#FF1493
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    SNWD_snow2: {
+        title: "Schneedecke-2",
+        conditions: [
+            { days: 2, minsum: 30 }
+        ],
+        variable: "SNWD",
+        color: "#FF10F0", // neon-#FF1493
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    SNOW_snow: {
+        title: "Schneefall-1",
+        conditions: [
+            { days: 1, min: 20 }
+        ],
+        variable: "SNOW",
+        color: "#FF10F0", // neon-#FF1493
+        stations: {}  // mit <station>:[<isoday>...]
+    },
+    SNOW_snow2: {
+        title: "Schneefall-2",
+        conditions: [
+            { days: 2, minsum: 30 }
+        ],
+        variable: "SNOW",
+        color: "#FF10F0", // neon-#FF1493
+        stations: {}  // mit <station>:[<isoday>...]
+    }
+};
+
+function getExtdays(records) {
+    // record mit source, stationid, variable, years - aufbereitet
+    //extdays: {GHCND_GM000001153: {2018-07-05: extevts:{ GHCND_GM000001153: {TMAX_hot: 30.5}, …}, 
+    // dayindex: 1234 (Tagesindex) im Jahr, year: 2018 als Jahr }}
+    let index = new Map(records.map((rec, i) => [rec.key, i]));
+    let allcritKeys = Object.keys(criticalDays);
+    let fromyear = 1950;
+    let toyear = 2019;
+    console.log(criticalDays);
+    let stationkeys = {};
+    for (let record of records) {
+        let stationkey = record.source + "_" + record.stationid;
+        record.stationkey = stationkey;
+        if (typeof stationkeys[stationkey] === "undefined") {
+            stationkeys[stationkey] = {};
+        }
+        // criticalDays["TMIN_danger"] kennt drei Prüfvariablen, die zusammen Vereisungsgefahr ergeben
+        /*  criticalDays["TMIN_danger"].stations{<iyear: [indexes of hits]}
+            criticalDays["TMIN_danger"].conditions:[{days:n }]
+            TMIN_danger: {
+                title: "Vereisungsgefahr",
+                conditions: [
+                    { days: 1, variable: "TMIN", max: 0 },
+                    { days: 1, variable: "PRCP", min: 0.5 },
+                    { days: 1, variable: "SNWD", max: 1 }
+                ],
+                variable: "TMIN,PRCP,SNWD",
+                color: "#9000ff",
+                stations: {}  // mit <station>:[<isoday>...]
+            },
+        */
+        // die conditions sind gewöhnlich geodert zu EINER variablen,
+        // Ausnahme ist TMIN_danger, dort sind die conditions geundet!!!
+        // erst werden alle Kriterien geprüft, die geodert sind, dann kommt die geundete TMIN_danger,
+        // TMIN_danger1 wird als lead zu TMIN_danger genutzt!!!
+        let selcritkeys = ["TMAX_hot"];
+        selcritkeys = selcritkeys.concat(["TMIN_tropic", "TMIN_cold", "TMIN_cold1", "TMIN_danger", "TMIN_danger1"]);
+        selcritkeys = selcritkeys.concat(["PRCP_rain", "PRCP_rain2"]);
+        selcritkeys = selcritkeys.concat(["SNWD_snow", "SNWD_snow2"]);
+        selcritkeys = selcritkeys.concat(["SNOW_snow", "SNOW_snow2"]);
+        let criticalcontrols = {
+            "TMAX": ["TMAX_hot"],
+            "TMIN": ["TMIN_tropic", "TMIN_cold", "TMIN_cold1", "TMIN_danger", "TMIN_danger1"],
+            "PRCP": ["PRCP_rain", "PRCP_rain2"],
+            "SNWD": ["SNWD_snow", "SNWD_snow2"],
+            "SNOW": ["SNOW_snow", "SNOW_snow2"]
+        };
+        let variable = record.variable;
+        if (typeof criticalcontrols[variable] === "undefined") {
+            continue;
+        }
+        let superdays = [];
+        for (let iyear = fromyear; iyear <= toyear; iyear++) {
+            let isleapyear = kli6900.isleapyear(iyear);
+            let yearlength = 365;
+            if (isleapyear) yearlength = 366;
+            let yearvals = record.years["" + iyear];
+            if (typeof yearvals === "undefined") {
+                continue;
+            }
+            let len = yearvals.len;
+            if (len === 365 && leapyear === true || len === 366 && leapyear === false) {
+                alert("problem");
+                debugger;
+            }
+            // Extender, wenn erforderlich
+            if (len < yearlength) {
+                for (let i = len - 1; i < yearlength; i++) {
+                    yearvals[i] = null;
+                }
+            } else if (len > yearlength) {
+                for (let i = len - 1; i > yearlength; i--) {
+                    let val = yearvals[i];
+                    if (val !== null) {
+                        alert("mist: " + val);
+                        debugger;
+                    }
+                    yearvals.splice(i, 1);
+                }
+            }
+            let vals = structuredClone(yearvals);
+            //if (typeof record.years["" + (iyear + 1)] !== "undefined") {
+            //    vals = vals.concat(record.years["" + (iyear + 1)]);
+            //}
+            for (let criticalkey of criticalcontrols[variable]) {
+                if (typeof criticalDays[criticalkey] === "undefined") {
+                    alert("grosser Mist:" + criticalkey);
+                    continue;
+                }
+                let conditions = criticalDays[criticalkey].conditions;
+                for (let condition of conditions) {
+                    let indexes = [];
+                    if (typeof condition.min !== "undefined") {
+                        indexes = vals.flatMap(function (val, index) {
+                            return val !== null && val >= condition.min ? [index] : [];
+                        });
+                    } else if (typeof condition.max !== "undefined") {
+                        indexes = vals.flatMap(function (val, index) {
+                            return val !== null && val <= condition.max ? [index] : [];
+                        });
+                    } else if (typeof condition.minsum !== "undefined") {
+                        indexes = vals.flatMap(function (val, index) {
+                            return val !== null && val >= 0 ? [index] : [];
+                        });
+                    }
+                    console.log(stationkey, criticalkey, iyear, indexes);
+                    if (indexes.length > 0) {
+                        if (typeof criticalDays[criticalkey].stations[stationkey] === "undefined") {
+                            criticalDays[criticalkey].stations[stationkey] = {};
+                        }
+                        criticalDays[criticalkey].stations[stationkey][iyear] = indexes;
+                    }
+                }
+            }
+        }
+    }
+    //criticalDays["TMIN_danger"].stations{<stationkey>:{<iyear: [indexes of hits]}}
+    //criticalDays["TMIN_danger"].conditions:[{days:n }]
+    // extdays - not notwendig?
+    let extdays = {};
+    for (let critical of Object.keys(criticalDays)) {
+        let variable = criticalDays[critical].variable;
+        if (typeof extdays[variable] === "undefined") {
+            extdays[variable] = {};
+        }
+        if (typeof extdays[variable][critical] === "undefined") {
+            extdays[variable][critical] = {
+                stations: {}
+            };
+        }
+        for (let stationkey of Object.keys(criticalDays[critical].stations)) {
+            if (typeof extdays[variable][critical].stations[stationkey] === "undefined") {
+                extdays[variable][critical].stations[stationkey] = {
+                    rawdata: [],
+                    data: new Array(toyear - fromyear + 1).fill(0)
+                };
+            }
+            for (let condition of criticalDays[critical].conditions) {
+                let days = condition.days;
+                let allindexes = criticalDays[critical].stations[stationkey];
+                if (days === 1) {
+                    for (let iyear = fromyear; iyear <= toyear; iyear++) {
+                        let yearindexes = allindexes[iyear];
+                        if (typeof yearindexes === "undefined") {
+                            continue;
+                        } else {
+                            extdays[variable][critical].stations[stationkey].data[iyear - fromyear] += yearindexes.length;
+                            extdays[variable][critical].stations[stationkey].rawdata.push({ iyear: yearindexes });
+                        }
+                    }
+                } else {   // days > 1
+                    for (let iyear = fromyear; iyear <= toyear; iyear++) {
+                        if (stationkey === "GHCND_GME00121054" && critical === "TMAX_hot" && iyear === 1950) {
+                            // debugger;
+                        }
+                        let isleapyear = kli6900.isleapyear(iyear);
+                        let yearlength = 365;
+                        if (isleapyear) yearlength = 366;
+                        let indexes = allindexes[iyear];
+                        if (typeof indexes === "undefined") {
+                            continue;
+                        }
+                        let bucketyear = 0;
+                        let bucket = [];  // Gruppenwechsellogik
+                        for (let i = 0; i < indexes.length; i++) {
+                            let index = indexes[i];
+                            if (bucket.length === 0) {
+                                bucket.push(index);
+                                bucketyear = iyear;
+                                continue; // Initialisierung
+                            }
+                            let newindex = indexes[i];
+                            let lastindex = bucket[bucket.length - 1];
+                            if (newindex - lastindex === 1) {
+                                bucket.push(index);
+                                bucketyear = iyear;
+                                continue;   // Kette bilden
+                            } else {
+                                // Gruppenwechsel
+                                if (bucket.length >= days) {
+                                    extdays[variable][critical].stations[stationkey].data[iyear - fromyear] += bucket.length;
+                                    extdays[variable][critical].stations[stationkey].rawdata.push({ iyear: bucket });
+                                }
+                                bucket = [];
+                                bucket.push(index);
+                                bucketyear = iyear;
+                                continue; // neue Initialisierung
+                            }
+                        }
+                        // letzter Fall
+                        if (bucket.length >= days) {
+                            let iyear = bucketyear;
+                            extdays[variable][critical].stations[stationkey].data[iyear - fromyear] += bucket.length;
+                            extdays[variable][critical].stations[stationkey].rawdata.push({ iyear: bucket });
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return extdays;
+}
+
+//let variable = record.variable;
+
+//}
 
 async function searchStations(location, distancekm) {
     let ret = {};
@@ -1732,7 +2554,7 @@ async function searchStations(location, distancekm) {
 
 /**
 * showMap - Anzeige der Weltkarte, noch ohne Marker
-*           addWorldmapSlider stellt den leadfet-Container bereit
+*           addWorldmapSlider stellt den leaflet-Container bereit
 *            maps.showWorldMap führt die Anzeige durch 
 * @param {any} $main - Vorgabe des Containers
 * @param {any} location - Vorgabe des Ortes, hier nur administrativ im Header
