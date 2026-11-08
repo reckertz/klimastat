@@ -1877,18 +1877,12 @@ function getConfig4lineChart(title, xlabels, datasets, xtitle, ytitle) {
     /*
     let xlabels = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
         "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
- 
-    let datasets = [
+     let datasets = [
         {
             label: "TMAX",
             data: [5, 7, 11, 16, 20, 24, 27, 26, 21, 15, 9, 6],
             borderColor: "#d9534f"
-        },
-        {
-            label: "TMIN",
-            data: [-1, 0, 3, 6, 10, 13, 15, 14, 11, 7, 3, 0],
-            borderColor: "#337ab7"
-        }
+        }, . . .
     ];
     */
     let config = {

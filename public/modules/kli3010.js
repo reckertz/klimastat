@@ -41,12 +41,16 @@ async function show(screenConfig, hook) {
     <h1>Wie hat sich das Klima bei dir verändert?</h1>
     <p>Vergleiche historische Temperaturen von Wetterstationen in deiner Nähe – verständlich und auf Grundlage von Messdaten.</p>
     <button type="button" class="btn btn-primary btn-sm primary" data-action="location">Klima hier entdecken</button>
+    &nbsp;&nbsp;
+    <button type="button" class="btn btn-primary btn-sm primary" data-action="oldlocations">alte Orte</button>
     <br><br>
     <details>
       <summary>Lieber einen Ort eingeben und dann auswählen?</summary>
       <form class="place-form">
         <label for="place">Ortsname</label>
         <input id="place" name="place" required autocomplete="address-level2" placeholder="z.B. Bonn">
+        <label for="countrycode">Ländername</label>
+        <input id="countrycode" name="countrycode" required  placeholder="z.B. DE">
         <button class="btn btn-primary btn-sm primary" data-action="searchlocation">Ort auswählen</button>
       </form>
     </details>
@@ -77,7 +81,12 @@ async function show(screenConfig, hook) {
                 alert("Bitte Ortsname eingeben");
                 return;
             }
-            let ret = await showCandidates(sectionid, searchstring);
+            let country_code = $("#" + sectionid).find("input[name=countrycode]").first().val();
+            //if (country_code.trim().length === 0) {
+            //    alert("Bitte Ländername eingeben");
+            //    return;
+            //}
+            let ret = await showCandidates(sectionid, searchstring, country_code);
         } else if (action === "location") {
             let geolocation = null;
             let geopermission = await getGeoPermission();
@@ -93,7 +102,9 @@ async function show(screenConfig, hook) {
                 geolocation = await getgeoLocationByIP();
             }
             console.log(geolocation);
-            await showCandidates(sectionid, "", geolocation.lat, geolocation.lon, 10);
+            await showCandidates(sectionid, "", "", geolocation.lat, geolocation.lon, 10);
+        } else if (action === "oldlocations") {
+            let oldlocations = await getOldLocations(sectionid);
         }
     });
 }
@@ -185,7 +196,7 @@ async function getOldLocations(sectionid) {
 }
 
 
-async function showCandidates(sectionid, searchstring, latitude, longitude, distance) {
+async function showCandidates(sectionid, searchstring, country_code, latitude, longitude, distance) {
     if (!(typeof searchstring === "string" && searchstring === "*cookie")) {
         let ret = {};
         let sql = "";
@@ -201,16 +212,23 @@ async function showCandidates(sectionid, searchstring, latitude, longitude, dist
         sql += " ON KLIGEONAMES.country_code || '.' || KLIGEONAMES.admin1_code = KLISTATES.statekey";
 
         if (typeof searchstring === "string" && searchstring.trim().length > 0) {
+            let ands = [];
             let such = searchstring;
             let frags = such.split(" ");
             if (frags.length > 0) {
-                let ands = [];
                 for (let frag of frags) {
                     ands.push(" lower(KLIGEONAMES.name) LIKE '%" + frag + "%'");
                 }
-                sql += " WHERE " + ands.join(" AND ");
+                //sql += " WHERE " + ands.join(" AND ");
             } else {
-                sql += " WHERE lower(KLIGEONAMES.name) LIKE('" + frags[0] + "%'";
+                //sql += " WHERE lower(KLIGEONAMES.name) LIKE('" + frags[0] + "%'";
+                ands.push(" lower(KLIGEONAMES.name) LIKE('" + frags[0] + "%'");
+            }
+            if (typeof country_code === "string" && country_code.trim().length > 0) {
+                ands.push(" KLIGEONAMES.country_code = '" + country_code + "'");
+            }
+            if (ands.length > 0) {
+                sql += " WHERE  " + ands.join(" AND ");
             }
         } else if (typeof latitude !== "undefined" && latitude !== null &&
             typeof longitude !== "undefined" && longitude !== null) {

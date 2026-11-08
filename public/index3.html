@@ -199,6 +199,21 @@
         .inline-details[open] summary::after {
             content: "less";
         }
+
+        .table-bordered {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .table-bordered th,
+        .table-bordered td {
+            border: 1px solid #888;
+            padding: 4px 6px;
+        }
+
+        .table-bordered th {
+            background-color: #eee;
+        }
     </style>
 </head>
 
@@ -214,13 +229,8 @@
             <p>Wetterdaten entdecken und vergleichen.</p>
             <button id="selectPlace">Ort auswählen</button>
         </section-->
-
-
-
     </main>
-
-    <main id="place-container" class="statistics">
-
+    <!--main id="place-container" class="statistics"-->
     </main>
     <script type="module">
         import * as kli3000 from "/modules/kli3000.js";

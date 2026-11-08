@@ -26,7 +26,6 @@ async function show() {
 
 async function addLocation(newlocation, geosets) {
     console.log(newlocation);
-    alert(newlocation.locname);
     if (screenConfig.mode === "mobile") {
         let locIndex = locationInstances.length;
         locationInstances[locIndex] = kli3020.createLocation();
@@ -46,7 +45,25 @@ async function addLocation(newlocation, geosets) {
         } else {
             containerid = $("div.row.maincontainer").attr("id");
         }
-        locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets);
+        let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets);
+        //  firstpage.topicstring = topicstring; firstpage.type = "page";
+        //  firstpage.colIndex = colIndex; firstpage.locationkey = locationkey; firstpage.locname = location.locname;
+        if (typeof firstpage.topicstring !== "undefined") {
+            let firsttopic = firstpage.topicstring;
+            let colindex = firstpage.colIndex;
+            let target = $("article.page.mobile[data-topic='" + firsttopic + "'][data-colindex='" + colindex + "']");
+            if ($(target).length > 0) {
+                let targetid = $(target).attr("id");
+                let targetSlider = document.getElementById(targetid);
+                let navHeight = document.querySelector("nav").offsetHeight;
+                let rect = targetSlider.getBoundingClientRect();
+                let top = window.scrollY + rect.top - navHeight;
+                window.scrollTo({
+                    top,
+                    behavior: "instant"
+                });
+            }
+        }
     } else if (screenConfig.mode == "desktop") {
         let locIndex = locationInstances.length;
         locationInstances[locIndex] = kli3020.createLocation();
@@ -62,7 +79,25 @@ async function addLocation(newlocation, geosets) {
                     }
                 }));
         }
-        locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets);
+        
+        let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets);
+        //  firstpage.topicstring = topicstring; firstpage.type = "page";
+        //  firstpage.colIndex = colIndex; firstpage.locationkey = locationkey; firstpage.locname = location.locname;
+        if (typeof firstpage.topicstring !== "undefined") {
+            let firsttopic = firstpage.topicstring;
+            let target = $("article.page.desktop[data-topic='" + firsttopic + "']");
+            if ($(target).length > 0) {
+                let targetid = $(target).attr("id");
+                let targetSlider = document.getElementById(targetid);
+                let navHeight = document.querySelector("nav").offsetHeight;
+                let rect = targetSlider.getBoundingClientRect();
+                let top = window.scrollY + rect.top - navHeight;
+                window.scrollTo({
+                    top,
+                    behavior: "instant"
+                });
+            }
+        }
     }
 }
 
@@ -120,18 +155,12 @@ function onSwipe(direction, container, currentSlider) {
     // direction 1 = nach links; -1 = nach rechts
     console.log("onSwipe");
     console.log(currentSlider.dataset); // "42"
-    // 0: id, 1: class, 2: data-topic, 3: data-title, 4: data-datasource
-    // 5: data-variable, 6: data-method, 7: data-altmethod1, 8: data-altmethod2
-
-    //altmethod1: "" altmethod2: "" datasource: "yeardata" method:  "kum" 
-    //title: "Zeitreihe" topic: "Zeitreihe_yeardata_PRCP_kum" variable: "PRCP"
-    // es fehlt die location, die hängt auf der page
     // <article id="dp1082323" class="col col-12  slider desktop" 
     // data-colindex="0" data-topic="Zeitreihe_yeardata_PRCP_kum" data-place="Trippelsdorf 2821102" 
     // data-title="Zeitreihe" data-datasource="yeardata" data-variable="PRCP" 
     // data-method="kum" data-altmethod1="" data-altmethod2=""></article>
     // navigation mit direction, colindex und data-topic
-    debugger;
+
     let $currentPage = $(currentSlider).find(".page.mobile");
     let currentPageId = $currentPage.attr("id");
     let pageElement = document.getElementById(currentPageId);
@@ -141,12 +170,25 @@ function onSwipe(direction, container, currentSlider) {
         colIndex = colIndex - 1;
         if (colIndex >= 0) {
             let topic = dataset.topic;
-            let target = $("article.page.mobile[data-topic='" + topic + "'][data-colindex=" + colIndex + "]");
-            target.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-                inline: "nearest"
-            });
+            let topics = $("article.page.mobile[data-topic='" + topic + "']").toArray();
+            for (let t of topics) {
+                let tid = $(t).attr("id");
+                let dataelement = document.getElementById(tid);
+                let dataset = dataelement.dataset;
+                console.log(dataset);
+            }
+            let target = $("article.page.mobile[data-topic='" + topic + "'][data-colindex='" + colIndex + "']");
+            if ($(target).length > 0) {
+                let targetid = $(target).attr("id");
+                let targetSlider = document.getElementById(targetid);
+                let navHeight = document.querySelector("nav").offsetHeight;
+                let rect = targetSlider.getBoundingClientRect();
+                let top = window.scrollY + rect.top - navHeight;
+                window.scrollTo({
+                    top,
+                    behavior: "instant"
+                });
+            }
         }
     } else if (direction === -1) {
         colIndex = colIndex + 1;
@@ -159,13 +201,16 @@ function onSwipe(direction, container, currentSlider) {
                 let dataset = dataelement.dataset;
                 console.log(dataset);
             }
-            debugger;
             let target = $("article.page.mobile[data-topic='" + topic + "'][data-colindex='" + colIndex + "']");
             if ($(target).length > 0) {
-                target.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                    inline: "nearest"
+                let targetid = $(target).attr("id");
+                let targetSlider = document.getElementById(targetid);
+                let navHeight = document.querySelector("nav").offsetHeight;
+                let rect = targetSlider.getBoundingClientRect();
+                let top = window.scrollY + rect.top - navHeight;
+                window.scrollTo({
+                    top,
+                    behavior: "instant"
                 });
             }
         }

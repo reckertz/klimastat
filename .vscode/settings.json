@@ -14,7 +14,12 @@
         "titleBar.activeForeground": "#FFFFFF",
         "titleBar.inactiveForeground": "#FFFFFF", /* "#AAAAAA", */
         "titleBar.activeBackground": "#252526",
-        "titleBar.inactiveBackground": "#333333"
+        "titleBar.inactiveBackground": "#333333",
+        "tab.activeBackground": "#285580",
+        "tab.activeForeground": "#FFFFFF",
+        "tab.inactiveBackground": "#252525",
+        "tab.inactiveForeground": "#AAAAAA",
+        "tab.activeBorderTop": "#00BFFF"
     },
     // 🔹 Tabs & Einrückung
     "editor.tabSize": 4,
