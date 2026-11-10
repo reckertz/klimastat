@@ -39,40 +39,45 @@ function createLocation() {
         ["Zeitreihe", addStandardPage, "yeardata", "TMAX", "avg", "max", "min"],
         ["Zeitreihe", addStandardPage, "yeardata", "TMIN", "avg", "min", "max"],
         ["Zeitreihe", addStandardPage, "yeardata", "PRCP", "kum", "", ""],
-        ["Zeitreihe", addStandardPage, "yeardata", "SNOW", "kum", "", ""],   // SNWD
+        ["Zeitreihe", addStandardPage, "yeardata", "SNOW", "kum", "", ""],   // SNOW
+        ["Zeitreihe", addStandardPage, "yeardata", "SNWD", "kum", "", ""],   // SNWD
 
 
         ["Trendanalyse", addStandardPage, "yeardata", "TMAX", "avg_reg", "", ""],
         ["Trendanalyse", addStandardPage, "yeardata", "TMIN", "avg_reg", "", ""],
         ["Trendanalyse", addStandardPage, "yeardata", "PRCP", "kum_reg", "", ""],
-        ["Trendanalyse", addStandardPage, "yeardata", "SNOW", "kum_reg", "", ""],   // SNWD
+        ["Trendanalyse", addStandardPage, "yeardata", "SNOW", "kum_reg", "", ""],
+        ["Trendanalyse", addStandardPage, "yeardata", "SNWD", "kum_reg", "", ""],
 
         ["Höhenanalyse", addHydePage, "yeardata", "TMAX", "avg", "min", "max", "height"],
         ["Höhenanalyse", addHydePage, "yeardata", "TMIN", "avg", "min", "max", "height"],
         ["Höhenanalyse", addHydePage, "yeardata", "PRCP", "kum", "", "", "height"],
         ["Höhenanalyse", addHydePage, "yeardata", "SNOW", "kum", "", "", "height"],   // SNWD
+        ["Höhenanalyse", addHydePage, "yeardata", "SNWD", "kum", "", "", "height"],
 
         ["Bevölkerung", addHydePage, "yeardata", "TMAX", "avg", "", "", "popd"],
         ["Bevölkerung", addHydePage, "yeardata", "TMIN", "avg", "", "", "popd"],
         ["Bevölkerung", addHydePage, "yeardata", "PRCP", "kum", "", "", "popd"],
         ["Bevölkerung", addHydePage, "yeardata", "SNOW", "kum", "", "", "popd"],   // SNWD
+        ["Bevölkerung", addHydePage, "yeardata", "SNWD", "kum", "", "", "popd"],
 
         ["Bebauung", addHydePage, "yeardata", "TMAX", "avg", "", "", "uopp"],
         ["Bebauung", addHydePage, "yeardata", "TMIN", "avg", "", "", "uopp"],
         ["Bebauung", addHydePage, "yeardata", "PRCP", "kum", "", "", "uopp"],
         ["Bebauung", addHydePage, "yeardata", "SNOW", "kum", "", "", "uopp"],   // SNWD
+        ["Bebauung", addHydePage, "yeardata", "SNWD", "kum", "", "", "uopp"],   // SNWD
 
         ["Urbanisierung", addHydePage, "yeardata", "TMAX", "avg", "", "", "zind"],  // category!!!
         ["Urbanisierung", addHydePage, "yeardata", "TMIN", "avg", "", "", "zind"],  // category!!!
         ["Urbanisierung", addHydePage, "yeardata", "PRCP", "kum", "", "", "zind"],  // category!!!
         ["Urbanisierung", addHydePage, "yeardata", "SNOW", "kum", "", "", "zind"],  // category!!!   // SNWD
-
+        ["Urbanisierung", addHydePage, "yeardata", "SNWD", "kum", "", "", "zind"],
 
         ["Hitzewellen", addExtremePage, "years", "TMAX", "ext", "", ""],
         ["Kältewellen", addExtremePage, "years", "TMIN", "ext", "", ""],
         ["Starkregen", addExtremePage, "years", "PRCP", "ext", "", ""],
         ["Schnee", addExtremePage, "years", "SNOW", "ext", "", ""]    // SNWD
-
+        ["Schnee", addExtremePage, "years", "SNWD", "ext", "", ""]    // SNWD
         /*
          ["Korrelation", "yeardata", "TMAX-TMIN", "avg-korr", "", ""],
          ["Korrelation", "yeardata", "TMAX-PRCP", "avg-korr", "", ""],
@@ -96,7 +101,7 @@ function createLocation() {
         TMAX_hot: {
             title: "Hitzewelle",
             conditions: [
-                { days: 3, min: 30 }
+                { variable: "TMAX", days: 3, min: 30 }
             ],
             variable: "TMAX",
             color: "#FF0000",
@@ -105,7 +110,7 @@ function createLocation() {
         TMIN_tropic: {
             title: "Tropische Nächte",
             conditions: [
-                { days: 3, min: 20 }
+                { variable: "TMIN", days: 3, min: 20 }
             ],
             variable: "TMIN",
             color: "#ff9d00",
@@ -114,7 +119,7 @@ function createLocation() {
         TMIN_cold: {
             title: "Frostwelle",
             conditions: [
-                { days: 5, max: 0 }
+                { variable: "TMIN", days: 5, max: 0 }
             ],
             variable: "TMIN",
             color: "#0000FF",
@@ -123,7 +128,7 @@ function createLocation() {
         TMIN_cold1: {
             title: "Kältewelle",
             conditions: [
-                { days: 3, max: -10 },
+                { variable: "TMIN", days: 3, max: -10 },
             ],
             variable: "TMIN",
             color: "#0000FF",
@@ -171,7 +176,7 @@ function createLocation() {
         PRCP_rain: {
             title: "Starkregen",
             conditions: [
-                { days: 1, min: 30 }
+                { variable: "PRCP", days: 1, min: 30 }
             ],
             variable: "PRCP",
             color: "#108cff", // neon-#FF1493
@@ -180,7 +185,7 @@ function createLocation() {
         PRCP_rain2: {
             title: "Dauerregen",
             conditions: [
-                { days: 3, minsum: 60 }
+                { variable: "PRCP", days: 3, minsum: 60 }
             ],
             variable: "PRCP",
             color: "#108cff", // neon-#FF1493
@@ -189,7 +194,7 @@ function createLocation() {
         SNWD_snow: {
             title: "Schneedecke-1",
             conditions: [
-                { days: 1, min: 20 },
+                { variable: "SNWD", days: 1, min: 20 },
             ],
             variable: "SNWD",
             color: "#FF10F0", // neon-#FF1493
@@ -198,7 +203,7 @@ function createLocation() {
         SNWD_snow2: {
             title: "Schneedecke-2",
             conditions: [
-                { days: 2, minsum: 30 }
+                { variable: "SNWD", days: 2, minsum: 30 }
             ],
             variable: "SNWD",
             color: "#FF10F0", // neon-#FF1493
@@ -207,7 +212,7 @@ function createLocation() {
         SNOW_snow: {
             title: "Schneefall-1",
             conditions: [
-                { days: 1, min: 20 }
+                { variable: "SNOW", days: 1, min: 20 }
             ],
             variable: "SNOW",
             color: "#FF10F0", // neon-#FF1493
@@ -216,7 +221,7 @@ function createLocation() {
         SNOW_snow2: {
             title: "Schneefall-2",
             conditions: [
-                { days: 2, minsum: 30 }
+                { variable: "SNOW", days: 2, minsum: 30 }
             ],
             variable: "SNOW",
             color: "#FF10F0", // neon-#FF1493
@@ -234,6 +239,7 @@ function createLocation() {
     let recindex;  // new Map auf records mit "key" aus <source>_<stationid>_<variable>
     //let maps = null;
     let vcontrol = {};
+    let stationpatterns = {}; // stationkey auf dashPatternsIndex
     //locationInstances.push(createLocation());
     //let locIndex = locationInstances.length - 1;
 
@@ -340,7 +346,7 @@ function createLocation() {
                     class: "page desktop",
                     //class: "col col-4",  //  place-page",
                     css: {
-                        flex: "0 0 33.3333%",
+                        flex: "0 0 31%",
                         "box-sizing": "border-box",
                         "padding-top": "5px",
                         margin: "3px",
@@ -496,9 +502,12 @@ function createLocation() {
             let ytitle = "Temperature";
             if (variable === "PRCP") {
                 ytitle = "Niederschlag kumuliert";
-            } else if (["SNOW", "SNWD"].includes(variable)) {
-                ytitle = "Schnee kumuliert";
+            } else if (["SNOW"].includes(variable)) {
+                ytitle = "Schneefall kumuliert";
+            } else if (["SNWD"].includes(variable)) {
+                ytitle = "Schneedecke kumuliert";
             }
+
             let config = getConfig4lineChart(thistitle, xlabels, datasets, xtitle, ytitle);
             let pageid = $page.attr("id");
             let container = $page.find("div.mychart");  // ist bereits definiert als container!!!
@@ -769,10 +778,8 @@ function createLocation() {
             */
         // extdays[variable][critical].stations[stationkey].data[iyear - fromyear] += bucket.length;
         // extdays[variable][critical].stations[stationkey].rawdata.push([iyear, bucket]);
-
         for (let topic of Object.keys(extdays[variable])) {
             // topic = critical, z.B. TMAX_hot
-            console.log(">>> topic:", topic, variable, " <<<");
             for (let stationkey of Object.keys(extdays[variable][topic].stations)) {
                 //let stations = locations[key].geosets[0];
                 let index = recindex.get(stationkey + "_" + variable);
@@ -797,17 +804,8 @@ function createLocation() {
                     data: data
                 };
                 let key = dataset.source + "_" + dataset.stationid;
-                let dashPatternsIndex = -1;
-                try {
-                    dashPatternsIndex = vcontrol["stations"][key].dashPatternsIndex;
-                    dataset.borderDash = dashPatterns[dashPatternsIndex];
-                } catch (err) {
-                    console.log("************" + key);
-                    console.log(err);
-                    console.log(vcontrol);
-                    console.log(vcontrol["stations"]);
-                    console.log(dashPatternsIndex = vcontrol["stations"][key]);
-                }
+                let dashPatternsIndex = stationpatterns[key];
+                dataset.borderDash = dashPatterns[dashPatternsIndex];
                 dataset.borderWidth = 3;  // 1, 2, 3 kann genutzt werden
                 let colorIndex = dashPatternsIndex;
                 let shadeFactor = 1;  // methodShadeFactors[dataset.method];
@@ -858,10 +856,6 @@ function createLocation() {
                 chart.options.responsive = false;
                 chart.update("none");
                 showChartButtons($page, canvasid, ["topics", "stations"]);
-                if (typeof vcontrol.topics !== "undefined" && typeof vcontrol.topics["TMIN_tropic"] !== "undefined") {
-                    console.log(vcontrol);
-                    debugger;
-                }
                 // criticalDays[topic].title
                 // criticalDays[topic].variable
                 // criticalDays[topic].conditions[{days: n, mmin|max|minsum: m}];
@@ -875,9 +869,10 @@ function createLocation() {
 
     function showTopicsTable($page, canvasid, criticalDays) {
         let chart = Chart.getChart(canvasid);
-        const datasets = chart.data.datasets.filter(
-            (ds, i) => chart.isDatasetVisible(i)
-        );
+        //const datasets = chart.data.datasets.filter(
+        //    (ds, i) => chart.isDatasetVisible(i)
+        //);
+        let datasets = chart.data.datasets;
         // get the topics
         let parms = {};
         for (let dataset of datasets) {
@@ -1032,11 +1027,15 @@ function createLocation() {
         }
         // dashPatternsIndex zuordnen zu vcontrol.stations und dann vererben
         let sortedkeys = Object.keys(vcontrol.stations).sort();
+
         let ind = 0;
         for (let key of sortedkeys) {
+
             vcontrol.stations[key].dashPatternsIndex = ind;
             ind++;
         }
+        // colindex umsetzen in class!!! damit die Events unique werden
+        let datasetclass = "datasetclass" + $page.attr("data-colindex");
 
         // Buttons erzeugen
         let crits = Object.keys(vcontrol);
@@ -1059,7 +1058,7 @@ function createLocation() {
                 }
                 $("#" + containerid)
                     .append($("<button/>", {
-                        class: "btn btn-sm btn-success datasetfilter",
+                        class: "btn btn-sm btn-success datasetfilter " + datasetclass,
                         css: {
                             margin: "5px",
                             padding: "0px"
@@ -1079,7 +1078,8 @@ function createLocation() {
             for (let value of values) {
                 let sign = oksign;
                 count++;
-                let dashPatternsIndex = vcontrol.stations[value].dashPatternsIndex;
+                //let dashPatternsIndex = vcontrol.stations[value].dashPatternsIndex;
+                let dashPatternsIndex = stationpatterns[value];
                 let borderDash = dashPatterns[dashPatternsIndex];
                 let color = kli6900.getOneOf20ColorShades(dashPatternsIndex, 1).color
                 let dashImg = getBorderDashThumb(borderDash, 3, color); // , borderWidth, borderColor) {
@@ -1090,7 +1090,7 @@ function createLocation() {
                 $("#" + containerid)
                     .append($("<button/>", {
                         id: btnid,
-                        class: "datasetfilter",
+                        class: "datasetfilter " + datasetclass,
                         css: {
                             margin: "5px",
                             padding: "0px"
@@ -1107,7 +1107,8 @@ function createLocation() {
         // Vererben dashPatterns auf die datasets
         for (let dataset of graph.data.datasets) {
             let key = dataset.source + "_" + dataset.stationid;
-            let dashPatternsIndex = vcontrol["stations"][key].dashPatternsIndex;
+            //let dashPatternsIndex = vcontrol["stations"][key].dashPatternsIndex;
+            let dashPatternsIndex = stationpatterns[key];
             dataset.borderDash = dashPatterns[dashPatternsIndex];
             dataset.borderWidth = 3;  // 1, 2, 3 kann genutzt werden
             let colorIndex = dashPatternsIndex;
@@ -1207,7 +1208,7 @@ function createLocation() {
             .append($("<hr/>"));
         $("#" + containerid)
             .append($("<button/>", {
-                class: "btn btn-sm btn-danger kli2000copydata",
+                class: "btn btn-sm btn-danger kli2000copydata " + datasetclass,
                 css: {
                     margin: "5px",
                     padding: "0px"
@@ -1215,12 +1216,12 @@ function createLocation() {
                 containerid: containerid,
                 canvasid: canvasid,
                 html: "Data",
-                title: "Copy label and data to Clipboard"
+                title: "Copy label and data to Clipboard "
             }));
 
         $("#" + containerid)
             .append($("<button/>", {
-                class: "btn btn-sm btn-danger kli2000copychart",
+                class: "btn btn-sm btn-danger kli2000copychart  " + datasetclass,
                 css: {
                     margin: "5px",
                     padding: "0px"
@@ -1234,7 +1235,7 @@ function createLocation() {
 
         $("#" + containerid)
             .append($("<button/>", {
-                class: "btn btn-sm btn-danger kli2000sumtable",
+                class: "btn btn-sm btn-danger kli2000sumtable " + datasetclass,
                 css: {
                     margin: "5px",
                     padding: "0px"
@@ -1261,8 +1262,15 @@ function createLocation() {
 
     $(document).on("click", "button.kli2000sumtable", async function (evt) {
         evt.preventDefault();
+        evt.stopImmediatePropagation();
+        evt.stopPropagation();
         let canvasid = $(this).attr("canvasid");
         let containerid = $(this).attr("containerid");
+        let $page = $("#" + canvasid).closest("article");
+        let oldsummary = $page.find(".kli3020summarytable");
+        if (oldsummary.length > 0) {
+            $(oldsummary).remove();
+        }
         let graph = Chart.getChart(canvasid);
         await showTable4Chart(graph, containerid, canvasid);
     });
@@ -1271,6 +1279,7 @@ function createLocation() {
         const datasets = chart.data.datasets.filter(
             (ds, i) => chart.isDatasetVisible(i)
         );
+
         // calculate row-header, first columns before data
         let rows = [];
         let headerfields = ["label", "variable", "method"];
@@ -1315,14 +1324,18 @@ function createLocation() {
             //yIntercept: 14.282
             rows.push(row);
         }
+
         let html = rowsToTable(rows, headerfields);
         let tid = "tbl" + (Math.floor(Math.random() * 1000000) + 1000000);
         $("#" + containerid)
-            .append($("<hr/>"));
-        $("#" + containerid)
             .append($("<div/>", {
-                id: tid
-            }));
+                class: "kli3020summarytable",
+            })
+                .append($("<hr/>"))
+                .append($("<div/>", {
+                    id: tid
+                }))
+            );
         $("#" + tid)
             .append(html);
     }
@@ -1345,7 +1358,7 @@ function createLocation() {
             html += "<thead>";
             html += "<tr>";
             html += "<th colspan='" + difflength + "'>";
-            html += location.locationname; //  + " " + rows[0].slice(0, headlength).join(" "); // Indizes 0 bis n
+            html += location.locname + " Summary"; //  + " " + rows[0].slice(0, headlength).join(" "); // Indizes 0 bis n
             html += "</th>";
             html += "</tr>";
             html += "<tr>";
@@ -1389,6 +1402,8 @@ function createLocation() {
 
     $(document).on("click", "button.kli2000copydata", async function (evt) {
         evt.preventDefault();
+        evt.stopImmediatePropagation();
+        evt.stopPropagation();
         let canvasid = $(this).attr("canvasid");
         let graph = Chart.getChart(canvasid);
         await copyChartCSV(graph);
@@ -1396,6 +1411,8 @@ function createLocation() {
 
     $(document).on("click", "button.kli2000copychart", async function (evt) {
         evt.preventDefault();
+        evt.stopImmediatePropagation();
+        evt.stopPropagation();
         let canvasid = $(this).attr("canvasid");
         const canvas = document.getElementById(canvasid); // Replace with your canvas element ID
         await copyCanvasToClipboard(canvas);
@@ -1448,8 +1465,10 @@ function createLocation() {
     // Usage: Get your canvas and pass it to the function
     //const canvas = document.getElementById('yourCanvasId'); // Replace with your canvas element ID
     //copyImageToClipboard(canvas);
-    $(document).on("click", ".datasetfilter", function (evt) {
+    $(document).on("click", ".datasetfilter", async function (evt) {
         evt.preventDefault();
+        evt.stopImmediatePropagation();
+        evt.stopPropagation();
         let that = this;
         let status = $(this).find("span").first().text();
         if (status === okletter) {
@@ -1459,12 +1478,17 @@ function createLocation() {
             $(this).find("span").first().html(oksign);
             status = "ok";
         }
-        requestAnimationFrame(function () {
-            let canvasid = $(that).attr("canvasid");
-            let varname = $(that).attr("varname");
-            let varvalue = $(that).attr("varvalue");
-            updateChart(canvasid);
+        await new Promise(function () {
+            requestAnimationFrame(function (resolve, reject) {
+                let canvasid = $(that).attr("canvasid");
+                let varname = $(that).attr("varname");
+                let varvalue = $(that).attr("varvalue");
+                updateChart(canvasid);
+                resolve();
+            });
         });
+        evt.stopImmediatePropagation();
+        evt.stopPropagation();
     });
 
     function updateChart(canvasid) {
@@ -1485,6 +1509,9 @@ function createLocation() {
                 }
             }
         }
+        console.log("datasetfilter-click");
+        console.log(canvasid, buttonsid);
+        console.log(selparms);
         let idataset = -1;
         for (let dataset of graph.data.datasets) {
             idataset++;
@@ -1599,13 +1626,30 @@ function createLocation() {
     async function getKLIDATA(location, geosets) {
         //extdays: {GHCND_GM000001153: {2018-07-05: extevts:{ GHCND_GM000001153: {TMAX_hot: 30.5}, …}, 
         // dayindex: 1234 (Tagesindex) im Jahr, year: 2018 als Jahr }}
+        stationpatterns = {};
         let sels = {};
-
+        let i = -1;
         for (let record of geosets[0]) {
+            //vcontrol.stations[key].dashPatternsIndex = ind;
+            i++;
+            if (i > 9) {
+                i = 0;
+            }
+            record.dashPatternsIndex = i;
+            stationpatterns[record.source + "_" + record.stationid] = i;   // dashPatternsIndex
             if (typeof sels[record.source] === "undefined") {
                 sels[record.source] = [];
             }
             sels[record.source].push(record.stationid);
+        }
+        for (let record of geosets[1]) {
+            //vcontrol.stations[key].dashPatternsIndex = ind;
+            i++;
+            if (i > 9) {
+                i = 0;
+            }
+            record.dashPatternsIndex = i;
+            stationpatterns[record.source + "_" + record.stationid] = i;   // dashPatternsIndex
         }
         let sql = "";
         sql += " SELECT KLISTATIONS.source, KLISTATIONS.stationid, KLISTATIONS.stationname,";
@@ -1666,6 +1710,8 @@ function createLocation() {
             Array.isArray(ret1.records)) {
             for (let record of ret1.records) {
                 record.key = record.source + "_" + record.stationid + "_" + record.variable;
+                record.stationkey = record.source + "_" + record.stationid;
+                record.dashPatternsIndex = stationpatterns[record.stationkey];   // dashPatternsIndex
                 if (typeof record.years === "string") {
                     record.years = JSON.parse(record.years);
                 }
@@ -1682,7 +1728,7 @@ function createLocation() {
                 }
             }
             // es sind die Werte jetzt auf float umgestellt, Rechnungen müssten also schneller gehen
-            extdays = getExtdays(ret1.records);
+            getExtdays(ret1.records);  // gehen automatisch nach extdays
             // extdays: {GHCND_GM000001153: {2018-07-05: extevts:{ GHCND_GM000001153: {TMAX_hot: 30.5}, …}, 
             // dayindex: 1234 (Tagesindex) im Jahr, year: 2018 als Jahr }}
             records = structuredClone(ret1.records);
@@ -1699,8 +1745,249 @@ function createLocation() {
         }
     }
 
-
     function getExtdays(records) {
+        let fromyear = 1950;
+        let toyear = 2019;
+        recindex = new Map(records.map((rec, i) => [rec.key, i]));
+        let allcritKeys = Object.keys(criticalDays);
+        let stationcontrol = {};
+        for (let record of records) {
+            if (typeof stationcontrol[record.stationkey] === "undefined") {
+                stationcontrol[record.stationkey] = {}
+            }
+        }
+        let stationkeys = Object.keys(stationcontrol);
+        // Vorgaben in  criticalDays mit
+        // TMIN_danger: {
+        //    title: "Vereisungsgefahr",
+        //      conditions: [
+        //        { days: 1, variable: "TMIN", max: 0 },
+        //        { days: 1, variable: "PRCP", min: 0.5 },
+        //        { days: 1, variable: "SNWD", max: 1 }
+        //      ],
+        //      variable: "TMIN",
+        //      color: "#9000ff",
+        //      stations: { }  // mit <station>:[<isoday>...]
+        // }
+
+        // Results
+        // extdays[variable][critical].stations[stationkey].data[iyear] => counter
+        // extdays[variable][critical].stations[stationkey].rawdata[iyear] => dayindexes
+        extdays = {};
+        for (let topic of Object.keys(criticalDays)) {
+            if (criticalDays[topic].conditions.length > 1) {
+                // Sonderfall, TMIN_danger nur days: 1,drei conditions
+                checkMultiDayMultiConditions(topic, criticalDays[topic].conditions, records, stationkeys, recindex, extdays);
+            } else if (criticalDays[topic].conditions[0].days === 1) {
+                checkMultiDayCondition(topic, criticalDays[topic].conditions[0], records, stationkeys, recindex, extdays);
+            } else {   // days > 1
+                // hardest out approach
+                checkMultiDayCondition(topic, criticalDays[topic].conditions[0], records, stationkeys, recindex, extdays);
+            }
+        }
+
+
+        function checkMultiDayMultiConditions(topic, conditions, records, stationkeys, recindex, extdays) {
+            let fromyear = 1950;
+            let toyear = 2019;
+            let specialdays = {}; // Trick 17: separate Struktur für die multi-conditions zu einem Topic
+            for (let condition of conditions) {
+                checkMultiDayCondition(topic, condition, records, stationkeys, recindex, specialdays);
+            }
+            let variable = "TMIN";
+            if (typeof extdays[variable] === "undefined") {
+                extdays[variable] = {};
+            }
+            if (typeof extdays[variable][topic] === "undefined") {
+                extdays[variable][topic] = {};
+                extdays[variable][topic].stations = {};
+            }
+            for (let topic of Object.keys(specialdays[variable])) {
+                for (let stationkey of Object.keys(specialdays[variable][topic].stations)) {
+                    // specialdays stations[stationkey].data, rawdata und values vorhanden
+                    // Vorbereiten des Ausgabebereichs in extdays                    
+                    if (typeof extdays["TMIN"][topic].stations[stationkey] === "undefined") {
+                        extdays["TMIN"][topic].stations[stationkey] = {
+                            data: new Array(70).fill(0),
+                            rawdata: {},
+                            values: {}
+                        };
+                    }
+                    for (let iyear = fromyear; iyear <= toyear; iyear++) {
+                        let tmindata = specialdays["TMIN"][topic].stations[stationkey].rawdata["" + iyear];
+                        let prcpdata = specialdays["PRCP"][topic].stations[stationkey].rawdata["" + iyear];
+                        let snwddata = specialdays["SNWD"][topic].stations[stationkey].rawdata["" + iyear];
+                        if (typeof prcpdata === "undefined" || typeof snwddata === "undefined" || typeof tmindata === "undefined") {
+                            continue;
+                        }
+                        extdays["TMIN"][topic].stations[stationkey].rawdata["" + iyear] = [];
+                        for (let iday of tmindata) {
+                            if (snwddata.includes(iday) && prcpdata.includes(iday)) {
+                                // Volltreffer
+                                extdays["TMIN"][topic].stations[stationkey].data[iyear - fromyear] += 1;
+                                extdays["TMIN"][topic].stations[stationkey].rawdata["" + iyear].push(iday);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // extdays[variable][topic].stations[stationkey].data["" + iyear] += anzdays;
+        // extdays[variable][topic].stations[stationkey].rawdata["" + iyear].push(bucket.days);
+        function checkMultiDayCondition(topic, condition, records, stationkeys, recindex, extdays) {
+            let variable = condition.variable;
+            let days = condition.days;
+            if (typeof extdays[variable] === "undefined") {
+                extdays[variable] = {};
+            }
+            if (typeof extdays[variable][topic] === "undefined") {
+                extdays[variable][topic] = {};
+                extdays[variable][topic].stations = {};
+            }
+            for (let stationkey of stationkeys) {
+                let recordkey = stationkey + "_" + variable;
+                let recordind = recindex.get(recordkey);
+                let record = records[recordind];
+                if (typeof record === "undefined") {
+                    continue;
+                }
+                if (typeof extdays[variable][topic].stations[stationkey] === "undefined") {
+                    extdays[variable][topic].stations[stationkey] = {};
+                }
+                extdays[variable][topic].stations[stationkey].data = new Array(toyear - fromyear + 1).fill(0);
+                extdays[variable][topic].stations[stationkey].rawdata = {};
+                extdays[variable][topic].stations[stationkey].values = {};
+                let years = record.years;
+                if (typeof years === "string") {
+                    years = JSON.parse(years);
+                }
+                for (let iyear = fromyear; iyear <= toyear; iyear++) {
+                    let dayvals = years["" + iyear];
+                    if (typeof dayvals === "undefined") {
+                        continue;
+                    }
+                    extdays[variable][topic].stations[stationkey].rawdata["" + iyear] = [];
+                    extdays[variable][topic].stations[stationkey].values["" + iyear] = [];
+                    let yearlength = dayvals.length;
+                    let iskip = 0;
+                    if (typeof condition.min !== "undefined" || typeof condition.max !== "undefined") {
+                        for (let iday = 0; iday < yearlength; iday++) {
+                            if (iskip > 0) {
+                                if (iday < iskip) {
+                                    continue;
+                                }
+                            }
+                            iskip = 0;
+                            let value = years["" + iyear][iday];
+                            let check1 = checkMinMax(condition, value);
+                            if (days === 1) {
+                                if (check1.check === true) {
+                                    extdays[variable][topic].stations[stationkey].data[iyear - fromyear] += 1;
+                                    extdays[variable][topic].stations[stationkey].rawdata["" + iyear].push(iday);
+                                    extdays[variable][topic].stations[stationkey].values["" + iyear].push(value);
+                                }
+                                continue;
+                            }
+                            if (check1.check === false) {
+                                continue;
+                            }
+                            // look ahead nur wenn iday schon true war bei min und max
+                            for (let mday = iday + 1; mday < yearlength; mday++) {
+                                let value = years["" + iyear][mday];
+                                let check2 = checkMinMax(condition, value);
+                                if (check2.check === false || mday === yearlength - 1) {
+                                    let duration = mday - iday;
+                                    if (duration >= days) {
+                                        extdays[variable][topic].stations[stationkey].data[iyear - fromyear] += duration;
+                                        for (let i = iday; i < mday; i++) {
+                                            extdays[variable][topic].stations[stationkey].rawdata["" + iyear].push(i);
+                                            extdays[variable][topic].stations[stationkey].values["" + iyear].push(years["" + iyear][i]);
+                                        }
+                                        iskip = mday;
+                                        break;
+                                    }
+                                }
+                            }
+                        }// ende iday
+                        // hier prüfen, ob noch Tage auszugeben sind
+                    } // min
+                }   // years
+            }
+        }
+    }
+
+
+    function addBucket(iyear, bucket, extdata) {
+        extdata.data["" + iyear] += bucket.days.length;
+        if (typeof extdata.rawdata["" + iyear] === "undefined") {
+            extdata.rawdata["" + iyear] = [];
+        }
+        extdata.rawdata["" + iyear].push(bucket.days);
+        bucket = {
+            sum: 0,
+            days: [],
+            values: []
+        };
+    };
+
+    function checkMinMax(condition, value) {
+        if (value === null) {
+            return { check: false };
+        }
+        if (typeof value === "string") {
+            if (value.length === 0) {
+                return { check: false };
+            }
+            value = parseFloat(value);
+        }
+        if (typeof condition.min !== "undefined") {
+            if (condition.min <= value) {
+                return { check: true };
+            } else {
+                return { check: false };
+            }
+        }
+        if (typeof condition.max !== "undefined") {
+            if (condition.max >= value) {
+                return { check: true };
+            } else {
+                return { check: false };
+            }
+        }
+    }
+
+    function checkValue(condition, value) {
+        if (value === null) {
+            return { check: false, add: null, value: value };
+        }
+        if (typeof value === "string") {
+            if (value.length === 0) {
+                return { check: false, add: null, value: value };
+            }
+            value = parseFloat(value);
+        }
+        if (typeof condition.min !== "undefined") {
+            if (condition.min <= value) {
+                return { check: true, add: null, value: value };
+            } else {
+                return { check: false, add: null, value: value };
+            }
+        }
+        if (typeof condition.max !== "undefined") {
+            if (condition.max >= value) {
+                return { check: true, add: null, value: value };
+            } else {
+                return { check: false, add: null, value: value };
+            }
+        }
+        if (typeof condition.minsum !== "undefined") {
+            return { check: true, add: value, value: value };
+        }
+    }
+
+
+    function getExtdays_old(records) {
         // record mit source, stationid, variable, years - aufbereitet
         // extdays: {GHCND_GM000001153: {2018-07-05: extevts:{ GHCND_GM000001153: {TMAX_hot: 30.5}, …}, 
         // dayindex: 1234 (Tagesindex) im Jahr, year: 2018 als Jahr }}
@@ -1780,7 +2067,7 @@ function createLocation() {
                         yearvals.splice(i, 1);
                     }
                 }
-                let vals = structuredClone(yearvals);
+                let vals = structuredClone(yearvals);  // yearlength beachten
                 //if (typeof record.years["" + (iyear + 1)] !== "undefined") {
                 //    vals = vals.concat(record.years["" + (iyear + 1)]);
                 //}
@@ -1791,28 +2078,32 @@ function createLocation() {
                     }
                     let conditions = criticalDays[criticalkey].conditions;
                     for (let condition of conditions) {
-                        let indexes = [];
-                        if (typeof condition.min !== "undefined") {
-                            indexes = vals.flatMap(function (val, index) {
-                                return val !== null && val >= condition.min ? [index] : [];
-                            });
-                        } else if (typeof condition.max !== "undefined") {
-                            indexes = vals.flatMap(function (val, index) {
-                                return val !== null && val <= condition.max ? [index] : [];
-                            });
-                        } else if (typeof condition.minsum !== "undefined") {
-                            // bringt hier eigentlich nichts, Durchgriff auf Rohdaten
-                            // bei der Chart-Erzeugung, wäre hier zu kompliziert
-                            indexes = vals.flatMap(function (val, index) {
-                                return val !== null && val >= 0 ? [index] : [];
-                            });
-                        }
-                        console.log(stationkey, criticalkey, iyear, indexes);
-                        if (indexes.length > 0) {
-                            if (typeof criticalDays[criticalkey].stations[stationkey] === "undefined") {
-                                criticalDays[criticalkey].stations[stationkey] = {};
+                        if (condition.days === 1) {
+                            let indexes = [];
+                            if (typeof condition.min !== "undefined") {
+                                indexes = vals.flatMap(function (val, index) {
+                                    return val !== null && val >= condition.min ? [index] : [];
+                                });
+                            } else if (typeof condition.max !== "undefined") {
+                                indexes = vals.flatMap(function (val, index) {
+                                    return val !== null && val <= condition.max ? [index] : [];
+                                });
+                            } else if (typeof condition.minsum !== "undefined") {
+                                // sollte hier nicht auftauchen, nur bei days > 1
+                                indexes = vals.flatMap(function (val, index) {
+                                    return val !== null && val >= 0 ? [index] : [];
+                                });
                             }
-                            criticalDays[criticalkey].stations[stationkey][iyear] = indexes;
+                            console.log(stationkey, criticalkey, iyear, indexes);
+                            if (indexes.length > 0) {
+                                if (typeof criticalDays[criticalkey].stations[stationkey] === "undefined") {
+                                    criticalDays[criticalkey].stations[stationkey] = {};
+                                }
+                                criticalDays[criticalkey].stations[stationkey][iyear] = indexes;
+                            }
+                        } else {
+                            // kays > 1 separat zu berechnen, etwas komplizierter
+                            getExtDaysPlus(condition, iyear, vals, record, criticaldays)
                         }
                     }
                 }
