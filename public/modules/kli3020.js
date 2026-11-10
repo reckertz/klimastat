@@ -38,6 +38,7 @@ function createLocation() {
     let topicParms = [
         ["Zeitreihe", addStandardPage, "yeardata", "TMAX", "avg", "max", "min"],
         ["Zeitreihe", addStandardPage, "yeardata", "TMIN", "avg", "min", "max"],
+        ["Zeitreihe", addStandardPage, "yeardata", "DTR", "avg", "min", "max"],
         ["Zeitreihe", addStandardPage, "yeardata", "PRCP", "kum", "", ""],
         ["Zeitreihe", addStandardPage, "yeardata", "SNOW", "kum", "", ""],   // SNOW
         ["Zeitreihe", addStandardPage, "yeardata", "SNWD", "kum", "", ""],   // SNWD
@@ -45,6 +46,7 @@ function createLocation() {
 
         ["Trendanalyse", addStandardPage, "yeardata", "TMAX", "avg_reg", "", ""],
         ["Trendanalyse", addStandardPage, "yeardata", "TMIN", "avg_reg", "", ""],
+        ["Trendanalyse", addStandardPage, "yeardata", "DTR", "avg_reg", "min", "max"],
         ["Trendanalyse", addStandardPage, "yeardata", "PRCP", "kum_reg", "", ""],
         ["Trendanalyse", addStandardPage, "yeardata", "SNOW", "kum_reg", "", ""],
         ["Trendanalyse", addStandardPage, "yeardata", "SNWD", "kum_reg", "", ""],
@@ -76,14 +78,14 @@ function createLocation() {
         ["Hitzewellen", addExtremePage, "years", "TMAX", "ext", "", ""],
         ["Kältewellen", addExtremePage, "years", "TMIN", "ext", "", ""],
         ["Starkregen", addExtremePage, "years", "PRCP", "ext", "", ""],
-        ["Schnee", addExtremePage, "years", "SNOW", "ext", "", ""]    // SNWD
+        ["Schnee", addExtremePage, "years", "SNOW", "ext", "", ""],    // SNWD
         ["Schnee", addExtremePage, "years", "SNWD", "ext", "", ""]    // SNWD
         /*
-         ["Korrelation", "yeardata", "TMAX-TMIN", "avg-korr", "", ""],
-         ["Korrelation", "yeardata", "TMAX-PRCP", "avg-korr", "", ""],
-         ["Korrelation", "yeardata", "PRCP-SNOW", "kum-korr", "", ""],
-         ["Korrelation", "yeardata", "TMAX-EXT", "avg-cnt-korr", "", ""],
-         */
+            ["Korrelation", "yeardata", "TMAX-TMIN", "avg-korr", "", ""],
+            ["Korrelation", "yeardata", "TMAX-PRCP", "avg-korr", "", ""],
+            ["Korrelation", "yeardata", "PRCP-SNOW", "kum-korr", "", ""],
+            ["Korrelation", "yeardata", "TMAX-EXT", "avg-cnt-korr", "", ""],
+            */
     ];
 
     let detailtopics = [
@@ -418,7 +420,7 @@ function createLocation() {
             }
         }
         let datasets = [];
-        if (datasource === "yeardata" && ["TMAX", "TMIN", "PRCP", "SNOW", "SNWD"].includes(variable) && ["avg", "kum"].includes(method)) {
+        if (datasource === "yeardata" && ["TMAX", "TMIN", "DTR", "PRCP", "SNOW", "SNWD"].includes(variable) && ["avg", "kum"].includes(method)) {
             let stations = geosets[0];
             // Loop über die Stations
             for (let station of stations) {
@@ -506,6 +508,8 @@ function createLocation() {
                 ytitle = "Schneefall kumuliert";
             } else if (["SNWD"].includes(variable)) {
                 ytitle = "Schneedecke kumuliert";
+            } else if (["DTR"].includes(variable)) {
+                ytitle = "Differenz TMAX-TMIN";
             }
 
             let config = getConfig4lineChart(thistitle, xlabels, datasets, xtitle, ytitle);
@@ -536,7 +540,7 @@ function createLocation() {
         //["Zeitreihe", dummy, "yeardata", "TMAX", "avg", "max", "min","height"],
         // async function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
         //let { $page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar } = hparms;
-        if (!(datasource === "yeardata" && ["TMAX", "TMIN", "PRCP", "SNOW", "SNWD"].includes(variable) && ["avg", "avg_reg", "kum", "kum_reg"].includes(method) && hydevar !== "")) {
+        if (!(datasource === "yeardata" && ["TMAX", "TMIN", "DTR", "PRCP", "SNOW", "SNWD"].includes(variable) && ["avg", "avg_reg", "kum", "kum_reg"].includes(method) && hydevar !== "")) {
             return {};
         }
         let fromyear = 1950;
@@ -960,9 +964,11 @@ function createLocation() {
                 }
             })
                 .append($("<span/>", {
+                    style: "font-weight:bold;",
                     html: ltitle
                 }))
                 .append($("<span/>", {
+                    style: "font-weight:bold;",
                     html: rtitle
                 }))
             );
@@ -1727,6 +1733,7 @@ function createLocation() {
                     }
                 }
             }
+            getDTR(ret1.records);
             // es sind die Werte jetzt auf float umgestellt, Rechnungen müssten also schneller gehen
             getExtdays(ret1.records);  // gehen automatisch nach extdays
             // extdays: {GHCND_GM000001153: {2018-07-05: extevts:{ GHCND_GM000001153: {TMAX_hot: 30.5}, …}, 
@@ -1744,6 +1751,68 @@ function createLocation() {
             };
         }
     }
+
+    function getDTR(records) {
+        let fromyear = 1950;
+        let toyear = 2019;
+        recindex = new Map(records.map((rec, i) => [rec.key, i]));
+        for (let record of records) {
+            if (record.variable !== "TMAX") {
+                continue;
+            }
+            let stationkey = record.stationkey;
+            let tminkey = stationkey + "_TMIN";
+            let tminind = recindex.get(tminkey);
+            let record1 = records[tminind];
+            if (typeof record1 === "undefined") {
+                continue;
+            }
+            let maxyears = record.years;
+            let minyears = record1.years;
+            let dtryears = {};
+            for (let iyear = fromyear; iyear <= toyear; iyear++) {
+                let maxvalues = maxyears["" + iyear];
+                let minvalues = minyears["" + iyear];
+                if (typeof maxvalues === "undefined" || typeof minvalues === "undefined") {
+                    continue;
+                }
+                for (let iday = 0; iday < maxvalues.length; iday++) {
+                    let maxvalue = maxvalues[iday];
+                    let minvalue = minvalues[iday];
+                    if (typeof maxvalue === "undefined" || typeof minvalue === "undefined") {
+                        continue;
+                    }
+                    if (maxvalue === null || minvalue === null || maxvalue === "" || minvalue === "") {
+                        continue;
+                    }
+                    let dtrvalue = parseFloat(maxvalue) - parseFloat(minvalue);
+                    dtrvalue = dtrvalue.toFixed(1);
+                    if (typeof dtryears["" + iyear] === "undefined") {
+                        dtryears["" + iyear] = new Array(maxvalues.length).fill("");
+                    }
+                    dtryears["" + iyear][iday] = dtrvalue;
+                }
+            } // end loop over years
+            let dtrrecord = structuredClone(record);
+            dtrrecord.variable = "DTR";
+            dtrrecord.key = dtrrecord.stationkey + "_DTR";
+            if (dtrrecord.fromyear < 1950) dtrrecord.fromyear = 1950;
+            if (dtrrecord.toyear > 2019) dtrrecord.toyear = 2019;
+            dtrrecord.years = dtryears;
+            // yeardata erzeugen aus years für dtrrecord;
+            dtrrecord.yeardata = {};
+            for (let iyear = fromyear; iyear <= toyear; iyear++) {
+                let yeardata = dtrrecord.years["" + iyear];
+                if (typeof yeardata !== "undefined") {
+                    let result = kli6900.getTrivial(dtrrecord.years["" + iyear], false, true);   // doround, korr)
+                    result.year = "" + iyear;
+                    dtrrecord.yeardata[result.year] = result;
+                }
+            }
+            records.push(dtrrecord);
+        }
+    }
+
 
     function getExtdays(records) {
         let fromyear = 1950;
@@ -1918,19 +1987,6 @@ function createLocation() {
     }
 
 
-    function addBucket(iyear, bucket, extdata) {
-        extdata.data["" + iyear] += bucket.days.length;
-        if (typeof extdata.rawdata["" + iyear] === "undefined") {
-            extdata.rawdata["" + iyear] = [];
-        }
-        extdata.rawdata["" + iyear].push(bucket.days);
-        bucket = {
-            sum: 0,
-            days: [],
-            values: []
-        };
-    };
-
     function checkMinMax(condition, value) {
         if (value === null) {
             return { check: false };
@@ -1955,354 +2011,6 @@ function createLocation() {
                 return { check: false };
             }
         }
-    }
-
-    function checkValue(condition, value) {
-        if (value === null) {
-            return { check: false, add: null, value: value };
-        }
-        if (typeof value === "string") {
-            if (value.length === 0) {
-                return { check: false, add: null, value: value };
-            }
-            value = parseFloat(value);
-        }
-        if (typeof condition.min !== "undefined") {
-            if (condition.min <= value) {
-                return { check: true, add: null, value: value };
-            } else {
-                return { check: false, add: null, value: value };
-            }
-        }
-        if (typeof condition.max !== "undefined") {
-            if (condition.max >= value) {
-                return { check: true, add: null, value: value };
-            } else {
-                return { check: false, add: null, value: value };
-            }
-        }
-        if (typeof condition.minsum !== "undefined") {
-            return { check: true, add: value, value: value };
-        }
-    }
-
-
-    function getExtdays_old(records) {
-        // record mit source, stationid, variable, years - aufbereitet
-        // extdays: {GHCND_GM000001153: {2018-07-05: extevts:{ GHCND_GM000001153: {TMAX_hot: 30.5}, …}, 
-        // dayindex: 1234 (Tagesindex) im Jahr, year: 2018 als Jahr }}
-        let index = new Map(records.map((rec, i) => [rec.key, i]));
-        let allcritKeys = Object.keys(criticalDays);
-        let fromyear = 1950;
-        let toyear = 2019;
-        console.log(criticalDays);
-        let stationkeys = {};
-        for (let record of records) {
-            let stationkey = record.source + "_" + record.stationid;
-            record.stationkey = stationkey;
-            if (typeof stationkeys[stationkey] === "undefined") {
-                stationkeys[stationkey] = {};
-            }
-            // criticalDays["TMIN_danger"] kennt drei Prüfvariablen, die zusammen Vereisungsgefahr ergeben
-            /* criticalDays["TMIN_danger"].stations{<iyear: [indexes of hits]}
-                criticalDays["TMIN_danger"].conditions:[{days:n }]
-                TMIN_danger: {
-                    title: "Vereisungsgefahr",
-                    conditions: [
-                        { days: 1, variable: "TMIN", max: 0 },
-                        { days: 1, variable: "PRCP", min: 0.5 },
-                        { days: 1, variable: "SNWD", max: 1 }
-                    ],
-                    variable: "TMIN,PRCP,SNWD",
-                    color: "#9000ff",
-                    stations: {}  // mit <station>:[<isoday>...]
-                },
-            */
-            // die conditions sind gewöhnlich geodert zu EINER variablen,
-            // Ausnahme ist TMIN_danger, dort sind die conditions geundet!!!
-            // erst werden alle Kriterien geprüft, die geodert sind, dann kommt die geundete TMIN_danger,
-            // TMIN_danger1 wird als lead zu TMIN_danger genutzt!!!
-            let selcritkeys = ["TMAX_hot"];
-            selcritkeys = selcritkeys.concat(["TMIN_tropic", "TMIN_cold", "TMIN_cold1", "TMIN_danger", "TMIN_danger1"]);
-            selcritkeys = selcritkeys.concat(["PRCP_rain", "PRCP_rain2"]);
-            selcritkeys = selcritkeys.concat(["SNWD_snow", "SNWD_snow2"]);
-            selcritkeys = selcritkeys.concat(["SNOW_snow", "SNOW_snow2"]);
-            let criticalcontrols = {
-                "TMAX": ["TMAX_hot"],
-                "TMIN": ["TMIN_tropic", "TMIN_cold", "TMIN_cold1", "TMIN_danger", "TMIN_danger1"],
-                "PRCP": ["PRCP_rain", "PRCP_rain2"],
-                "SNWD": ["SNWD_snow", "SNWD_snow2"],
-                "SNOW": ["SNOW_snow", "SNOW_snow2"]
-            };
-            let variable = record.variable;
-            if (typeof criticalcontrols[variable] === "undefined") {
-                continue;
-            }
-            let superdays = [];
-            for (let iyear = fromyear; iyear <= toyear; iyear++) {
-                let isleapyear = kli6900.isleapyear(iyear);
-                let yearlength = 365;
-                if (isleapyear) yearlength = 366;
-                let yearvals = record.years["" + iyear];
-                if (typeof yearvals === "undefined") {
-                    continue;
-                }
-                let len = yearvals.len;
-                if (len === 365 && leapyear === true || len === 366 && leapyear === false) {
-                    alert("problem");
-                    debugger;
-                }
-                // Extender, wenn erforderlich
-                if (len < yearlength) {
-                    for (let i = len - 1; i < yearlength; i++) {
-                        yearvals[i] = null;
-                    }
-                } else if (len > yearlength) {
-                    for (let i = len - 1; i > yearlength; i--) {
-                        let val = yearvals[i];
-                        if (val !== null) {
-                            alert("mist: " + val);
-                            debugger;
-                        }
-                        yearvals.splice(i, 1);
-                    }
-                }
-                let vals = structuredClone(yearvals);  // yearlength beachten
-                //if (typeof record.years["" + (iyear + 1)] !== "undefined") {
-                //    vals = vals.concat(record.years["" + (iyear + 1)]);
-                //}
-                for (let criticalkey of criticalcontrols[variable]) {
-                    if (typeof criticalDays[criticalkey] === "undefined") {
-                        alert("grosser Mist:" + criticalkey);
-                        continue;
-                    }
-                    let conditions = criticalDays[criticalkey].conditions;
-                    for (let condition of conditions) {
-                        if (condition.days === 1) {
-                            let indexes = [];
-                            if (typeof condition.min !== "undefined") {
-                                indexes = vals.flatMap(function (val, index) {
-                                    return val !== null && val >= condition.min ? [index] : [];
-                                });
-                            } else if (typeof condition.max !== "undefined") {
-                                indexes = vals.flatMap(function (val, index) {
-                                    return val !== null && val <= condition.max ? [index] : [];
-                                });
-                            } else if (typeof condition.minsum !== "undefined") {
-                                // sollte hier nicht auftauchen, nur bei days > 1
-                                indexes = vals.flatMap(function (val, index) {
-                                    return val !== null && val >= 0 ? [index] : [];
-                                });
-                            }
-                            console.log(stationkey, criticalkey, iyear, indexes);
-                            if (indexes.length > 0) {
-                                if (typeof criticalDays[criticalkey].stations[stationkey] === "undefined") {
-                                    criticalDays[criticalkey].stations[stationkey] = {};
-                                }
-                                criticalDays[criticalkey].stations[stationkey][iyear] = indexes;
-                            }
-                        } else {
-                            // kays > 1 separat zu berechnen, etwas komplizierter
-                            getExtDaysPlus(condition, iyear, vals, record, criticaldays)
-                        }
-                    }
-                }
-            }
-        }
-        //criticalDays["TMIN_danger"].stations{<stationkey>:{<iyear: [indexes of hits]}}
-        //criticalDays["TMIN_danger"].conditions:[{days:n }]
-        // extdays - not notwendig?
-        let extdays = {};
-        for (let critical of Object.keys(criticalDays)) {
-            let variable = criticalDays[critical].variable;
-            if (typeof extdays[variable] === "undefined") {
-                extdays[variable] = {};
-            }
-            if (typeof extdays[variable][critical] === "undefined") {
-                extdays[variable][critical] = {
-                    stations: {}
-                };
-            }
-            for (let stationkey of Object.keys(criticalDays[critical].stations)) {
-                if (typeof extdays[variable][critical].stations[stationkey] === "undefined") {
-                    extdays[variable][critical].stations[stationkey] = {
-                        rawdata: {},
-                        data: new Array(toyear - fromyear + 1).fill(0)
-                    };
-                }
-                for (let condition of criticalDays[critical].conditions) {
-                    let days = condition.days;
-                    let allindexes = criticalDays[critical].stations[stationkey];
-                    if (days === 1) {
-                        for (let iyear = fromyear; iyear <= toyear; iyear++) {
-                            let yearindexes = allindexes[iyear];
-                            if (typeof yearindexes === "undefined") {
-                                continue;
-                            } else {
-                                extdays[variable][critical].stations[stationkey].data[iyear - fromyear] += yearindexes.length;
-
-                                if (typeof extdays[variable][critical].stations[stationkey].rawdata[iyear] === "undefined") {
-                                    extdays[variable][critical].stations[stationkey].rawdata[iyear] = [];
-                                }
-                                extdays[variable][critical].stations[stationkey].rawdata[iyear] =
-                                    extdays[variable][critical].stations[stationkey].rawdata[iyear].concat(yearindexes);
-                            }
-                        }
-                    } else if (days > 1 && typeof condition.minsum === "undefined") {   // days > 1
-                        for (let iyear = fromyear; iyear <= toyear; iyear++) {
-                            if (stationkey === "GHCND_GME00121054" && critical === "TMAX_hot" && iyear === 1950) {
-                                // debugger;
-                            }
-                            let isleapyear = kli6900.isleapyear(iyear);
-                            let yearlength = 365;
-                            if (isleapyear) yearlength = 366;
-                            let indexes = allindexes[iyear];
-                            if (typeof indexes === "undefined") {
-                                continue;
-                            }
-                            let bucketyear = 0;
-                            let bucket = [];  // Gruppenwechsellogik
-                            for (let i = 0; i < indexes.length; i++) {
-                                let index = indexes[i];
-                                if (bucket.length === 0) {
-                                    bucket.push(index);
-                                    bucketyear = iyear;
-                                    continue; // Initialisierung
-                                }
-                                let newindex = indexes[i];
-                                let lastindex = bucket[bucket.length - 1];
-                                if (newindex - lastindex === 1) {
-                                    bucket.push(index);
-                                    bucketyear = iyear;
-                                    continue;   // Kette bilden
-                                } else {
-                                    // Gruppenwechsel
-                                    if (bucket.length >= days) {
-                                        extdays[variable][critical].stations[stationkey].data[iyear - fromyear] += bucket.length;
-                                        // extdays[variable][critical].stations[stationkey].rawdata.push({ iyear: bucket });
-                                        if (typeof extdays[variable][critical].stations[stationkey].rawdata[iyear] === "undefined") {
-                                            extdays[variable][critical].stations[stationkey].rawdata[iyear] = [];
-                                        }
-                                        extdays[variable][critical].stations[stationkey].rawdata[iyear] =
-                                            extdays[variable][critical].stations[stationkey].rawdata[iyear].concat(bucket);
-                                    }
-                                    bucket = [];
-                                    bucket.push(index);
-                                    bucketyear = iyear;
-                                    continue; // neue Initialisierung
-                                }
-                            }
-                            // letzter Fall
-                            if (bucket.length >= days) {
-                                let iyear = bucketyear;
-                                extdays[variable][critical].stations[stationkey].data[iyear - fromyear] += bucket.length;
-                                //extdays[variable][critical].stations[stationkey].rawdata.push({ iyear: bucket });
-                                if (typeof extdays[variable][critical].stations[stationkey].rawdata[iyear] === "undefined") {
-                                    extdays[variable][critical].stations[stationkey].rawdata[iyear] = [];
-                                }
-                                extdays[variable][critical].stations[stationkey].rawdata[iyear] =
-                                    extdays[variable][critical].stations[stationkey].rawdata[iyear].concat(bucket);
-
-                            }
-                        }
-                    } else {
-                        // days > 1 && minsum als Vorgabe; stationkey bekannt und variable
-
-                        if (typeof recindex === "undefined") {
-                            recindex = new Map(records.map((rec, i) => [rec.key, i]));
-                        }
-                        let recind = recindex.get(stationkey + "_" + variable);
-                        let record = records[recind];
-                        if (typeof record === "undefined") {
-                            continue;
-                        }
-                        let years = record.years;
-                        let minsum = condition.minsum;
-                        let data = new Array(toyear - fromyear + 1).fill(0);
-                        let bucket = { sum: 0, days: [] };
-                        for (let iyear = fromyear; iyear <= toyear; iyear++) {
-                            if (typeof years["" + iyear] === "undefined" || years["" + iyear] === null) {
-                                continue;
-                            }
-                            if (stationkey === "GHCND_GME00121054" && critical === "TMAX_hot" && iyear === 1950) {
-                                // debugger;
-                            }
-                            let isleapyear = kli6900.isleapyear(iyear);
-                            let yearlength = 365;
-                            if (isleapyear) yearlength = 366;
-                            bucket = { sum: 0, days: [] };
-                            let skipto = 0;
-                            for (let iday = 0; iday < yearlength; iday++) {
-                                // skipto-Prüfung, überspringt zugeordnete Tage
-                                if (skipto > 0 && iday < skipto) {
-                                    continue;
-                                } else {
-                                    skipto = 0;
-                                }
-                                // Prüfung Tag 1
-                                let val = years["" + iyear][iday];
-                                if (typeof val === "undefined" || val === null) {
-                                    bucket = { sum: 0, days: [] };
-                                    continue;
-                                }
-                                if (val <= 0) {
-                                    bucket = { sum: 0, days: [] };
-                                    continue;
-                                }
-                                bucket.sum += val;
-                                bucket.days.push(iday);
-                                // Prüfung Tag 2 - n
-                                let fday = iday;
-                                for (fday = iday + 1; fday < iday + days; fday++) {
-                                    let val = years["" + iyear][fday];
-                                    if (typeof val === "undefined" || val === null) {
-                                        continue;
-                                    }
-                                    bucket.sum += val;
-                                    bucket.days.push(fday);
-                                }
-                                if (bucket.sum <= minsum) {
-                                    continue;
-                                }
-                                // Prüfung Folgetage, klassisch look ahead
-                                for (let mday = fday + 1; mday < yearlength; mday++) {
-                                    let val = years["" + iyear][mday];
-                                    if (typeof val === "undefined" || val === null || parseFloat(val) < minsum / days) {
-                                        // Übernehmen bucket nach data
-                                        // 1. erst undefined - close und break
-                                        // dann parseFloat und Prüfung => break oder weiter
-                                        data[iyear - fromyear] += bucket.days.length;
-                                        for (let i1 = 0; i1 < bucket.days.length; i1++) {
-                                            extdays[variable][critical].stations[stationkey].rawdata[iyear] = bucket.days[i1];
-                                        }
-                                        bucket = { sum: 0, days: [] };
-                                        skipto = mday;
-                                        continue;
-                                    } else {
-                                        bucket.sum += parseFloat(val);
-                                        bucket.days.push(mday);
-                                    }
-                                }
-                                // Auswertung bucket
-                                // Fortschreibung data[iyear - fromyear];
-                            }
-                            // Abschluss: bucket prüfen und ggf. ausgeben
-                            if (bucket.days > days && bucket.sum >= minsum) {
-                                data[iyear - fromyear] += bucket.days.length;
-                                for (let i1 = 0; i1 < bucket.days.length; i1++) {
-                                    extdays[variable][critical].stations[stationkey].rawdata[iyear] = bucket.days[i1];
-                                }
-                            }
-                        }
-                        // iyear-Loop zu ende, data übernehmen
-                        extdays[variable][critical].stations[stationkey].data = data;
-                        console.log(extdays[variable][critical].stations[stationkey].data);
-                        console.log(extdays[variable][critical].stations[stationkey].rawdata);
-                    }
-                }
-            }
-        }
-        return extdays;
     }
 
     function getBorderDashThumb(borderDash, borderWidth, borderColor) {
