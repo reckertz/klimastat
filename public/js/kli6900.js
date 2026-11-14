@@ -812,7 +812,78 @@
         }
     };
 
+    /**
+     * getYearQuality Qualität der Daten in einem Jahr prüfen
+     * für TMIN und TMAX erst mal
+     * 1. Einlaufende oder auslaufende Lücke > 30 tage
+     * 2. verteilte Lücken > 20%
+     * Vorgabe array für das Jahr mit Temperaturdaten,
+     * Prüfung gegen null oder "null" sowie Typ oder ""
+     * return true/false
+     *
+     * @param {*} yeararray
+     * @returns
+            error: error, true or false
+            message: "Qualitätskontrolle",
+            total: iges, - gesamtzahl der Werte im Array
+            goods: hasgood, - Gesamtzahl gute Werte
+            bads: bads, - Gesamtzahl fehlende Werte ("Missing Data")
+            badstarter: badstarter - Fehlende Daten am Anfang, daraus kann der erste Tag berechnet werden
+            badender: badender - Fehlende Daten am Ende, daraus kann der letzte Tag berechnet werden
+            kla6900.fromTTT2MMTT = function (tyear, tint) - separat aufrufen,
+            weil hier das Jahr nicht beachtet wird
+            einfache Abfrage if(kal6900.getYearQuality(yeararray).error === false)
+     */
+    kli6900.getYearQuality = function (yeararray) {
+        let iges = yeararray.length;
+        let hasgood = 0;
+        let badstarter = 0;
+        let badender = 0;
+        let bads = 0;
+        for (let i = 0; i < iges; i++) {
+            let isbad = false;
+            if (yeararray[i] === null || yeararray[i] === "null") {
+                isbad = true;
+            } else if (yeararray[i] === "") {
+                isbad = true;
+            }
+            if (isbad === false) {
+                hasgood++;
+                badender = 0;
+            } else {
+                bads++;
+            }
+            if (hasgood === 0) {
+                badstarter++;
+            }
+            if (hasgood > 0 && isbad === true) {
+                badender++;
+            }
 
+        }
+        let error = false;
+        if (badstarter > 30 || badender > 30) {
+            error = true;
+        } else if (hasgood / iges < .95) {
+            // console.log((hasgood / iges * 100).toFixed(1));
+            if (hasgood / iges < .75) {
+                error = true;
+            } else {
+                error = false;
+            }
+        } else {
+            error = false;
+        }
+        return {
+            error: error,
+            message: "Qualitätskontrolle",
+            total: iges,
+            goods: hasgood,
+            bads: bads,
+            badstarter: badstarter,
+            badender: badender
+        };
+    };
 
     /**
     * kli6900.lincoordinates

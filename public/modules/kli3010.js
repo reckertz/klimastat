@@ -40,6 +40,10 @@ async function show(screenConfig, hook) {
     <p class="eyebrow">Dein Klima. Deine Umgebung.</p>
     <h1>Wie hat sich das Klima bei dir verändert?</h1>
     <p>Vergleiche historische Temperaturen von Wetterstationen in deiner Nähe – verständlich und auf Grundlage von Messdaten.</p>
+    <button type="button" class="btn btn-secondary btn-sm qualitycontrol" title="formale Qualitätskontrolle auf Datenvollständigkeit">
+        <span>${oksign}</span><span> Qualitätskontrolle</span>
+    </button>
+    <hr>
     <button type="button" class="btn btn-primary btn-sm primary" data-action="location">Klima hier entdecken</button>
     &nbsp;&nbsp;
     <button type="button" class="btn btn-primary btn-sm primary" data-action="oldlocations">alte Orte</button>
@@ -66,6 +70,17 @@ async function show(screenConfig, hook) {
         behavior: "smooth",
         block: "start",
         inline: "nearest"
+    });
+
+
+    $("#" + sectionid).on("click", "button.qualitycontrol", async function (evt) {
+        evt.preventDefault();
+        let status = $(this).find("span").first().text(); // button.qualitycontrol
+        if (status === okletter) {
+            $(this).find("span").first().html(cancelsign);
+        } else {
+            $(this).find("span").first().html(oksign);
+        }
     });
 
     let oldlocations = await getOldLocations(sectionid);
@@ -521,7 +536,7 @@ async function searchStations(location, distancekm) {
     let ret = {};
     let ret1 = {};
     let geopoints = [];
-    for (let distance of [50, 100, 250]) {
+    for (let distance of [50, 100, 250, 500]) {
         ret = {};
         geopoints = [];
         let sql = "";
@@ -629,7 +644,7 @@ async function searchStations(location, distancekm) {
             });
             let icountry = 0;
             kli6900.putMessage("Treffer: " + ret1.records.length);  // + " in: " + perf);
-            if (ret1.records.length >= 5) {
+            if (ret1.records.length >= 10) {
                 break;
             }
         }
