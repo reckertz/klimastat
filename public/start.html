@@ -75,10 +75,9 @@
             //await app.start();
             let ms = await speedTest();
             let p = document.getElementById("performance");
-            p.textContent = "Durchlauf: " + ms;
-
+            p.textContent = "Durchlauf: " + ms.toFixed(3);
             await new Promise(resolve => {
-                setTimeout(resolve, 3000);
+                setTimeout(resolve, 500);
             });
             let gurl = "index3.html?target=kli3000";
             let wname = "_self";

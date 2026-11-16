@@ -89,6 +89,9 @@ function createLocation() {
     ];
 
     let topicParms2 = [
+
+        ["Qualitycontrol", addQualityPage, "yeardata", "TMAX", "avg", "max", "min"],
+
         ["Zeitreihe", addStandardPage, "yeardata", "TMAX", "avg", "max", "min"],
         ["Trendanalyse", addStandardPage, "yeardata", "TMAX", "avg_reg", "", ""],
         ["Höhenanalyse", addHydePage, "yeardata", "TMAX", "avg", "min", "max", "height"],
@@ -311,6 +314,7 @@ function createLocation() {
         locationkey = location.locname.replace(/[^\p{L}\p{N}]/gu, "");
         locationkey += " " + location.geonameid;
         let firstpage = {};
+        debugger;
         let ret = await getKLIDATA(location, geosets);  // records je Instanz übergeordnet!!!
         recindex = new Map(records.map((rec, i) => [rec.key, i]));
         for (let topicParm of topicParms) {
@@ -363,7 +367,7 @@ function createLocation() {
                     // $("<span style='margin:5px'>").text(`(${locationkey})`)
                 );
                 $page.append(
-                    $("<div>", {
+                    $("<div/>", {
                         id: pageid + "chart",
                         class: "mychart",
                         css: {
@@ -374,7 +378,7 @@ function createLocation() {
                 $slider.append($page);
                 let ret = await locfunction($page, mode, location, geosets, topicParm);
             } else if (mode === "desktop") {
-                $("#" + containerid).append("<hr>");
+                // $("#" + containerid).append("<hr>");  // check
                 let $slider = null;
                 let topicstring = title + "_" + datasource + "_" + variable + "_" + method;
                 $slider = $("section[data-topic='" + topicstring + "']");
@@ -434,7 +438,7 @@ function createLocation() {
                     // $("<span style='margin:5px'>").text(`(${locationkey})`)
                 );
                 $page.append(
-                    $("<div>", {
+                    $("<div/>", {
                         id: pageid + "chart",
                         class: "mychart",
                         css: {
@@ -448,6 +452,58 @@ function createLocation() {
         }
         return firstpage;
     }
+
+
+    // die Qualitydata ausgeben!!! wie conditions
+    async function addQualityPage($page, mode, location, geosets, topicParm) {
+
+        // calculate row-header, first columns before data
+        let rows = [];
+        let header = [];
+        header.push("station");
+        header.push("from/to");
+        header.push("cat");
+        header.push("good");
+        header.push("bad");
+        header.push("miss");
+        header.push("dist");
+        rows.push(header);
+        let icount = 0;
+        for (let geoind of [0, 1, 2]) {
+            for (let record of geosets[geoind]) {
+                icount++;
+                let sign = cancelsign;
+                if (icount <= 5) {
+                    sign = oksign;
+                }
+                let row = [];
+                row.push(sign + " " + record.stationkey.replace(/_/g, " ") + " " + record.locname);
+                row.push(record.fromyear + "<br>" + record.toyear);
+                row.push(record.category);
+                row.push(record.goodyears);
+                row.push(record.badyears);
+                row.push(record.missingyears);
+                row.push(record.distancekm);
+                rows.push(row);
+            }
+        }
+        let html = rowsToTable(rows);
+        let tid = "tbl" + (Math.floor(Math.random() * 1000000) + 1000000);
+        $($page)
+            .append($("<hr/>"));
+        $($page)
+            .append($("<div/>", {
+                id: tid,
+                css: {
+                    width: "95%"
+                }
+            }));
+        $("#" + tid)
+            .append(html);
+        let pageid = $page.attr("id");
+        $("#" + pageid + "chart").remove();
+    }
+
 
     async function addStandardPage($page, mode, location, geosets, topicParm) {
         let [title, dummy, datasource, variable, method, altmethod1, altmethod2, hydevar] = topicParm;
@@ -557,7 +613,7 @@ function createLocation() {
             if (datasets.length === 0) {
                 $page.find(".mychart").remove();
                 $page.append(
-                    $("<div>", {
+                    $("<div/>", {
                         html: "keine Daten"
                     }));
                 return;
@@ -755,7 +811,7 @@ function createLocation() {
         if (icount === 0) {
             $page.find(".mychart").remove();
             $page.append(
-                $("<div>", {
+                $("<div/>", {
                     html: "keine Daten"
                 }));
             return;
@@ -833,7 +889,7 @@ function createLocation() {
         let topicstring = title + "_" + datasource + "_" + variable + "_" + method;
 
         // Map auf records setzen
-        let datasets = [];
+
         /*
             TMAX_hot: {
                 title: "Hitzewelle",
@@ -847,20 +903,23 @@ function createLocation() {
             */
         // extdays[variable][critical].stations[stationkey].data[iyear - fromyear] += bucket.length;
         // extdays[variable][critical].stations[stationkey].rawdata.push([iyear, bucket]);
-        debugger;
+        let datasets = [];
         for (let topic of Object.keys(extdays[variable])) {
             // topic = critical, z.B. TMAX_hot
             for (let stationkey of Object.keys(extdays[variable][topic].stations)) {
                 //let stations = locations[key].geosets[0];
                 let index = recindex.get(stationkey + "_" + variable);
                 let station = records[index];
-                let data = extdays[variable][topic].stations[stationkey].data;
+                let data = kli6900.cloneObject(extdays[variable][topic].stations[stationkey].data);
                 let sum = ss.sum(data);
                 if (sum === 0) {
                     continue;
                 }
                 let dataset = {
+                    type: "line",
                     label: station.stationname,
+                    hidden: false,
+                    visible: true,
                     source: station.source,
                     stationid: station.stationid,
                     locname: station.stationname,
@@ -889,18 +948,17 @@ function createLocation() {
                 datasets.push(dataset);
             }
         }
-
         if (datasets.length === 0) {
             $page.find(".mychart").remove();
             $page.append(
-                $("<div>", {
+                $("<div/>", {
                     html: "keine Daten"
                 }));
             return;
         }
         /*
         $page.append(
-            $("<div>", {
+            $("<div/>", {
                 class: "mychart",
                 css: {
                     backgroundColor: "lightyellow"
@@ -911,7 +969,6 @@ function createLocation() {
         let thistitle = title + " " + variable + " " + location.locname;
         let xtitle = "years";
         let ytitle = "count of days";
-        debugger;
         let config = getConfig4lineChart(thistitle, xlabels, datasets, xtitle, ytitle);
         let pageid = $page.attr("id");
         let container = $page.find("div.mychart");  // ist bereits definiert als container!!!
@@ -919,29 +976,56 @@ function createLocation() {
             .append($("<canvas/>", {
                 id: pageid + "canvas"
             }));
-        await new Promise(function (resolve, reject) {
-            requestAnimationFrame(async function () {
-                let canvasid = pageid + "canvas";
-                let canvas = document.getElementById(canvasid);
-                let ctx = canvas.getContext("2d");
-                let chart = new Chart(ctx, config);
-                chart.options.responsive = false;
-                chart.update("none");
-                showChartButtons($page, canvasid, ["topics", "stations"]);
-                // criticalDays[topic].title
-                // criticalDays[topic].variable
-                // criticalDays[topic].conditions[{days: n, mmin|max|minsum: m}];
-                showTopicsTable($page, pageid + "canvas", criticalDays);
-                resolve({ error: false, message: "" });
-            });
+
+        let canvasid = pageid + "canvas";
+        let canvas = document.getElementById(canvasid);
+        let ctx = canvas.getContext("2d");
+        let chart = new Chart(ctx, config);
+        //console.log("Original:", config.data.datasets);
+        //console.log("Chart:", chart.data.datasets);
+        //console.log("Metasets:", chart._metasets);
+        chart.options.responsive = false;
+        chart.update();
+        showChartButtons($page, canvasid, ["topics", "stations"]);
+        showTopicsTable($page, pageid + "canvas", criticalDays);
+        // science
+        console.log({
+            datasets: chart.data.datasets.length,
+            visible: chart.getVisibleDatasetCount(),
+            points: chart.data.datasets.map(ds => ds.data?.length)
         });
     }
 
+    function checkChart(chart) {
+        let canvas = chart.canvas;
+        let rect = canvas.getBoundingClientRect();
+        let result = {
+            connected: canvas.isConnected,
+            width: rect.width,
+            height: rect.height,
+            chartWidth: chart.width,
+            chartHeight: chart.height,
+            datasets: chart.data.datasets.length,
+            labels: chart.data.labels?.length,
+            visibleDatasets: chart.getVisibleDatasetCount(),
+            chartArea: chart.chartArea,
+            scales: Object.fromEntries(
+                Object.entries(chart.scales).map(function ([key, scale]) {
+                    return [key, {
+                        min: scale.min,
+                        max: scale.max
+                    }];
+                })
+            )
+        };
+
+        console.log(result);
+        return result;
+    }
+
+
     function showTopicsTable($page, canvasid, criticalDays) {
         let chart = Chart.getChart(canvasid);
-        //const datasets = chart.data.datasets.filter(
-        //    (ds, i) => chart.isDatasetVisible(i)
-        //);
         let datasets = chart.data.datasets;
         // get the topics
         let parms = {};
@@ -1307,7 +1391,9 @@ function createLocation() {
             $(button1).find("span").first().html(oksign);
             $(button1).hide();
         }
+
         updateChart(canvasid);
+
         // ergänzende Buttons für Copy
         $("#" + containerid)
             .append($("<hr/>"));
@@ -1629,10 +1715,9 @@ function createLocation() {
             parms.method = "kum";
             regscience = true;
         }
-        if (parms.method === "avg" || parms.method === "kum") {
+        if (parms.method === "avg" || parms.method === "kum" || parms.method === "ext") {
             let idataset = -1;
             let docancel = false;
-            debugger;
             for (let dataset of graph.data.datasets) {
                 idataset++;
                 if (dataset.variable === parms.variable && dataset.method === parms.method) {
@@ -1943,6 +2028,7 @@ function createLocation() {
         let buttonsid = canvasid.replace("canvas", "buttons");
         let buttons = $("#" + buttonsid).find("button.datasetfilter").toArray();
         let selparms = {};
+        let btncontrol = {};
         for (let button of buttons) {
             let visibility = $(button).css("visibility");
             if (visibility === "hidden") {
@@ -1950,6 +2036,12 @@ function createLocation() {
             }
             let varname = $(button).attr("varname");
             let varvalue = $(button).attr("varvalue");
+
+            if (typeof btncontrol[varname] === "undefined") {
+                btncontrol[varname] = 0;
+            }
+            btncontrol[varname]++;
+
             let status = $(button).find("span").first().text();
             if (status === okletter) {
                 if (typeof selparms[varname] === "undefined") {
@@ -1968,9 +2060,16 @@ function createLocation() {
             }
         }
         // Abbruch wenn gewisse Kriterien überhaupt nicht angesetzt sind
-
-        if (typeof selparms["method"] === "undefined" || selparms["method"].length === 0 ||
-            typeof selparms["stationkey"] === "undefined" || selparms["stationkey"].length === 0) {
+        // method, topics und stationkey sind wichtige Kriterien, wenn es die Buttons gibt
+        let doreset = false;
+        if (typeof btncontrol["method"] !== "undefined" && (typeof selparms["method"] === "undefined" || selparms["method"].length === 0)) {
+            doreset = true;
+        } else if (typeof btncontrol["topics"] !== "undefined" && (typeof selparms["topics"] === "undefined" || selparms["topics"].length === 0)) {
+            doreset = true;
+        } else if (typeof btncontrol["stationkey"] !== "undefined" && (typeof selparms["stationkey"] === "undefined" || selparms["stationkey"].length === 0)) {
+            doreset = true;
+        }
+        if (doreset === true) {
             for (let idataset = 0; idataset < graph.data.datasets.length; idataset++) {
                 graph.setDatasetVisibility(idataset, false);
             }
@@ -2018,6 +2117,32 @@ function createLocation() {
                 graph.setDatasetVisibility(idataset, true);
             }
         }
+        let scales = graph.scales;
+        for (let scaleid of Object.keys(scales)) {
+            let scale = scales[scaleid];
+            if (scale.axis !== "y") {
+                continue;
+            }
+            let scalemin = scale.min;
+            let scalemax = scale.max;
+            // check gegen die Daten
+            for (let dataset of graph.data.datasets) {
+                if (typeof dataset.custom === "undefined" && dataset.data.length === 70) {
+
+                    let erg = kli6900.getTrivial(dataset.data, false, false);
+                    dataset.custom = Object.assign({}, erg);
+                    if (dataset.custom.min < scalemin) {
+                        scales[scaleid].min = dataset.custom.min;
+                    }
+                    if (dataset.custom.max < scalemax) {
+                        scales[scaleid].max = dataset.custom.max;
+                    }
+                }
+            }
+
+        }
+
+
         graph.update("none");
     };
 
@@ -2108,7 +2233,7 @@ function createLocation() {
                 }
             }
         };
-        return structuredClone(config);
+        return kli6900.cloneObject(config);
     }
 
     // locationkey, colindex, location, geosets in locations[locationkey]
@@ -2149,13 +2274,11 @@ function createLocation() {
             record.dashPatternsIndex = i;
             stationpatterns[record.source + "_" + record.stationid] = i;   // dashPatternsIndex
             icount += 1;
-            if (icount < 15) {
-                if (typeof sels[record.source] === "undefined") {
-                    sels[record.source] = [];
-                }
-                sels[record.source].push(record.stationid);
-                stationdata[record.source + "_" + record.stationid] = structuredClone(record);
+            if (typeof sels[record.source] === "undefined") {
+                sels[record.source] = [];
             }
+            sels[record.source].push(record.stationid);
+            stationdata[record.source + "_" + record.stationid] = structuredClone(record);
         }
         let sql = "";
         sql += " SELECT KLISTATIONS.source, KLISTATIONS.stationid, KLISTATIONS.stationname,";
@@ -2258,9 +2381,9 @@ function createLocation() {
                         sumrealcounted += result.realcounted;
                     }
                     let category = 0;
-                    if (goodyears >= 68) {
+                    if (goodyears >= 65) {   // früher 68
                         category = 0;
-                    } else if (goodyears >= 65) {
+                    } else if (goodyears >= 70 * 0.8) {
                         category = 1;
                     } else {
                         category = 2;
@@ -2296,23 +2419,55 @@ function createLocation() {
                         return 0;
                     }
                 });
-                catstations = [[], [], []];
+
+                //stationdata[record.source + "_" + record.stationid]
+                geosets[0].length = 0;
+                geosets[1].length = 0;
+                geosets[2].length = 0;
                 for (let qrecord of qrecords) {
                     //if (catstations[qrecord.category] === 0) catstations[qrecord.category] = [];
-                    let len = catstations[0].length;
-                    if (qrecord.category === 0 && len >= 5) {
-                        qrecord.category = 1;
+                    let georec = stationdata[qrecord.stationkey];
+                    georec = Object.assign(georec, qrecord);
+                    geosets[qrecord.category].push(georec);
+                }
+                // Regorg geosets
+                debugger;
+
+                if (geosets[0].length < 5) {
+                    if (geosets[1].length > 0) {
+                        let diff = 5 - geosets[0].length;
+                        if (geosets[1].length >= diff) {
+                            geosets[0] = geosets[0].concat(geosets[1].splice(0, diff));
+                        } else {
+                            geosets[0] = geosets[0].concat(geosets[1]);
+                        }
+                    } else if (geosets[1].length > 5) {
+                        geosets[0] = geosets[0].concat(geosets[1].splice(0, 5));
                     }
-                    catstations[qrecord.category].push(qrecord);
+                } else if (geosets[0].length > 5) {
+                    let moresets = geosets[0].splice(5);
+                    geosets[1] = moresets.concat(geosets[1]);
+                }
+                let geokeys = [];
+                for (let geoset of geosets[0]) {
+                    geokeys.push(geoset.stationkey);
+                }
+                records = [];
+                for (let record of ret1.records) {
+                    if (geokeys.includes(record.stationkey)) {
+                        records.push(structuredClone(record));
+                    }
                 }
                 // und jetzt die magic stationdata[record.source + "_" + record.stationid] = structuredClone(record);
                 // nach geosets
+                /*
                 let usestationkeys = [];
                 for (let index of [0, 1, 2]) {
                     geosets[index].length = 0;
                     for (let catstation of catstations[index]) {
                         let stationkey = catstation.stationkey;
                         let record = stationdata[stationkey];
+                        record.category = catstation.category;
                         record.goodyears = catstation.goodyears;
                         record.missingyears = catstation.missingyears;
                         record.badyears = catstation.badyears;
@@ -2322,11 +2477,13 @@ function createLocation() {
                         }
                     }
                 }
+                debugger;
                 for (let record of ret1.records) {
                     if (usestationkeys.includes(record.stationkey)) {
                         records.push(structuredClone(record));
                     }
                 }
+                */
             } else {
                 records = ret1.records;
             }
