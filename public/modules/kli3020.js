@@ -313,7 +313,6 @@ function createLocation() {
         let firstpage = {};
         let ret = await getKLIDATA(location, geosets);  // records je Instanz übergeordnet!!!
         recindex = new Map(records.map((rec, i) => [rec.key, i]));
-        console.log(records.length);
         for (let topicParm of topicParms) {
             let [title, locfunction, datasource, variable, method, altmethod1, altmethod2, hydevar] = topicParm;
             if (mode === "mobile") {
@@ -496,6 +495,7 @@ function createLocation() {
                         check: "data",
                         fromyear: fromyear,
                         toyear: toyear,
+                        yAxisID: "y",
                         data: []
                     }
                     for (let record of records) {
@@ -576,6 +576,7 @@ function createLocation() {
                 ytitle = "Differenz TMAX-TMIN";
             }
             let config = getConfig4lineChart(thistitle, xlabels, datasets, xtitle, ytitle);
+
             let pageid = $page.attr("id");
             let container = $page.find("div.mychart");  // ist bereits definiert als container!!!
             $(container)
@@ -741,7 +742,7 @@ function createLocation() {
             hydedataset.pointRadius = 0;
             hydedataset.borderWidth = 2;
             hydedataset.check = "hyde";
-            hydedataset.yAxisID = referencedataset.hydevar;
+            hydedataset.yAxisID = referencedataset.hydevar; // TODO: prüfen
             datasets.push(hydedataset);
         }
 
@@ -829,7 +830,6 @@ function createLocation() {
             ["Schnee", "years", "SNOW", "ext", "", ""]
         ];
 
-        console.log("*** ", title, " ****");
         let topicstring = title + "_" + datasource + "_" + variable + "_" + method;
 
         // Map auf records setzen
@@ -847,6 +847,7 @@ function createLocation() {
             */
         // extdays[variable][critical].stations[stationkey].data[iyear - fromyear] += bucket.length;
         // extdays[variable][critical].stations[stationkey].rawdata.push([iyear, bucket]);
+        debugger;
         for (let topic of Object.keys(extdays[variable])) {
             // topic = critical, z.B. TMAX_hot
             for (let stationkey of Object.keys(extdays[variable][topic].stations)) {
@@ -870,6 +871,7 @@ function createLocation() {
                     method: "ext",
                     fromyear: fromyear,
                     toyear: toyear,
+                    yAxisID: "y",
                     data: data
                 };
                 let key = dataset.source + "_" + dataset.stationid;
@@ -909,6 +911,7 @@ function createLocation() {
         let thistitle = title + " " + variable + " " + location.locname;
         let xtitle = "years";
         let ytitle = "count of days";
+        debugger;
         let config = getConfig4lineChart(thistitle, xlabels, datasets, xtitle, ytitle);
         let pageid = $page.attr("id");
         let container = $page.find("div.mychart");  // ist bereits definiert als container!!!
@@ -916,7 +919,7 @@ function createLocation() {
             .append($("<canvas/>", {
                 id: pageid + "canvas"
             }));
-        let ret = await new Promise(function (resolve, reject) {
+        await new Promise(function (resolve, reject) {
             requestAnimationFrame(async function () {
                 let canvasid = pageid + "canvas";
                 let canvas = document.getElementById(canvasid);
@@ -932,8 +935,6 @@ function createLocation() {
                 resolve({ error: false, message: "" });
             });
         });
-
-        console.log("page fertig");
     }
 
     function showTopicsTable($page, canvasid, criticalDays) {
@@ -1001,6 +1002,8 @@ function createLocation() {
     }
 
     function showChartButtons($page, canvasid, vcontrolfields, hydevar) {
+        let fromyear = 1950;
+        let toyear = 2019;
         let containerid = $page.attr("id") + "buttons";
         $page.append($("<div/>", {
             id: containerid,
@@ -1140,6 +1143,31 @@ function createLocation() {
                         html: "<span>" + sign + "</span><span> " + value + "</span>",
                         title: crit + " " + value
                     }));
+            }
+            // Postprocessing methods für P0,P1,P2 mit visibility "hidden" oder "visible"
+            if (crit === "methods") {
+                for (let pparms of [["P0", 1950, 1979], ["P1", 1970, 1999], ["P2", 1990, 2019]]) {
+                    let [period, pfromyear, ptoyear] = pparms;
+                    let fromind = pfromyear - fromyear;
+                    let toind = ptoyear - fromyear;
+                    $("#" + containerid)
+                        .append($("<button/>", {
+                            class: "btn btn-sm btn-success datasetfilter " + datasetclass,
+                            css: {
+                                visibility: "hidden",
+                                margin: "5px",
+                                padding: "0px"
+                            },
+                            canvasid: canvasid,
+                            varname: crit.substring(0, crit.length - 1),
+                            varvalue: period,
+                            fromyear: pfromyear,
+                            toyear: ptoyear,
+                            html: "<span>" + oksign + "</span><span> " + period + "</span>",
+                            title: "Auswertung Verdichtung auf 30 Jahre",
+                            title: crit + " " + period
+                        }));
+                }
             }
         }
         // Sonderabwicklung stations
@@ -1308,6 +1336,19 @@ function createLocation() {
                 canvasid: canvasid,
                 html: "Copy Data",
                 title: "Copy label and data to Clipboard "
+            }));
+
+        $("#" + containerid)
+            .append($("<button/>", {
+                class: "btn btn-sm btn-danger kli2000copyall " + datasetclass,
+                css: {
+                    margin: "5px",
+                    padding: "0px"
+                },
+                containerid: containerid,
+                canvasid: canvasid,
+                html: "Copy All",
+                title: "Copy label, attributes and data to Clipboard "
             }));
 
         $("#" + containerid)
@@ -1544,12 +1585,15 @@ function createLocation() {
         evt.preventDefault();
         evt.stopImmediatePropagation();
         evt.stopPropagation();
+        $(this).prop("disabled", true);
         let canvasid = $(this).attr("canvasid");
         let pageid = canvasid.replace("canvas", "");
         let $page = $("#" + pageid);
+        $page.find("button[canvasid=" + canvasid + "][varname=method][varvalue=P0]").css("visibility", "visible");
+        $page.find("button[canvasid=" + canvasid + "][varname=method][varvalue=P1]").css("visibility", "visible");
+        $page.find("button[canvasid=" + canvasid + "][varname=method][varvalue=P2]").css("visibility", "visible");
         await showChartScience($page, pageid, canvasid);
     });
-
 
     function showChartScience($page, pageid, canvasid) {
         // auf der Ebene pageid gibt es zahlreiche Attribute
@@ -1575,11 +1619,20 @@ function createLocation() {
             return [rec.key, i];
         }));
 
-
         let yAxisID = "";
+        let regscience = false;
+        if (parms.method === "avg_reg") {
+            parms.method = "avg";
+            regscience = true;
+        }
+        if (parms.method === "kum_reg") {
+            parms.method = "kum";
+            regscience = true;
+        }
         if (parms.method === "avg" || parms.method === "kum") {
             let idataset = -1;
             let docancel = false;
+            debugger;
             for (let dataset of graph.data.datasets) {
                 idataset++;
                 if (dataset.variable === parms.variable && dataset.method === parms.method) {
@@ -1587,9 +1640,11 @@ function createLocation() {
                     let checkind = setindex.get(checkkey);
                     if (typeof graph.data.datasets[checkind] !== "undefined") {
                         docancel = true;
+                        debugger;
                         break;
                     }
                     let visible = graph.isDatasetVisible(idataset);
+
                     for (let pparms of [["P0", 1950, 1979], ["P1", 1970, 1999], ["P2", 1990, 2019]]) {
                         let [period, pfromyear, ptoyear] = pparms;
                         let fromind = pfromyear - fromyear;
@@ -1597,180 +1652,76 @@ function createLocation() {
                         let pdata = dataset.data.slice(fromind, toind);
                         let erg = kli6900.getTrivial(pdata, false, false);
                         let pdataset = kli6900.cloneObject(dataset);
+                        pdataset.originalmethod = dataset.method;
                         pdataset.method += period;
                         pdataset.key = dataset.source + "_" + dataset.stationid + "_" + dataset.variable + "_" + period;
                         pdataset.label += period;
                         pdataset.period = period;
-                        pdataset.data = [
-                            { x: fromind, y: erg.avg },
-                            { x: toind, y: erg.avg }
-                            //{ x: pfromyear, y: erg.avg },
-                            //{ x: ptoyear, y: erg.avg }
-                        ];
+                        if (regscience === false) {
+                            pdataset.data = [
+                                { x: fromind, y: erg.avg },
+                                { x: toind, y: erg.avg }
+                                //{ x: pfromyear, y: erg.avg },
+                                //{ x: ptoyear, y: erg.avg }
+                            ];
+                        } else {
+                            // Regressionsrechnung 
+                            let result = getregression(pdata, 0);
+                            let y1 = result.regdata[0];
+                            let y2 = result.regdata[result.regdata.length - 1];
+                            pdataset.data = [
+                                { x: fromind, y: y1 },
+                                { x: toind, y: y2 }
+                                //{ x: pfromyear, y: erg.avg },
+                                //{ x: ptoyear, y: erg.avg }
+                            ];
+                        }
                         pdataset.parsing = false;
                         pdataset.borderColor = "red";
                         pdataset.pointRadius = 0;
                         pdataset.borderWidth = 3;
-                        pdataset.yAxisID = "P";  //pdataset.variable + "_P";
+                        console.log(pdataset.yAxisID);
                         if (yAxisID === "") {
                             yAxisID = pdataset.yAxisID;
                         }
                         graph.data.datasets.push(pdataset);
+                        console.log(pdataset.key, pdataset.yAxisID, pdataset.period);
                         graph.setDatasetVisibility(graph.data.datasets.length - 1, visible);
+
                     }
                 }
             }
-            console.log("L:" + graph.data.datasets.length);
             if (docancel === true) {
                 return;
             }
-            //graph.options.scales.x.type = "category";
-            graph.scales.x.type = "category";
-
-            let scalemin = graph.scales['y'].min;
-            let scalemax = graph.scales['y'].max;
-            graph.options.scales[yAxisID] = {
-                axis: "y",
-                type: "linear",
-                position: "right",
-                suggestedMin: scalemin,
-                suggestedMax: scalemax,
-                min: scalemin,
-                max: scalemax,
-                grid: {
-                    drawOnChartArea: false
-                },
-                title: {
-                    display: false,
-                    text: yAxisID
-                },
-                ticks: {
-                    maxTicksLimit: 6,
-                    font: { size: 10 }
-                }
-            };
-            graph.update("none");
-            return;
-        } else if ((parms.method.includes("avg") || parms.method.includes("kum")) && parms.method.includes("reg")) {
-            // Gradienten für die Subperioden
-            let idataset = -1;
-            for (let dataset of graph.data.datasets) {
-                idataset++;
-                if (dataset.variable === parms.variable && parms.method.includes(dataset.method)) {
-                    let checkkey = dataset.source + "_" + dataset.stationid + "_" + dataset.variable + "_" + "P0";
-                    let checkind = setindex.get(checkkey);
-                    if (typeof graph.data.datasets[checkind] !== "undefined") {
-                        docancel = true;
-                        break;
-                    }
-                    let visible = graph.isDatasetVisible(idataset);
-                    for (let pparms of [["P0", 1950, 1979], ["P1", 1970, 1999], ["P2", 1990, 2019]]) {
-                        let [period, pfromyear, ptoyear] = pparms;
-                        let fromind = pfromyear - fromyear;
-                        let toind = ptoyear - fromyear;
-                        let pdata = dataset.data.slice(fromind, toind);
-
-                        let result = getregression(pdata, 0);
-                        // result.regdata; gradient; r2
-                        let pdataset = kli6900.cloneObject(dataset);
-                        pdataset.method += period;
-                        pdataset.key = dataset.source + "_" + dataset.stationid + "_" + dataset.variable + "_" + period;
-                        pdataset.label += period;
-                        pdataset.period = period;
-                        pdataset.data = [
-                            { x: fromind, y: result.regdata[0] },
-                            { x: toind, y: result.regdata[result.regdata.length - 1] }
-                            //{ x: pfromyear, y: erg.avg },
-                            //{ x: ptoyear, y: erg.avg }
-                        ];
-                        pdataset.parsing = false;
-                        pdataset.borderColor = "red";
-                        pdataset.pointRadius = 0;
-                        pdataset.borderWidth = 3;
-                        pdataset.yAxisID = "P";  //pdataset.variable + "_P";
-                        if (yAxisID === "") {
-                            yAxisID = pdataset.yAxisID;
-                        }
-                        graph.data.datasets.push(pdataset);
-                        graph.setDatasetVisibility(graph.data.datasets.length - 1, visible);
-                    }
-                }
-            }
-            console.log("L:" + graph.data.datasets.length);
-
-            //graph.options.scales.x.type = "category";
-            graph.scales.x.type = "category";
-
-            let scalemin = graph.scales['y'].min;
-            let scalemax = graph.scales['y'].max;
-            graph.options.scales[yAxisID] = {
-                axis: "y",
-                type: "linear",
-                position: "right",
-                suggestedMin: scalemin,
-                suggestedMax: scalemax,
-                min: scalemin,
-                max: scalemax,
-                grid: {
-                    drawOnChartArea: false
-                },
-                title: {
-                    display: false,
-                    text: yAxisID
-                },
-                ticks: {
-                    maxTicksLimit: 6,
-                    font: { size: 10 }
-                }
-            };
-            graph.update("none");
-            return;
-        }
-    }
-
-
-    /*
-    let [title, dummy, datasource, variable, method, altmethod1, altmethod2, hydevar] = topicParm;
-    if (standard === "standard") {
-        // Trend auf variable an sich
-        let totalmin = null;
-        let totalmax = null;
-        let testvariable = "grad";
-        for (let dataset of datasets) {
-            if (totalmin === null) {
-                if (dataset.custom.min !== null) [
-                    totalmin = dataset.custom.min
-                ]
-            } else if (totalmin > dataset.custom.min) {
-                totalmin = dataset.custom.min
-            }
-            if (totalmax === null) {
-                if (dataset.custom.max !== null) [
-                    totalmax = dataset.custom.max
-                ]
-            } else if (totalmax < dataset.custom.max) {
-                totalmax = dataset.custom.max
-            }
-
         }
 
-
-
-        $("#" + containerid).find(".kli3020summarytable")
-            .append($("<details/>")
-                .append($("<summary/>", {
-                    html: "Die Temperatur steigt!?"
-                }))
-                .append($("<p>").html(`
-                    Global Warming durch menschgemachte CO2-Freisetzung<br>
-                    ist eine zentrale Hypothese.<br>
-                    Zur Verdeutlichung 
-
-                    
-                `))
-            );
+        //graph.options.scales.x.type = "category";
+        graph.scales.x.type = "category";
+        let scalemin = graph.scales['y'].min;
+        let scalemax = graph.scales['y'].max;
+        graph.options.scales[yAxisID] = {
+            axis: "y",
+            type: "linear",
+            position: "right",
+            suggestedMin: scalemin,
+            suggestedMax: scalemax,
+            min: scalemin,
+            max: scalemax,
+            grid: {
+                drawOnChartArea: false
+            },
+            title: {
+                display: false,
+                text: yAxisID
+            },
+            ticks: {
+                maxTicksLimit: 6,
+                font: { size: 10 }
+            }
+        };
+        graph.update("none");
     }
-    */
 
 
 
@@ -1784,6 +1735,19 @@ function createLocation() {
         await copyChartCSV(graph);
     });
 
+
+
+    $(document).on("click", "button.kli2000copyall", async function (evt) {
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
+        evt.stopPropagation();
+
+        let canvasid = $(this).attr("canvasid");
+        let graph = Chart.getChart(canvasid);
+        await copyChartAttrsCSV(graph);
+    });
+
+
     $(document).on("click", "button.kli2000copychart", async function (evt) {
         evt.preventDefault();
         evt.stopImmediatePropagation();
@@ -1792,6 +1756,114 @@ function createLocation() {
         const canvas = document.getElementById(canvasid); // Replace with your canvas element ID
         await copyCanvasToClipboard(canvas);
     });
+
+
+    async function copyChartAttrsCSV(graph) {
+
+        const datasets = graph.data.datasets;
+
+        let fields = "key,source,stationid,datakey,fromyear,toyear,";
+        fields += "label,stationkey,locname,variable,method,check,";
+        fields += "period,yAxisID";
+        let rowfields = fields.split(",");
+        let subfields = "counted,realcounted,missing,missingseqmax,max,min,imax,imin,avg,sum,grad,r2,yIntercept";
+        let rowsubfields = subfields.split(",");
+
+        let totalrows = rowfields.length + rowsubfields.length;
+
+        // zuerst alle rows initialisieren mit der ersten Spalte
+        let rows = [];
+        for (let irow = 0; irow < rowfields.length; irow++) {
+            rows[irow] = [];
+            rows[irow].push(rowfields[irow]);
+        }
+        // jetzt die Zeilen für die rowsubfields
+        let missings = 0;
+        let visibles = 0;
+        let availables = 0;
+        let xydata = 0;
+        for (let idataset = 0; idataset < datasets.length; idataset++) {
+            let dataset = datasets[idataset];
+            if (graph.isDatasetVisible(idataset) === false) {
+                continue;
+            }
+            visibles++;
+            if (typeof dataset.custom === "undefined") {
+                missings++;
+            } else {
+                availables++;
+            }
+            if (dataset.data.length === 2) {
+                xydata++;
+            }
+        }
+        let docustom = false;
+        if (availables > 0) {
+            docustom = true;
+        }
+        if (docustom === true) {
+            for (let irow = 0; irow < rowsubfields.length; irow++) {
+                let rowind = rowfields.length - 1 + irow;
+                rows[rowind] = [];
+                rows[rowind].push(rowsubfields[irow]);
+            }
+        }
+        // Lines for special lines with two objects with x and y
+        if (xydata > 0) {
+            rows[rows.length] = [];
+            rows[rows.length - 1].push("xyfrom");
+            rows[rows.length] = [];
+            rows[rows.length - 1].push("xyto");
+        }
+
+
+        let icol = 0; // die fieldname-Spalte ist hier bereits vorhanden
+        let i = -1;
+        for (let dataset of datasets) {
+            i++;
+            if (graph.isDatasetVisible(i) === false) {
+                continue;
+            }
+            icol++;
+            for (let irow = 0; irow < rowfields.length; irow++) {
+                let value = "" + dataset[rowfields[irow]];
+                value = value.replace(/_/g, "<br>");
+                rows[irow][icol] = value;
+            }
+            if (docustom === true) {
+                for (let irow = 0; irow < rowsubfields.length; irow++) {
+                    let rowind = rowfields.length - 1 + irow;
+                    if (typeof dataset["custom"] !== "undefined") {
+                        let value = "" + dataset["custom"][rowsubfields[irow]];
+                        rows[rowind][icol] = value;
+                    } else {
+                        rows[rowind][icol] = "unknown";
+                    }
+                }
+            }
+            if (xydata > 0) {
+                if (dataset.data.length === 2) {
+                    let rind = rows.length - 2;
+                    rows[rind][icol] = "x:" + dataset.data[0].x + ";<br>y:" + dataset.data[0].y;
+                    rind++;
+                    rows[rind][icol] = "x:" + dataset.data[1].x + ";<br>y:" + dataset.data[1].y;
+                } else {
+                    let rind = rows.length - 2;
+                    rows[rind][icol] = "not available";
+                    rind++;
+                    rows[rind][icol] = "not available";
+                }
+            }
+        }
+        let html = rowsToTable(rows, []);
+        // html bereitstellen im Clipboard
+        await navigator.clipboard.write([
+            new ClipboardItem({
+                "text/html": new Blob([html], { type: "text/html" }),
+            })
+        ]);
+    }
+
 
     async function copyChartCSV(chart) {
         const labels = chart.data.labels;
@@ -1872,6 +1944,10 @@ function createLocation() {
         let buttons = $("#" + buttonsid).find("button.datasetfilter").toArray();
         let selparms = {};
         for (let button of buttons) {
+            let visibility = $(button).css("visibility");
+            if (visibility === "hidden") {
+                continue;
+            }
             let varname = $(button).attr("varname");
             let varvalue = $(button).attr("varvalue");
             let status = $(button).find("span").first().text();
@@ -1879,22 +1955,61 @@ function createLocation() {
                 if (typeof selparms[varname] === "undefined") {
                     selparms[varname] = [];
                 }
-                if (!selparms[varname].includes(varvalue)) {
-                    selparms[varname].push(varvalue);
+                if (varname === "method" &&
+                    (varvalue.endsWith("P0") || varvalue.endsWith("P1") || varvalue.endsWith("P2"))) {
+                    if (!selparms[varname].includes(varvalue)) {
+                        selparms[varname].push(varvalue);
+                    }
+                } else {
+                    if (!selparms[varname].includes(varvalue)) {
+                        selparms[varname].push(varvalue);
+                    }
                 }
             }
         }
-        console.log("datasetfilter-click");
-        console.log(canvasid, buttonsid);
-        console.log(selparms);
+        // Abbruch wenn gewisse Kriterien überhaupt nicht angesetzt sind
+
+        if (typeof selparms["method"] === "undefined" || selparms["method"].length === 0 ||
+            typeof selparms["stationkey"] === "undefined" || selparms["stationkey"].length === 0) {
+            for (let idataset = 0; idataset < graph.data.datasets.length; idataset++) {
+                graph.setDatasetVisibility(idataset, false);
+            }
+            graph.update("none");
+            return;
+        }
         let idataset = -1;
         for (let dataset of graph.data.datasets) {
             idataset++;
             let found = true;
             for (let varname of Object.keys(selparms)) {
-                if (!selparms[varname].includes(dataset[varname])) {
-                    found = false;
-                    break;
+                let value = dataset[varname];
+                if (varname === "method") {
+                    if (value.endsWith("P0")) {
+                        if (!selparms[varname].includes("P0")) {
+                            found = false;
+                            break;
+                        }
+                    } else if (value.endsWith("P1")) {
+                        if (!selparms[varname].includes("P1")) {
+                            found = false;
+                            break;
+                        }
+                    } else if (value.endsWith("P2")) {
+                        if (!selparms[varname].includes("P2")) {
+                            found = false;
+                            break;
+                        }
+                    } else {
+                        if (!selparms[varname].includes(dataset[varname])) {
+                            found = false;
+                            break;
+                        }
+                    }
+                } else {
+                    if (!selparms[varname].includes(dataset[varname])) {
+                        found = false;
+                        break;
+                    }
                 }
             }
             if (found === false) {
@@ -2142,8 +2257,6 @@ function createLocation() {
                         sumcounted += result.counted;
                         sumrealcounted += result.realcounted;
                     }
-                    console.log(record.source, record.stationid, record.variable);
-                    console.log(goodyears, missingyears, badyears);
                     let category = 0;
                     if (goodyears >= 68) {
                         category = 0;
@@ -2165,7 +2278,6 @@ function createLocation() {
             }
             records = [];
             if (doQualityControl === true) {
-                debugger;
                 // sortieren qualitydata
                 let qrecords = qualitydata.sort(function (a, b) {
                     if (a.category > b.category) {
@@ -2184,7 +2296,6 @@ function createLocation() {
                         return 0;
                     }
                 });
-                console.log(qrecords);
                 catstations = [[], [], []];
                 for (let qrecord of qrecords) {
                     //if (catstations[qrecord.category] === 0) catstations[qrecord.category] = [];
@@ -2207,7 +2318,7 @@ function createLocation() {
                         record.badyears = catstation.badyears;
                         geosets[index].push(record);
                         if (index === 0) {
-                        usestationkeys.push(stationkey);
+                            usestationkeys.push(stationkey);
                         }
                     }
                 }
@@ -2219,7 +2330,6 @@ function createLocation() {
             } else {
                 records = ret1.records;
             }
-            debugger;
             getDTR(records);
             // es sind die Werte jetzt auf float umgestellt, Rechnungen müssten also schneller gehen
             getExtdays(records);  // gehen automatisch nach extdays
