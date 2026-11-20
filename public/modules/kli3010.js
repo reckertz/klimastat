@@ -460,7 +460,6 @@ async function showCandidates(sectionid, searchstring, country_code, latitude, l
                 html: location.locname + " Auswerten",
                 click: async function (evt) {
                     evt.preventDefault();
-                    debugger;
                     await locationhook(location, geosets);
                     //await startStatistics(location, geosets);
                 }

@@ -89,6 +89,9 @@ async function showThemeSelection() {
                     topicindex: topicindex,
                     click: function (evt) {
                         evt.preventDefault();
+                        if (typeof resolve === "undefined") {
+                            alert("schön wärs");
+                        }
                         resolve(topic);
                     }
                 })
@@ -108,6 +111,13 @@ async function showThemeSelection() {
                     });
                 */
         });
+        let target = $("div.row.themescontainer")[0];
+        //let target = document.getElementById(pageid + "help");
+        target.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+            inline: "nearest"
+        });
     });
 
 }
@@ -120,6 +130,7 @@ async function addLocation(newlocation, geosets) {
     let theme = null;
     if (locationInstances.length === 0) {
         theme = await showThemeSelection();
+
     }
 
     if (screenConfig.mode === "mobile") {

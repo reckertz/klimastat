@@ -316,7 +316,6 @@ function createLocation() {
 
     async function addTopics(newcontainerid, colIndex, newmode, newlocation, newgeosets, theme) {
         await help.generate(topicParms);
-        debugger;
         containerid = newcontainerid;
         mode = newmode;
         location = kli6900.cloneObject(newlocation);
@@ -1996,7 +1995,6 @@ function createLocation() {
                     let checkind = setindex.get(checkkey);
                     if (typeof graph.data.datasets[checkind] !== "undefined") {
                         docancel = true;
-                        debugger;
                         break;
                     }
                     let visible = graph.isDatasetVisible(idataset);
@@ -2801,7 +2799,6 @@ function createLocation() {
                         }
                     }
                 }
-                debugger;
                 for (let record of ret1.records) {
                     if (usestationkeys.includes(record.stationkey)) {
                         records.push(structuredClone(record));
