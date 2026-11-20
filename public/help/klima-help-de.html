@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<body>
+
+    <section id="common.commandbuttons">
+        <p>Dazu kommen <b>Kommandobuttons</b>
+            <br>Science - Aufbereitung zusätzlicher Informationen
+            <br>Copy Data - es werden die Daten der sichtbaren Linien im Clipboard bereitgestellt
+            <br>Copy All - es werden Attribute der sichtbaren Linien im Clipboard bereitgestellt
+            <br>Copy Chart - es wird das Chart im Clipboard bereitgestellt
+            <br>Show Table - es wird ein kompakte Übersicht zu dem Chart ausgegeben
+            <br>Copy Table - es wird ein kompakte Übersicht zu dem Chart im Clipboard bereitgestellt
+        </p>
+    </section>
+
+    <section id="common.science">
+        <p>
+            Die Daten im Chart zeigen den Verlauf über die Jahre, der <b>Button "Science"</b>
+            blendet zusätzlich die Durchschnittstemperaturen für die 30-Jahresperioden
+            <b>1950-1979, 1970-1999, 1990-2019</b>. Mit den Buttons P0, P1, P2 können diese Perioden
+            gezielt ein- und ausgeblendet werden als Linie für jeweils 30 Jahre.
+        </p>
+    </section>
+
+    <section id="common.scienceregression">
+        <p>
+            Die Daten im Chart zeigen den Verlauf und die Regressino über die Jahre, der <b>Button "Science"</b>
+            blendet zusätzlich die Regressionsgeraden für die 30-Jahresperioden
+            <b>1950-1979, 1970-1999, 1990-2019</b> ein. Mit den Buttons P0, P1, P2 können diese Perioden
+            gezielt ein- und ausgeblendet werden als Linie für jeweils 30 Jahre.
+            So kann schnell geprüft werden, ob die Steigung der Temperatur steigt oder gleich bleibt
+            oder fällt.
+        </p>
+    </section>
+
+    <section id="common.shorttable">
+        <p>
+            Die <b>Tabelle umfasst folgende Daten</b>
+            <br>Die Kopfzeile je Station enthält den Namen, die Variable und die Berechnung
+            <br>vals - Anzahl der Jahre mit Daten
+            <br>min - Minimalwert über alle Jahre
+            <br>avg - Durchschnittswert über alle Jahre
+            <br>max - Maximalwert über alle Jahre
+            <br>sum - Summe der gemessenen Werte über alle Jahre
+            <br>grad - Steigung der Regressionsgerade über alle Jahre
+            <br>r2 - Streuung um die Regressionsgerade über alle Jahre
+        </p>
+    </section>
+
+    <section id="QC_TMAX_avg">
+        <h3>Formale Qualitätskontrolle</h3>
+        <p>Vollständigkeit der Daten pro Jahr und über die 70 Jahre von 1950 bis 2019</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>station - Die Wetterstation mit ID und Name
+                <br>cat - Kategorie, 0 = vollständig, erste 5; 1 = vollständig; 2 = unvollständig
+                <br>good - Jahre mit vollständigen Daten
+                <br>bad - Jahre mit unvollständigen Daten
+                <br>miss - missing data, Jahre ohne Daten
+                <br>dist - Entfernung der Station vom vorgegebenen Ort in km
+            </p>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>"vollständig" sind Jahre mit bestimmten Einschränkungen
+                <br>innerherhalb eines Jahres dürfen 20% der Tage fehlen
+                <br>es dürfen allerdings nur maximal 6 Tage aufeinanderfolgend fehlen
+                <br>es müssen 80% aller Jahre einer Station genügend Daten haben
+            </p>
+            <p>Die Prüfungen orientieren sich an internationalen Vorgaben
+                <a href='https://library.wmo.int/records/item/55797-wmo-guidelines-on-the-calculation-of-climate-normals'
+                    target='_blank'>
+                    WMO
+                </a>
+                und <a
+                    href='https://www.dwd.de/DE/leistungen/deutscherklimaatlas/erlaeuterungen/normalwerte/normalwerte.html'
+                    target='_blank'>
+                    DWD
+                </a>
+                , die auch vom IPCC akzeptiert sind
+            </p>
+        </details>
+    </section>
+
+
+    <section id="ZR_TMAX_avg">
+        <h3>Zeitreihe TMAX</h3>
+        <p>Tageshöchsttemperaturen im Jahresdurchschnitt</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse mit den Temperaturen in Grad Celsius
+                <br>die initiale Anzeige betrifft die Mittelwerte (avg), es können aber
+                auch die Minmalwerte und Maximalwerte je Jahr ausgewertet werden.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+            </p>
+            <p>Dazu kommen <b>Kommandobuttons</b>
+                <br>Science - Aufbereitung zusätzlicher Informationen
+                <br>Copy Data - es werden die Daten der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy All - es werden Attribute der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy Chart - es wird das Chart im Clipboard bereitgestellt
+                <br>Show Table - es wird ein kompakte Übersicht zu dem Chart ausgegeben
+                <br>Copy Table - es wird ein kompakte Übersicht zu dem Chart im Clipboard bereitgestellt
+            </p>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>Die Hypothese lautet: <b>es gibt global warming</b></p>
+            <div data-help-ref="common.science"></div>
+        </details>
+    </section>
+
+
+    <section id="ZR_TMAX_avg_reg">
+        <h3>Zeitreihe TMAX mit Regression</h3>
+        <p>Tageshöchsttemperaturen mit Regression</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse mit den Temperaturen in Grad Celsius
+                <br>die initiale Anzeige betrifft die Mittelwerte (avg), es können aber
+                auch die Minmalwerte und Maximalwerte je Jahr ausgewertet werden.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+                <br>es können die Regressionsgeraden eingeblendet werden
+            </p>
+            <p>Dazu kommen <b>Kommandobuttons</b>
+                <br>Science - Aufbereitung zusätzlicher Informationen
+                <br>Copy Data - es werden die Daten der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy All - es werden Attribute der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy Chart - es wird das Chart im Clipboard bereitgestellt
+                <br>Show Table - es wird ein kompakte Übersicht zu dem Chart ausgegeben
+                <br>Copy Table - es wird ein kompakte Übersicht zu dem Chart im Clipboard bereitgestellt
+            </p>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>Die Hypothese lautet: <b>die Temperaturen steigen immer stärker</b></p>
+            <div data-help-ref="common.scienceregression"></div>
+        </details>
+    </section>
+
+
+    <section id="ZR_TMIN_avg">
+        <h3>Zeitreihe TMIN</h3>
+        <p>Nächtliche Tiefsttemperaturen im Jahresdurchschnitt</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse mit den Temperaturen in Grad Celsius
+                <br>die initiale Anzeige betrifft die Mittelwerte (avg), es können aber
+                auch die Minmalwerte und Maximalwerte je Jahr ausgewertet werden.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+            </p>
+            <p>Dazu kommen <b>Kommandobuttons</b>
+                <br>Science - Aufbereitung zusätzlicher Informationen
+                <br>Copy Data - es werden die Daten der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy All - es werden Attribute der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy Chart - es wird das Chart im Clipboard bereitgestellt
+                <br>Show Table - es wird ein kompakte Übersicht zu dem Chart ausgegeben
+                <br>Copy Table - es wird ein kompakte Übersicht zu dem Chart im Clipboard bereitgestellt
+            </p>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>Die Hypothese lautet: <b>es gibt global warming</b></p>
+            <div data-help-ref="common.science"></div>
+        </details>
+    </section>
+
+
+    <section id="ZR_TMIN_avg_reg">
+        <h3>Zeitreihe TMIN mit Regression</h3>
+        <p>Nächtliche Tiefttemperaturen mit Regression</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse mit den Temperaturen in Grad Celsius
+                <br>die initiale Anzeige betrifft die Mittelwerte (avg), es können aber
+                auch die Minmalwerte und Maximalwerte je Jahr ausgewertet werden.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+                <br>es können die Regressionsgeraden eingeblendet werden
+            </p>
+            <p>Dazu kommen <b>Kommandobuttons</b>
+                <br>Science - Aufbereitung zusätzlicher Informationen
+                <br>Copy Data - es werden die Daten der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy All - es werden Attribute der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy Chart - es wird das Chart im Clipboard bereitgestellt
+                <br>Show Table - es wird ein kompakte Übersicht zu dem Chart ausgegeben
+                <br>Copy Table - es wird ein kompakte Übersicht zu dem Chart im Clipboard bereitgestellt
+            </p>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>Die Hypothese lautet: <b>die Temperaturen steigen immer stärker</b></p>
+            <div data-help-ref="common.scienceregression"></div>
+        </details>
+    </section>
+
+
+    <section id="CP_TMAXTMIN_avg_reg">
+        <h3>Zeitreihenvergleich</h3>
+        <p>Abgleich der Steigung vom TMAX und TMIN</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse mit den Temperaturen in Grad Celsius
+                <br>die initiale Anzeige betrifft die Mittelwerte (avg), es können aber
+                auch die Minmalwerte und Maximalwerte je Jahr ausgewertet werden.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+                <br>es können die Regressionsgeraden eingeblendet werden
+            </p>
+            <p>Dazu kommen <b>Kommandobuttons</b>
+                <br>Science - Aufbereitung zusätzlicher Informationen
+                <br>Copy Data - es werden die Daten der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy All - es werden Attribute der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy Chart - es wird das Chart im Clipboard bereitgestellt
+                <br>Show Table - es wird ein kompakte Übersicht zu dem Chart ausgegeben
+                <br>Copy Table - es wird ein kompakte Übersicht zu dem Chart im Clipboard bereitgestellt
+            </p>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>Die Hypothese lautet: <b>die TMIN-Temperaturen steigen stärker als die TMAX-Temperaturen</b>
+                <br>Das betrifft die nördliche Hälfte des Globus stärker und primär städtische Regionen.
+            </p>
+            <div data-help-ref="common.scienceregression"></div>
+        </details>
+    </section>
+
+
+    <section id="HY_TMAX_height">
+        <h3>Höhenanalyse TMAX</h3>
+        <p>Höhe der Messstation und Temperaturentwicklung</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt die Höhe und den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse mit den Temperaturen in Grad Celsius
+                <br>die initiale Anzeige betrifft die Mittelwerte (avg), es können aber
+                auch die Minmalwerte und Maximalwerte je Jahr ausgewertet werden.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+                <br>Mit der Höhe werden die Durchschnittstemperaturen kälter, das ist leicht zu prüfen,
+                denn <b>die Höhe der Stationen wird in den Stationsbuttons mit angezeigt</b>.
+                <br>Die Initiale Anzeige zeigt die Stationen mit der größten und der niedrigsten Höhe.
+
+            </p>
+            <p>Dazu kommen <b>Kommandobuttons</b>
+                <br>Science - Aufbereitung zusätzlicher Informationen
+                <br>Copy Data - es werden die Daten der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy All - es werden Attribute der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy Chart - es wird das Chart im Clipboard bereitgestellt
+                <br>Show Table - es wird ein kompakte Übersicht zu dem Chart ausgegeben
+                <br>Copy Table - es wird ein kompakte Übersicht zu dem Chart im Clipboard bereitgestellt
+            </p>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>Die Hypothese lautet: <b>Mit der Höhe einer Messstation über dem Meeresspiegel sinken die
+                    Temperaturen: um 6 Grad auf 1000 Meter</b> und das kann gut geprüft werden mit der
+                Übersichtstabelle</p>
+            <div data-help-ref="common.science"></div>
+        </details>
+    </section>
+
+
+    <section id="HY_TMIN_height">
+        <h3>Höhenanalyse TMIN</h3>
+        <p>Höhe der Messstation und Temperaturentwicklung</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt die Höhe und den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse mit den Temperaturen in Grad Celsius
+                <br>die initiale Anzeige betrifft die Mittelwerte (avg), es können aber
+                auch die Minmalwerte und Maximalwerte je Jahr ausgewertet werden.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+                <br>Mit der Höhe werden die Durchschnittstemperaturen kälter, das ist leicht zu prüfen,
+                denn <b>die Höhe der Stationen wird in den Stationsbuttons mit angezeigt</b>.
+                <br>Die Initiale Anzeige zeigt die Stationen mit der größten und der niedrigsten Höhe.
+
+            </p>
+            <p>Dazu kommen <b>Kommandobuttons</b>
+                <br>Science - Aufbereitung zusätzlicher Informationen
+                <br>Copy Data - es werden die Daten der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy All - es werden Attribute der sichtbaren Linien im Clipboard bereitgestellt
+                <br>Copy Chart - es wird das Chart im Clipboard bereitgestellt
+                <br>Show Table - es wird ein kompakte Übersicht zu dem Chart ausgegeben
+                <br>Copy Table - es wird ein kompakte Übersicht zu dem Chart im Clipboard bereitgestellt
+            </p>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>Die Hypothese lautet: <b>Mit der Höhe einer Messstation über dem Meeresspiegel sinken die
+                    Temperaturen: um 6 Grad auf 1000 Meter</b> und das kann gut geprüft werden mit der
+                Übersichtstabelle</p>
+            <div data-help-ref="common.science"></div>
+        </details>
+
+    </section>
+
+
+    <section id="ZR_DTR_avg">
+        <h3>Zeitreihe DTR</h3>
+        <p>Diurnal Temperature Range ist die Differenz TMAX - TMIN</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse mit den Temperaturen in Grad Celsius
+                <br>die initiale Anzeige betrifft die Mittelwerte (avg), es können aber
+                auch die Minmalwerte und Maximalwerte je Jahr ausgewertet werden.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+            </p>
+            <div data-help-ref="common.commandbuttons"></div>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>Die Hypothese lautet: <b>mit dem Klimawandel steigt DTR</b>
+                <br>Eine große DTR tritt häufig bei wolkenarmem Himmel, trockener Luft und schwachem Wind auf.
+                <br>Eine kleine DTR kann beispielsweise mit starker Bewölkung, hoher Luftfeuchtigkeit oder Wind
+                zusammenhängen.
+                <br>Langfristige Veränderungen der DTR können Hinweise auf unterschiedliche Entwicklungen der
+                Tages- und Nachttemperaturen liefern. Sie erlauben für sich genommen aber keine eindeutige Aussage
+                über die Ursachen.
+            </p>
+            <div data-help-ref="common.science"></div>
+        </details>
+    </section>
+
+
+    <section id="ZR_DTR_avg_reg">
+        <h3>Trendanalyse DTR</h3>
+        <p>Diurnal Temperature Range ist die Differenz TMAX - TMIN</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse mit den Temperaturen in Grad Celsius
+                <br>die initiale Anzeige betrifft die Mittelwerte (avg), es können aber
+                auch die Minmalwerte und Maximalwerte je Jahr ausgewertet werden.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+                <br>Optional kann die Regressionsgerade eingeblendet werden und mit "Science" kann
+                die Regressionsgerade auf 30-Jahresperioden eingeblendet werden
+            </p>
+            <div data-help-ref="common.commandbuttons"></div>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>Die Hypothese lautet: <b>mit dem Klimawandel steigt DTR</b>
+                <br>Eine große DTR tritt häufig bei wolkenarmem Himmel, trockener Luft und schwachem Wind auf.
+                <br>Eine kleine DTR kann beispielsweise mit starker Bewölkung, hoher Luftfeuchtigkeit oder Wind
+                zusammenhängen.
+                <br>Langfristige Veränderungen der DTR können Hinweise auf unterschiedliche Entwicklungen der
+                Tages- und Nachttemperaturen liefern. Sie erlauben für sich genommen aber keine eindeutige Aussage
+                über die Ursachen.
+            </p>
+            <div data-help-ref="common.scienceregression"></div>
+        </details>
+    </section>
+
+
+    <section id="ZR_PRCP_kum">
+        <h3>Zeitreihe PRCP</h3>
+        <p>PRCP steht für den Niederschlag</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse kumulierte Höhe des Niederschlags pro Jahr
+                <br>PRCP beschreibt die Wassermenge, die als Niederschlag auf eine horizontale Fläche fällt.
+                Ein Millimeter entspricht einem Liter Wasser pro Quadratmeter.
+                <br>Die Größe erlaubt Analysen von Trockenperioden, Niederschlagssummen und Starkregenereignissen.
+                Sie sagt allerdings nichts darüber aus, wie sich der Niederschlag zeitlich innerhalb des
+                Beobachtungszeitraums verteilt hat.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+            </p>
+            <div data-help-ref="common.commandbuttons"></div>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>
+                Mit zunehmender globaler Erwärmung verändern sich die Bedingungen für Verdunstung, Wasserdampftransport,
+                Wolkenbildung und Niederschlag. Daraus ergeben sich regional unterschiedliche Veränderungen
+                der Niederschlagsmengen, Niederschlagshäufigkeiten und Niederschlagsintensitäten.
+                <br>Ein einheitlicher Zusammenhang zwischen lokaler Temperaturzunahme und lokaler Niederschlagszunahme
+                wird nicht vorausgesetzt.
+            </p>
+            <div data-help-ref="common.science"></div>
+        </details>
+    </section>
+
+
+
+    <section id="ZR_PRPC_kum_reg">
+        <h3>Trendanalyse</h3>
+        <p>PRCP - Niederschlag mit Regressionsanalyse</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse kumulierte Höhe des Niederschlags pro Jahr
+                <br>PRCP beschreibt die Wassermenge, die als Niederschlag auf eine horizontale Fläche fällt.
+                Ein Millimeter entspricht einem Liter Wasser pro Quadratmeter.
+                <br>Die Größe erlaubt Analysen von Trockenperioden, Niederschlagssummen und Starkregenereignissen.
+                Sie sagt allerdings nichts darüber aus, wie sich der Niederschlag zeitlich innerhalb des
+                Beobachtungszeitraums verteilt hat.
+                <br>die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+                <br>Optional kann die Regressionsgerade eingeblendet werden und mit "Science" vertieft werden.
+            </p>
+            <div data-help-ref="common.commandbuttons"></div>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>
+                Mit zunehmender globaler Erwärmung verändern sich die Bedingungen für Verdunstung, Wasserdampftransport,
+                Wolkenbildung und Niederschlag. Daraus ergeben sich regional unterschiedliche Veränderungen
+                der Niederschlagsmengen, Niederschlagshäufigkeiten und Niederschlagsintensitäten.
+                <br>Ein einheitlicher Zusammenhang zwischen lokaler Temperaturzunahme und lokaler Niederschlagszunahme
+                wird nicht vorausgesetzt.
+            </p>
+            <div data-help-ref="common.scienceregression"></div>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNOW_kum">
+        <h3>Zeitreihe SNOW </h3>
+        <p>SNOW - Neuschnee oder Schneefall</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse kumulierte Höhe des Schneefalls pro Jahr.
+                <br>SNOW misst die Höhe des neu gefallenen Schnees, nicht dessen Wassergehalt.
+                <br>Zehn Zentimeter Neuschnee entsprechen keineswegs immer zehn Millimetern Niederschlag,
+                da die Schneedichte erheblich schwanken kann.
+                <br>Die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+
+            </p>
+            <div data-help-ref="common.commandbuttons"></div>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>
+                Eine langfristige Erhöhung der globalen Mitteltemperatur verändert die Bedingungen für Schneefall,
+                Schneeakkumulation und Schneeschmelze.
+                <br>In Regionen mit Temperaturen nahe dem Gefrierpunkt ist tendenziell mit einem Rückgang der
+                Schneefallhäufigkeit, der Schneedeckendauer und der Schneehöhe zu rechnen.
+                <br>In dauerhaft kalten Regionen können dagegen zunehmende Niederschläge auch zu größeren Schneemengen
+                führen. Richtung und Stärke der Veränderungen hängen von den regionalen Temperaturverhältnissen,
+                der Niederschlagsmenge, der Höhenlage und der Jahreszeit ab.
+            </p>
+            <div data-help-ref="common.science"></div>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNOW_kum_reg">
+        <h3>Trendanalyse</h3>
+        <p>SNOW - Neuschnee oder Schneefall mit Regressionsgerade</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse kumulierte Höhe des Schneefalls pro Jahr.
+                <br>SNOW misst die Höhe des neu gefallenen Schnees, nicht dessen Wassergehalt.
+                <br>Zehn Zentimeter Neuschnee entsprechen keineswegs immer zehn Millimetern Niederschlag,
+                da die Schneedichte erheblich schwanken kann.
+                <br>Die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+                <br>Optional kann die Regressionsgerade eingeblendet werden und mit "Science" vertieft werden.
+            </p>
+            <div data-help-ref="common.commandbuttons"></div>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>
+                Eine langfristige Erhöhung der globalen Mitteltemperatur verändert die Bedingungen für Schneefall,
+                Schneeakkumulation und Schneeschmelze.
+                <br>In Regionen mit Temperaturen nahe dem Gefrierpunkt ist tendenziell mit einem Rückgang der
+                Schneefallhäufigkeit, der Schneedeckendauer und der Schneehöhe zu rechnen.
+                <br>In dauerhaft kalten Regionen können dagegen zunehmende Niederschläge auch zu größeren Schneemengen
+                führen. Richtung und Stärke der Veränderungen hängen von den regionalen Temperaturverhältnissen,
+                der Niederschlagsmenge, der Höhenlage und der Jahreszeit ab.
+            </p>
+            <div data-help-ref="common.scienceregression"></div>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNWD_kum">
+        <h3>Zeitreihe</h3>
+        <p>SNOW - Neuschnee oder Schneefall</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>
+                SNWD beschreibt die vorhandene Schneedecke.
+                Sie verändert sich durch Neuschnee, Schmelzen, Setzung und andere Einflüsse.
+                Ein Tag kann deshalb SNOW = 0 und gleichzeitig SNWD = 200 mm aufweisen.
+            </p>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse kumulierte Höhe des Schneefalls pro Jahr.
+                <br>SNWD misst die Höhe des vorhandenen Schnees, nicht dessen Wassergehalt.
+                <br>Die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+            </p>
+            <div data-help-ref="common.commandbuttons"></div>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>
+                Eine langfristige Erhöhung der globalen Mitteltemperatur verändert die Bedingungen für Schneefall,
+                Schneeakkumulation und Schneeschmelze.
+                <br>In Regionen mit Temperaturen nahe dem Gefrierpunkt ist tendenziell mit einem Rückgang der
+                Schneefallhäufigkeit, der Schneedeckendauer und der Schneehöhe zu rechnen.
+                <br>In dauerhaft kalten Regionen können dagegen zunehmende Niederschläge auch zu größeren Schneemengen
+                führen. Richtung und Stärke der Veränderungen hängen von den regionalen Temperaturverhältnissen,
+                der Niederschlagsmenge, der Höhenlage und der Jahreszeit ab.
+            </p>
+            <div data-help-ref="common.science"></div>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNWD_kum_reg">
+        <h3>Trendanalyse</h3>
+        <p>SNWD - Neuschnee oder Schneefall mit Regression</p>
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>
+                SNWD beschreibt die vorhandene Schneedecke.
+                Sie verändert sich durch Neuschnee, Schmelzen, Setzung und andere Einflüsse.
+                Ein Tag kann deshalb SNOW = 0 und gleichzeitig SNWD = 200 mm aufweisen.
+            </p>
+            <p><b>Das Chart zeigt den Verlauf je Wetterstation</b>
+                <br>x-Achse mit den Jahren, y-Achse kumulierte Höhe des Schneefalls pro Jahr.
+                <br>SNWD misst die Höhe des neu gefallenen Schnees, nicht dessen Wassergehalt.
+                <br>Zehn Zentimeter Neuschnee entsprechen keineswegs immer zehn Millimetern Niederschlag,
+                da die Schneedichte erheblich schwanken kann.
+                <br>Die Ein- und Ausblendung der Stationen kann über Stations-Buttons realisiert werden.
+                <br>Optional kann die Regressionsgerade eingeblendet werden und mit "Science" vertieft werden.
+            </p>
+            <div data-help-ref="common.commandbuttons"></div>
+            <div data-help-ref="common.shorttable"></div>
+        </details>
+        <details>
+            <summary>Wissenschaftliche Vertiefung</summary>
+            <p>
+                Eine langfristige Erhöhung der globalen Mitteltemperatur verändert die Bedingungen für Schneefall,
+                Schneeakkumulation und Schneeschmelze.
+                <br>In Regionen mit Temperaturen nahe dem Gefrierpunkt ist tendenziell mit einem Rückgang der
+                Schneefallhäufigkeit, der Schneedeckendauer und der Schneehöhe zu rechnen.
+                <br>In dauerhaft kalten Regionen können dagegen zunehmende Niederschläge auch zu größeren Schneemengen
+                führen. Richtung und Stärke der Veränderungen hängen von den regionalen Temperaturverhältnissen,
+                der Niederschlagsmenge, der Höhenlage und der Jahreszeit ab.
+            </p>
+            <div data-help-ref="common.scienceregression"></div>
+        </details>
+    </section>
+
+
+    <section id="ZR_PRPC_kum_height">
+        <h3>Höhenanalyse</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_PRPC_kum_height
+            addHydePage
+            yeardata
+            PRCP kum
+            height
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNOW_kum_height">
+        <h3>Höhenanalyse</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_SNOW_kum_height
+            addHydePage
+            yeardata
+            SNOW kum
+            height
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNWD_kum_height">
+        <h3>Höhenanalyse</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_SNWD_kum_height
+            addHydePage
+            yeardata
+            SNWD kum
+            height
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_TMAX_avg_popd">
+        <h3>Bevölkerung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_TMAX_avg_popd
+            addHydePage
+            yeardata
+            TMAX avg
+            popd
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_TMIN_avg_popd">
+        <h3>Bevölkerung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_TMIN_avg_popd
+            addHydePage
+            yeardata
+            TMIN avg
+            popd
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_PRCP_kum_popd">
+        <h3>Bevölkerung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_PRCP_kum_popd
+            addHydePage
+            yeardata
+            PRCP kum
+            popd
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNOW_kum_popd">
+        <h3>Bevölkerung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_SNOW_kum_popd
+            addHydePage
+            yeardata
+            SNOW kum
+            popd
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNWD_kum_popd">
+        <h3>Bevölkerung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_SNWD_kum_popd
+            addHydePage
+            yeardata
+            SNWD kum
+            popd
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_TMAX_avg_uopp">
+        <h3>Bebauung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_TMAX_avg_uopp
+            addHydePage
+            yeardata
+            TMAX avg
+            uopp
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_TMIN_avg_uopp">
+        <h3>Bebauung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_TMIN_avg_uopp
+            addHydePage
+            yeardata
+            TMIN avg
+            uopp
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_PRCP_kum_uopp">
+        <h3>Bebauung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_PRCP_kum_uopp
+            addHydePage
+            yeardata
+            PRCP kum
+            uopp
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNOW_kum_uopp">
+        <h3>Bebauung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_SNOW_kum_uopp
+            addHydePage
+            yeardata
+            SNOW kum
+            uopp
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNWD_kum_uopp">
+        <h3>Bebauung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_SNWD_kum_uopp
+            addHydePage
+            yeardata
+            SNWD kum
+            uopp
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_TMAX_kum_popd">
+        <h3>Urbanisierung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_TMAX_kum_popd
+            addHydePage
+            yeardata
+            TMAX avg
+            zind
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_TMIN_kum_popd">
+        <h3>Urbanisierung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_TMIN_kum_popd
+            addHydePage
+            yeardata
+            TMIN avg
+            zind
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_PRPC_kum_popd">
+        <h3>Urbanisierung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_PRPC_kum_popd
+            addHydePage
+            yeardata
+            PRCP kum
+            zind
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNOW_kum_popd">
+        <h3>Urbanisierung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_SNOW_kum_popd
+            addHydePage
+            yeardata
+            SNOW kum
+            zind
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZR_SNWD_kum_popd">
+        <h3>Urbanisierung</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZR_SNWD_kum_popd
+            addHydePage
+            yeardata
+            SNWD kum
+            zind
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZX_TMAX_ext">
+        <h3>Hitzewellen</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZX_TMAX_ext
+            addExtremePage
+            years
+            TMAX ext
+
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZX_TMIN_ext">
+        <h3>Kältewellen</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZX_TMIN_ext
+            addExtremePage
+            years
+            TMIN ext
+
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZX_PRCP_ext">
+        <h3>Starkregen</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZX_PRCP_ext
+            addExtremePage
+            years
+            PRCP ext
+
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZX_SNOW_ext">
+        <h3>Schnee</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZX_SNOW_ext
+            addExtremePage
+            years
+            SNOW ext
+
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+
+
+    <section id="ZX_SNWD_ext">
+        <h3>Schnee</h3>
+        <p>Kurzbeschreibung ...</p>
+
+        <details>
+            <summary>Weitere Erläuterungen</summary>
+            <p>Ergänzender Text ...</p>
+            ZX_SNWD_ext
+            addExtremePage
+            years
+            SNWD ext
+
+            <details>
+                <summary>Wissenschaftliche Vertiefung</summary>
+                <p>Vertiefender Text ...</p>
+            </details>
+        </details>
+    </section>
+</body>
+
+</html>

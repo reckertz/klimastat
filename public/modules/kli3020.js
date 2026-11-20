@@ -38,6 +38,7 @@ function createLocation() {
     let topicParms1 = [
         ["Zeitreihe", addStandardPage, "yeardata", "TMAX", "avg", "max", "min"],
         ["Zeitreihe", addStandardPage, "yeardata", "TMIN", "avg", "min", "max"],
+        ["Zeitreihenvergleich", addComparePage, "yeardata", "TMAX,TMIN", "avg", "min", "max"],
         ["Zeitreihe", addStandardPage, "yeardata", "DTR", "avg", "min", "max"],
         ["Zeitreihe", addStandardPage, "yeardata", "PRCP", "kum", "", ""],
         ["Zeitreihe", addStandardPage, "yeardata", "SNOW", "kum", "", ""],   // SNOW
@@ -90,55 +91,57 @@ function createLocation() {
 
     let topicParms2 = [
 
-        ["Qualitycontrol", addQualityPage, "yeardata", "TMAX", "avg", "max", "min"],
+        ["Qualitycontrol", addQualityPage, "yeardata", "TMAX", "avg", "max", "min", "", "QC_TMAX_avg"],
 
-        ["Zeitreihe", addStandardPage, "yeardata", "TMAX", "avg", "max", "min"],
-        ["Trendanalyse", addStandardPage, "yeardata", "TMAX", "avg_reg", "", ""],
-        ["Höhenanalyse", addHydePage, "yeardata", "TMAX", "avg", "min", "max", "height"],
+        ["Zeitreihe", addStandardPage, "yeardata", "TMAX", "avg", "max", "min", "", "ZR_TMAX_avg"],
+        ["Trendanalyse", addStandardPage, "yeardata", "TMAX", "avg_reg", "", "", "", "ZR_TMAX_avg_reg"],
 
-        ["Zeitreihe", addStandardPage, "yeardata", "TMIN", "avg", "min", "max"],
-        ["Trendanalyse", addStandardPage, "yeardata", "TMIN", "avg_reg", "", ""],
-        ["Höhenanalyse", addHydePage, "yeardata", "TMIN", "avg", "min", "max", "height"],
+        ["Zeitreihe", addStandardPage, "yeardata", "TMIN", "avg", "min", "max", "", "ZR_TMIN_avg"],
+        ["Trendanalyse", addStandardPage, "yeardata", "TMIN", "avg_reg", "", "", "", "ZR_TMIN_avg_reg"],
+        ["Zeitreihenvergleich", addComparePage, "yeardata", "TMAX,TMIN", "avg_reg", "", "", "", "CP_TMAXTMIN_avg_reg"],
 
-        ["Zeitreihe", addStandardPage, "yeardata", "DTR", "avg", "min", "max"],
-        ["Trendanalyse", addStandardPage, "yeardata", "DTR", "avg_reg", "min", "max"],
+        ["Höhenanalyse", addHydePage, "yeardata", "TMAX", "avg", "min", "max", "height", "HY_TMAX_height"],
+        ["Höhenanalyse", addHydePage, "yeardata", "TMIN", "avg", "min", "max", "height", "HY_TMIN_height"],
 
+        ["Zeitreihe", addStandardPage, "yeardata", "DTR", "avg", "min", "max", "", "ZR_DTR_avg"],
+        ["Trendanalyse", addStandardPage, "yeardata", "DTR", "avg_reg", "min", "max", "", "ZR_DTR_avg_reg"],
 
-        ["Zeitreihe", addStandardPage, "yeardata", "PRCP", "kum", "", ""],
-        ["Zeitreihe", addStandardPage, "yeardata", "SNOW", "kum", "", ""],   // SNOW
-        ["Zeitreihe", addStandardPage, "yeardata", "SNWD", "kum", "", ""],   // SNWD
+        ["Zeitreihe", addStandardPage, "yeardata", "PRCP", "kum", "", "", "", "ZR_PRCP_kum"],
+        ["Trendanalyse", addStandardPage, "yeardata", "PRCP", "kum_reg", "", "", "", "ZR_PRPC_kum_reg"],
 
-        ["Trendanalyse", addStandardPage, "yeardata", "PRCP", "kum_reg", "", ""],
-        ["Trendanalyse", addStandardPage, "yeardata", "SNOW", "kum_reg", "", ""],
-        ["Trendanalyse", addStandardPage, "yeardata", "SNWD", "kum_reg", "", ""],
+        ["Zeitreihe", addStandardPage, "yeardata", "SNOW", "kum", "", "", "", "ZR_SNOW_kum"],   // SNOW
+        ["Trendanalyse", addStandardPage, "yeardata", "SNOW", "kum_reg", "", "", "", "ZR_SNOW_kum_reg"],
 
-        ["Höhenanalyse", addHydePage, "yeardata", "PRCP", "kum", "", "", "height"],
-        ["Höhenanalyse", addHydePage, "yeardata", "SNOW", "kum", "", "", "height"],   // SNWD
-        ["Höhenanalyse", addHydePage, "yeardata", "SNWD", "kum", "", "", "height"],
+        ["Zeitreihe", addStandardPage, "yeardata", "SNWD", "kum", "", "", "", "ZR_SNWD_kum"],   // SNWD
+        ["Trendanalyse", addStandardPage, "yeardata", "SNWD", "kum_reg", "", "", "", "ZR_SNWD_kum_reg"],
 
-        ["Bevölkerung", addHydePage, "yeardata", "TMAX", "avg", "", "", "popd"],
-        ["Bevölkerung", addHydePage, "yeardata", "TMIN", "avg", "", "", "popd"],
-        ["Bevölkerung", addHydePage, "yeardata", "PRCP", "kum", "", "", "popd"],
-        ["Bevölkerung", addHydePage, "yeardata", "SNOW", "kum", "", "", "popd"],   // SNWD
-        ["Bevölkerung", addHydePage, "yeardata", "SNWD", "kum", "", "", "popd"],
+        ["Höhenanalyse", addHydePage, "yeardata", "PRCP", "kum", "", "", "height", "ZR_PRPC_kum_height"],
+        ["Höhenanalyse", addHydePage, "yeardata", "SNOW", "kum", "", "", "height", "ZR_SNOW_kum_height"],   // SNWD
+        ["Höhenanalyse", addHydePage, "yeardata", "SNWD", "kum", "", "", "height", "ZR_SNWD_kum_height"],
 
-        ["Bebauung", addHydePage, "yeardata", "TMAX", "avg", "", "", "uopp"],
-        ["Bebauung", addHydePage, "yeardata", "TMIN", "avg", "", "", "uopp"],
-        ["Bebauung", addHydePage, "yeardata", "PRCP", "kum", "", "", "uopp"],
-        ["Bebauung", addHydePage, "yeardata", "SNOW", "kum", "", "", "uopp"],   // SNWD
-        ["Bebauung", addHydePage, "yeardata", "SNWD", "kum", "", "", "uopp"],   // SNWD
+        ["Bevölkerung", addHydePage, "yeardata", "TMAX", "avg", "", "", "popd", "ZR_TMAX_avg_popd"],
+        ["Bevölkerung", addHydePage, "yeardata", "TMIN", "avg", "", "", "popd", "ZR_TMIN_avg_popd"],
+        ["Bevölkerung", addHydePage, "yeardata", "PRCP", "kum", "", "", "popd", "ZR_PRCP_kum_popd"],
+        ["Bevölkerung", addHydePage, "yeardata", "SNOW", "kum", "", "", "popd", "ZR_SNOW_kum_popd"],   // SNWD
+        ["Bevölkerung", addHydePage, "yeardata", "SNWD", "kum", "", "", "popd", "ZR_SNWD_kum_popd"],
 
-        ["Urbanisierung", addHydePage, "yeardata", "TMAX", "avg", "", "", "zind"],  // category!!!
-        ["Urbanisierung", addHydePage, "yeardata", "TMIN", "avg", "", "", "zind"],  // category!!!
-        ["Urbanisierung", addHydePage, "yeardata", "PRCP", "kum", "", "", "zind"],  // category!!!
-        ["Urbanisierung", addHydePage, "yeardata", "SNOW", "kum", "", "", "zind"],  // category!!!   // SNWD
-        ["Urbanisierung", addHydePage, "yeardata", "SNWD", "kum", "", "", "zind"],
+        ["Bebauung", addHydePage, "yeardata", "TMAX", "avg", "", "", "uopp", "ZR_TMAX_avg_uopp"],
+        ["Bebauung", addHydePage, "yeardata", "TMIN", "avg", "", "", "uopp", "ZR_TMIN_avg_uopp"],
+        ["Bebauung", addHydePage, "yeardata", "PRCP", "kum", "", "", "uopp", "ZR_PRCP_kum_uopp"],
+        ["Bebauung", addHydePage, "yeardata", "SNOW", "kum", "", "", "uopp", "ZR_SNOW_kum_uopp"],   // SNWD
+        ["Bebauung", addHydePage, "yeardata", "SNWD", "kum", "", "", "uopp", "ZR_SNWD_kum_uopp"],   // SNWD
 
-        ["Hitzewellen", addExtremePage, "years", "TMAX", "ext", "", ""],
-        ["Kältewellen", addExtremePage, "years", "TMIN", "ext", "", ""],
-        ["Starkregen", addExtremePage, "years", "PRCP", "ext", "", ""],
-        ["Schnee", addExtremePage, "years", "SNOW", "ext", "", ""],    // SNWD
-        ["Schnee", addExtremePage, "years", "SNWD", "ext", "", ""]    // SNWD
+        ["Urbanisierung", addHydePage, "yeardata", "TMAX", "avg", "", "", "zind", "ZR_TMAX_kum_popd"],  // category!!!
+        ["Urbanisierung", addHydePage, "yeardata", "TMIN", "avg", "", "", "zind", "ZR_TMIN_kum_popd"],  // category!!!
+        ["Urbanisierung", addHydePage, "yeardata", "PRCP", "kum", "", "", "zind", "ZR_PRPC_kum_popd"],  // category!!!
+        ["Urbanisierung", addHydePage, "yeardata", "SNOW", "kum", "", "", "zind", "ZR_SNOW_kum_popd"],  // category!!!   // SNWD
+        ["Urbanisierung", addHydePage, "yeardata", "SNWD", "kum", "", "", "zind", "ZR_SNWD_kum_popd"],
+
+        ["Hitzewellen", addExtremePage, "years", "TMAX", "ext", "", "", "", "ZX_TMAX_ext"],
+        ["Kältewellen", addExtremePage, "years", "TMIN", "ext", "", "", "", "ZX_TMIN_ext"],
+        ["Starkregen", addExtremePage, "years", "PRCP", "ext", "", "", "", "ZX_PRCP_ext"],
+        ["Schnee", addExtremePage, "years", "SNOW", "ext", "", "", "", "ZX_SNOW_ext"],    // SNWD
+        ["Schnee", addExtremePage, "years", "SNWD", "ext", "", "", "", "ZX_SNWD_ext"]    // SNWD
         /*
             ["Korrelation", "yeardata", "TMAX-TMIN", "avg-korr", "", ""],
             ["Korrelation", "yeardata", "TMAX-PRCP", "avg-korr", "", ""],
@@ -148,6 +151,11 @@ function createLocation() {
     ];
 
     let topicParms = topicParms2;
+
+    for (let topicParm of topicParms) {
+        let [title, locfunction, datasource, variable, method, altmethod1, altmethod2, hydevar, helpkey] = topicParm;
+        console.log(helpkey + "\t" + locfunction.name + "\t" + title + "\n");
+    }
 
     let detailtopics = [
         ["Tagesreihe", "years", "TMAX", "val", "", ""],
@@ -306,7 +314,9 @@ function createLocation() {
     //locationInstances.push(createLocation());
     //let locIndex = locationInstances.length - 1;
 
-    async function addTopics(newcontainerid, colIndex, newmode, newlocation, newgeosets) {
+    async function addTopics(newcontainerid, colIndex, newmode, newlocation, newgeosets, theme) {
+        await help.generate(topicParms);
+        debugger;
         containerid = newcontainerid;
         mode = newmode;
         location = kli6900.cloneObject(newlocation);
@@ -314,11 +324,27 @@ function createLocation() {
         locationkey = location.locname.replace(/[^\p{L}\p{N}]/gu, "");
         locationkey += " " + location.geonameid;
         let firstpage = {};
-        debugger;
         let ret = await getKLIDATA(location, geosets);  // records je Instanz übergeordnet!!!
         recindex = new Map(records.map((rec, i) => [rec.key, i]));
-        for (let topicParm of topicParms) {
-            let [title, locfunction, datasource, variable, method, altmethod1, altmethod2, hydevar] = topicParm;
+        // Vorlauf für den Fall der Theme-Übergabe
+        let tparms = topicParms;
+        if (typeof theme !== "undefined") {
+            let [name, imgname, references] = theme;
+            let parms = [];
+            for (let ref of references) {
+                //["Hitzewellen", addExtremePage, "years", "TMAX", "ext", "", "", "", "ZX_TMAX_ext"],
+                for (let topicParm of topicParms) {
+                    let [title, locfunction, datasource, variable, method, altmethod1, altmethod2, hydevar, helpkey] = topicParm;
+                    if (helpkey === ref) {
+                        parms.push(topicParm);
+                        break;
+                    }
+                }
+            }
+            tparms = parms;
+        }
+        for (let topicParm of tparms) {
+            let [title, locfunction, datasource, variable, method, altmethod1, altmethod2, hydevar, helpkey] = topicParm;
             if (mode === "mobile") {
                 let $slider = null;
                 let topicstring = title + "_" + datasource + "_" + variable + "_" + method;
@@ -352,7 +378,8 @@ function createLocation() {
                     "data-method": method,
                     "data-altmethod1": altmethod1,
                     "data-altmethod2": altmethod2,
-                    "data-hydevar": hydevar
+                    "data-hydevar": hydevar,
+                    "data-helpkey": helpkey
                 });
                 if (typeof firstpage.topicstring === "undefined") {
                     firstpage.topicstring = topicstring;
@@ -362,10 +389,14 @@ function createLocation() {
                     firstpage.locname = location.locname;
                 }
                 $page.append("<hr>");
+                /*
                 $page.append(
                     $("<span style='font-weight: bold;margin:5px;'>").text(`${location.locname} ${variable} ${title}`),
                     // $("<span style='margin:5px'>").text(`(${locationkey})`)
                 );
+                */
+                let pagetitle = `${location.locname} ${variable} ${title}`;
+                addPageHeader($page, pagetitle, helpkey);
                 $page.append(
                     $("<div/>", {
                         id: pageid + "chart",
@@ -424,7 +455,8 @@ function createLocation() {
                     "data-method": method,
                     "data-altmethod1": altmethod1,
                     "data-altmethod2": altmethod2,
-                    "data-hydevar": hydevar
+                    "data-hydevar": hydevar,
+                    "data.helpkey": helpkey
                 });
                 if (typeof firstpage.topicstring === "undefined") {
                     firstpage.topicstring = topicstring;
@@ -433,10 +465,16 @@ function createLocation() {
                     firstpage.locationkey = locationkey;
                     firstpage.locname = location.locname;
                 }
+                /*
                 $page.append(
                     $("<span style='font-weight: bold;margin:5px;'>").text(`${location.locname} ${variable} ${title}`),
                     // $("<span style='margin:5px'>").text(`(${locationkey})`)
                 );
+                */
+
+                let pagetitle = `${location.locname} ${variable} ${title}`;
+                addPageHeader($page, pagetitle, helpkey);
+
                 $page.append(
                     $("<div/>", {
                         id: pageid + "chart",
@@ -452,6 +490,83 @@ function createLocation() {
         }
         return firstpage;
     }
+
+    function addPageHeader($page, title, topic) {
+        let pageid = $page.attr("id");
+
+        const header = $("<div>", {
+            class: "article-header"
+        });
+        header.append(
+            $("<span>").text(title)
+        );
+        const actions = $("<div>", {
+            class: "article-actions"
+        });
+        actions.append(
+            $("<button>", {
+                html: "&#9432;",
+                title: "Information",
+                class: "helpinformation",
+                mode: mode,
+                topic: topic,
+                pageid: pageid,
+                "data-action": "info"
+            }),
+            $("<button>", {
+                html: "&#10515;",
+                title: "Download",
+                topic: topic,
+                pageid: pageid,
+                "data-action": "download"
+            }),
+            /*
+            $("<button>", {
+                html: "&#8942;",
+                title: "Menü",
+                topic: topic,
+                pageid: pageid,
+                "data-action": "menu"
+            })
+            */
+        );
+        header.append(actions);
+        $page.append(header);
+
+        const menu = $("<details>", {
+            class: "article-menu"
+        });
+
+        menu.append(
+            $("<summary>", {
+                html: "&#8942;",  // ⋮
+                title: "Menü"
+            })
+        );
+
+        const content = $("<div>", {
+            class: "menu-content"
+        });
+
+        content.append(
+            $("<button>", {
+                text: "Hilfe",
+                "data-action": "help"
+            }),
+            $("<button>", {
+                text: "Export",
+                "data-action": "export"
+            }),
+            $("<button>", {
+                text: "Einstellungen",
+                "data-action": "settings"
+            })
+        );
+        menu.append(content);
+        // In den rechten Bereich der Überschrift einfügen
+        actions.append(menu);
+    }
+
 
 
     // die Qualitydata ausgeben!!! wie conditions
@@ -506,7 +621,7 @@ function createLocation() {
 
 
     async function addStandardPage($page, mode, location, geosets, topicParm) {
-        let [title, dummy, datasource, variable, method, altmethod1, altmethod2, hydevar] = topicParm;
+        let [title, dummy, datasource, variable, method, altmethod1, altmethod2, hydevar, helpkey] = topicParm;
         //["Zeitreihe", dummy, "yeardata", "TMAX", "avg", "max", "min"],
         // bisher
         //async function showStatisticPage($page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar) {
@@ -655,10 +770,83 @@ function createLocation() {
         }
     }
 
+    //["Zeitreihenvergleich", addComparePage, "yeardata", "TMAX,TMIN", "avg_reg", "", ""],
+    async function addComparePage($page, mode, location, geosets, topicParm) {
+        let [title, dummy, datasource, variable, method, altmethod1, altmethod2, hydevar, helpkey] = topicParm;
+        // in locations[key] = {} stehen key, colindex, location, geosets bereit
+        // holen der bereits vorhandenen pages und datasets
+        let colindex = $page.attr("data-colindex");
+        let $section = $page.parent();
+        let $container = $($section).parent();
 
+        let $TMAXpage = $container.find("article[data-colindex=" + colindex + "][data-variable=TMAX][data-method=avg_reg]");
+        let TMAXcanvasid = $TMAXpage.find("canvas").first().attr("id");
+        let TMAXgraph = Chart.getChart(TMAXcanvasid);
+
+        let $TMINpage = $container.find("article[data-colindex=" + colindex + "][data-variable=TMIN][data-method=avg_reg]");
+        let TMINcanvasid = $TMINpage.find("canvas").first().attr("id");
+        let TMINgraph = Chart.getChart(TMINcanvasid);
+
+        // Umsortieren der recindex
+        let dataindex = new Map(TMINgraph.data.datasets.map(function (rec, i) {
+            let key = rec.source + "_" + rec.stationid + "_" + rec.variable + "_" + rec.method;  // source_stationid_variable_method
+            return [key, i];
+        }));
+        let datasets = [];
+        for (let dataset of TMAXgraph.data.datasets) {
+            datasets.push(dataset);
+            let key = dataset.source + "_" + dataset.stationid + "_TMIN_" + dataset.method;
+            let ind = dataindex.get(key);
+            if (typeof TMINgraph.data.datasets[ind] !== "undefined") {
+                datasets.push(TMINgraph.data.datasets[ind]);
+            }
+        }
+
+
+        let fromyear = 1950;
+        let toyear = 2019;
+
+        let xlabels = TMAXgraph.data.labels;
+        let anz = xlabels.length;
+
+        if (datasets.length === 0) {
+            $page.find(".mychart").remove();
+            $page.append(
+                $("<div/>", {
+                    html: "keine Daten"
+                }));
+            return;
+        }
+        // hier sind xlabels und datasets bekannt
+        let thistitle = location.locname + " " + "TMAX/TMIN" + title;
+        let xtitle = "years";
+        let ytitle = "Temperature";
+        let config = getConfig4lineChart(thistitle, xlabels, datasets, xtitle, ytitle);
+
+        let pageid = $page.attr("id");
+        let container = $page.find("div.mychart");  // ist bereits definiert als container!!!
+        $(container)
+            .append($("<canvas/>", {
+                id: pageid + "canvas"
+            }));
+        await new Promise(function (resolve, reject) {
+            requestAnimationFrame(async function () {
+                let canvasid = pageid + "canvas";   // vorher "canvas"
+                let canvas = document.getElementById(canvasid);
+                let ctx = canvas.getContext("2d");
+                let chart = new Chart(ctx, config);
+                chart.options.responsive = false;
+                chart.update("none");
+                //let buttoncontainer = $("#" + pageid + "chart");
+                showChartButtons($page, canvasid);
+                resolve();
+            });
+        });
+
+    }
 
     async function addHydePage($page, mode, location, geosets, topicParm) {
-        let [title, dummy, datasource, variable, method, altmethod1, altmethod2, hydevar] = topicParm;
+        let [title, dummy, datasource, variable, method, altmethod1, altmethod2, hydevar, helpkey] = topicParm;
         //["Zeitreihe", dummy, "yeardata", "TMAX", "avg", "max", "min","height"],
         // async function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
         //let { $page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar } = hparms;
@@ -868,7 +1056,7 @@ function createLocation() {
 
 
     async function addExtremePage($page, mode, location, geosets, topicParm) {
-        let [title, dummy, datasource, variable, method, altmethod1, altmethod2, hydevar] = topicParm;
+        let [title, dummy, datasource, variable, method, altmethod1, altmethod2, hydevar, helpkey] = topicParm;
         //["Zeitreihe", dummy, "yeardata", "TMAX", "avg", "max", "min"],
         //async function showBarStatistics(doslider, colindex, locationkey, locations) {
         let fromyear = 1950;
@@ -1286,6 +1474,7 @@ function createLocation() {
                         title: "Station " + value + " " + vcontrol["stations"][value].locname
                     }));
             }
+            addGenericFilterButtons(containerid, "datasetfilterX", canvasid, "stationkey");
         }
         // Vererben dashPatterns auf die datasets
         for (let dataset of graph.data.datasets) {
@@ -1450,7 +1639,6 @@ function createLocation() {
                 title: "Copy Chart to Clipboard"
             }));
 
-
         $("#" + containerid)
             .append($("<button/>", {
                 class: "btn btn-sm btn-danger kli2000sumtable " + datasetclass,
@@ -1464,7 +1652,6 @@ function createLocation() {
                 html: "Show Table",
                 title: "Show table with summary data"
             }));
-
 
         $("#" + containerid)
             .append($("<button/>", {
@@ -1493,6 +1680,90 @@ function createLocation() {
         }));
         */
     };
+
+    function addGenericFilterButtons(containerid, genericClass, canvasid, varname) {
+        for (let oper of [">", "<", "*", "#"]) {
+            let btnid = "gb" + (Math.floor(Math.random() * 1000000) + 1000000);
+            $("#" + containerid)
+                .append($("<button/>", {
+                    id: btnid,
+                    class: genericClass,  // + colorclass, "btn btn-sm " +
+                    css: {
+                        //"border": "2px solid white",
+                        "margin": "5px",
+                        padding: "0px"
+                    },
+                    canvasid: canvasid,
+                    varname: varname,
+                    oper: oper,
+                    html: " " + oper + " ",
+                    title: varname
+                }));
+        }
+    };
+
+    $(document).on("click", "button.datasetfilterX", async function (evt) {
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
+        evt.stopPropagation();
+        let oper = $(this).attr("oper");
+        let canvasid = $(this).attr("canvasid");
+        let varname = $(this).attr("varname");
+        let buttons = $("button.datasetfilter[canvasid=" + canvasid + "][varname=" + varname + "]").toArray();
+        let len = buttons.length;
+        if (oper === "*") {
+            for (let i = 0; i < buttons.length; i++) {
+                $(buttons[i]).find("span").first().html(oksign);
+            }
+        }
+        if (oper === "#") {
+            for (let i = 0; i < buttons.length; i++) {
+                $(buttons[i]).find("span").first().html(cancelsign);
+            }
+        }
+        if (oper === ">") {
+            let inext = -1;
+            for (let i = 0; i < buttons.length; i++) {
+                let button = buttons[i];
+                let status = $(button).find("span").first().text();
+                if (status === okletter) {
+                    if (i < len - 1) {
+                        inext = i + 1;
+                    } else {
+                        inext = 0;
+                    }
+                }
+                $(button).find("span").first().html(cancelsign);
+            }
+            if (inext > -1) {
+                $(buttons[inext]).find("span").first().html(oksign);
+            } else {
+                $(buttons[0]).find("span").first().html(oksign);
+            }
+        }
+        if (oper === "<") {
+            let inext = -1;
+            for (let i = 0; i < buttons.length; i++) {
+                let button = buttons[i];
+                let status = $(button).find("span").first().text();
+                if (status === okletter) {
+                    if (i > 0) {
+                        inext = i - 1;
+                    } else {
+                        inext = len - 1;
+                    }
+                }
+                $(button).find("span").first().html(cancelsign);
+            }
+            if (inext > -1) {
+                $(buttons[inext]).find("span").first().html(oksign);
+            } else {
+                $(buttons[len - 1]).find("span").first().html(oksign);
+            }
+        }
+        updateChart(canvasid);
+    });
+
 
     $(document).on("click", "button.kli2000sumtable", async function (evt) {
         evt.preventDefault();
@@ -1556,7 +1827,7 @@ function createLocation() {
             row.push(result.sum.toFixed(1));
             // Regression über die Jahre und Ausgabe hier
             let erg = getregression(dataset.data, 0);
-            row.push(erg.gradient.toFixed(2));
+            row.push(erg.gradient.toFixed(3));
             row.push(erg.r2);
             //gradient: 0.032
             //r2: 0.425
@@ -2024,6 +2295,11 @@ function createLocation() {
     });
 
     function updateChart(canvasid) {
+        let fixedletter = $("button.fixedyscales").find("span").first().text();
+        let dofixed = false;
+        if (fixedletter === okletter) {
+            dofixed = true;
+        }
         let graph = Chart.getChart(canvasid);
         let buttonsid = canvasid.replace("canvas", "buttons");
         let buttons = $("#" + buttonsid).find("button.datasetfilter").toArray();
@@ -2117,32 +2393,82 @@ function createLocation() {
                 graph.setDatasetVisibility(idataset, true);
             }
         }
-        let scales = graph.scales;
-        for (let scaleid of Object.keys(scales)) {
-            let scale = scales[scaleid];
-            if (scale.axis !== "y") {
-                continue;
-            }
-            let scalemin = scale.min;
-            let scalemax = scale.max;
-            // check gegen die Daten
+        if (dofixed === true) {
+            let scales = graph.scales;
+            let visibles = {};
+            let icount = -1;
             for (let dataset of graph.data.datasets) {
+                icount++;
                 if (typeof dataset.custom === "undefined" && dataset.data.length === 70) {
-
                     let erg = kli6900.getTrivial(dataset.data, false, false);
                     dataset.custom = Object.assign({}, erg);
-                    if (dataset.custom.min < scalemin) {
-                        scales[scaleid].min = dataset.custom.min;
+                } else if (typeof dataset.custom === "undefined" && dataset.data.length === 2) {
+                    let data = [];
+                    if (typeof dataset.data[0].y !== "undefined") {
+                        data.push(dataset.data[0].y);
                     }
-                    if (dataset.custom.max < scalemax) {
-                        scales[scaleid].max = dataset.custom.max;
+                    if (typeof dataset.data[1].y !== "undefined") {
+                        data.push(dataset.data[1].y);
+                    }
+                    let erg = kli6900.getTrivial(data, false, false);
+                    dataset.custom = Object.assign({}, erg);
+                }
+                let scalekey = dataset.yAxisID + "_" + dataset.variable + "_" + dataset.method;
+                if (graph.isDatasetVisible(icount)) {
+                    if (typeof visibles[scalekey] === "undefined") {
+                        visibles[scalekey] = {
+                            min: null,
+                            max: null,
+                            count: 0
+                        }
+                        visibles[scalekey].count++;
                     }
                 }
             }
-
+            icount = -1;
+            for (let dataset of graph.data.datasets) {
+                icount++;
+                let scalekey = dataset.yAxisID + "_" + dataset.variable + "_" + dataset.method;
+                if (typeof visibles[scalekey] !== "undefined") {
+                    if (visibles[scalekey].min === null) {
+                        visibles[scalekey].min = dataset.custom.min;
+                    } else if (visibles[scalekey].min > dataset.custom.min) {
+                        visibles[scalekey].min = dataset.custom.min;
+                    }
+                    if (visibles[scalekey].max === null) {
+                        visibles[scalekey].max = dataset.custom.max;
+                    } else if (visibles[scalekey].max < dataset.custom.max) {
+                        visibles[scalekey].max = dataset.custom.max;
+                    }
+                }
+            }
+            // Übernehmen in die Konfiguration des Graph
+            let scalecontrol = {};
+            for (let scaleid of Object.keys(graph.scales)) {
+                for (let visiblekey of Object.keys(visibles)) {
+                    let [yAxisID, variable, method] = visiblekey;
+                    if (scaleid !== yAxisID) {
+                        continue;
+                    }
+                    if (typeof scalecontrol[yAxisID] === "undefined") {
+                        scalecontrol[yAxisID] = 1;
+                        scales[scaleid].min = Number.MAX_VALUE;
+                        scales[scaleid].max = Number.MIN_VALUE;
+                    }
+                    let visible = visibles[visiblekey];
+                    if (visible.min < scales[scaleid].min) {
+                        scales[scaleid].min = Math.floor(visible.min);
+                    }
+                    if (visible.max > scales[scaleid].max) {
+                        scales[scaleid].max = Math.ceil(visible.max);
+                    }
+                }
+                graph.options.scales[scaleid].min = scales[scaleid].min;
+                graph.options.scales[scaleid].max = scales[scaleid].max;
+                graph.scales[scaleid].suggestedMin = scales[scaleid].min;
+                graph.scales[scaleid].suggestedMax = scales[scaleid].max;
+            }
         }
-
-
         graph.update("none");
     };
 
@@ -2431,8 +2757,6 @@ function createLocation() {
                     geosets[qrecord.category].push(georec);
                 }
                 // Regorg geosets
-                debugger;
-
                 if (geosets[0].length < 5) {
                     if (geosets[1].length > 0) {
                         let diff = 5 - geosets[0].length;
@@ -2911,6 +3235,66 @@ function createLocation() {
         addTopics
     };
 }
+
+$(document).on("click", ".helpinformation", function (evt) {
+    evt.preventDefault();
+    let topic = $(this).attr("topic");
+    let pageid = $(this).attr("pageid");
+    let mode = $(this).attr("mode");
+    // mode - ist gegeben
+    // help-mode: dialog, window, embedded
+    if (mode === "mobile") {
+        if ($("#" + pageid + "help").length > 0) {
+            let target = document.getElementById(pageid + "help");
+            target.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+                inline: "nearest"
+            });
+            return;
+        }
+        if ($("#" + pageid + "chart").length > 0) {
+            $("#" + pageid + "chart")
+                .after($("<div/>", {
+                    id: pageid + "help"
+                }));
+        } else {
+            $("#" + pageid)
+                .after($("<div/>", {
+                    id: pageid + "help"
+                }));
+
+        }
+        // pageid + "help"
+        let $pagehelp = $("#" + pageid + "help");
+        help.show(topic, "embedded", $pagehelp);
+        let target = document.getElementById(pageid + "help");
+        target.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+            inline: "nearest"
+        });
+    } else if (mode === "desktop") {
+        help.show(topic, "dialog");
+    }
+
+});
+
+$(document).on("click", function (event) {
+    if ($(event.target).closest(".article-menu").length === 0) {
+        $(".article-menu[open]").prop("open", false);
+    }
+});
+
+$(document).on("toggle", ".article-menu", function () {
+    if (this.open) {
+        $(".article-menu").not(this).prop("open", false);
+    }
+});
+
+$(document).on("click", ".article-menu summary", function () {
+    $(".article-menu").not($(this).parent()).prop("open", false);
+});
 
 export {
     createLocation

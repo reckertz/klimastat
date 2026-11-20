@@ -40,11 +40,21 @@ async function show(screenConfig, hook) {
     <p class="eyebrow">Dein Klima. Deine Umgebung.</p>
     <h1>Wie hat sich das Klima bei dir verändert?</h1>
     <p>Vergleiche historische Temperaturen von Wetterstationen in deiner Nähe – verständlich und auf Grundlage von Messdaten.</p>
+    <details>
+      <summary>Optionen (für später)</summary>
+    
     <button type="button" class="btn btn-secondary btn-sm qualitycontrol" title="formale Qualitätskontrolle auf Datenvollständigkeit">
         <span>${oksign}</span><span> Qualitätskontrolle</span>
     </button>
+    <button type="button" class="btn btn-secondary btn-sm fixedyscales" title="Fixierung der y-Achsen auf die Extremwerte über alle datasets">
+        <span>${oksign}</span><span> Fixierte Y-Achsen</span>
+    </button>
+    <button type="button" class="btn btn-secondary btn-sm syncedyscales" title="Synchronisierung der y-Achsen über die Lokationen">
+        <span>${oksign}</span><span> Synchrone Y-Achsen</span>
+    </button>
+    </details>
     <hr>
-    <button type="button" class="btn btn-primary btn-sm primary" data-action="location">Klima hier entdecken</button>
+    <button type="button" class="btn btn-primary btn-sm primary" data-action="location">Klima 'hier' entdecken</button>
     &nbsp;&nbsp;
     <button type="button" class="btn btn-primary btn-sm primary" data-action="oldlocations">alte Orte</button>
     <br><br>
@@ -450,6 +460,7 @@ async function showCandidates(sectionid, searchstring, country_code, latitude, l
                 html: location.locname + " Auswerten",
                 click: async function (evt) {
                     evt.preventDefault();
+                    debugger;
                     await locationhook(location, geosets);
                     //await startStatistics(location, geosets);
                 }

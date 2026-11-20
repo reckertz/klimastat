@@ -3,6 +3,7 @@
 
 import * as kli3010 from "/modules/kli3010.js";
 import * as kli3020 from "/modules/kli3020.js";
+import { createHelp } from "/modules/help.js";
 
 let oksign = "&#10003;"; // Haken "✓" oder &#x25CB;
 let cancelsign = "&#10005;"; // x oder &#x25CF;
@@ -10,22 +11,117 @@ let okletter = "✓";
 let cancelletter = "✕"; // soll font-abhängig sein, also Vorsicht
 
 let $main = $("#application");
-
 let $stat = [];
 
 let screenConfig = null;
 let locationInstances = [];
+
 let destroyer = null;
+
+let actualTheme = null;
+let themePromise;
+
+// addQualityPage ist noch ein Thema
+let climateThemes = [
+    ["Temperatur", "temperatur.png", ["ZR_TMAX_avg", "ZR_TMAX_avg_reg", "ZR_TMIN_avg", "ZR_TMIN_avg_reg", "CP_TMAXTMIN_avg_reg", "ZR_DTR_avg", "ZR_DTR_avg_reg"]],
+    ["Regen", "niederschlag.png", ["ZR_PRCP_kum", "ZR_PRCP_kum_reg"]],
+    ["Schnee", "schnee.png", ["ZR_SNOW_kum", "ZR_SNOW_kum_reg", "ZR_SNWD_kum", "ZR_SNWD_kum_reg"]],
+    ["Hitze", "hitzewellen.png", ["ZX_TMAX_ext"]],
+    ["Kälte", "kaeltewellen.png", ["ZX_TMIN_ext"]],
+    ["Dauerregen", "dauerregen.png", ["ZX_PRCP_ext"]],
+    ["Starkregen", "starkregen.png", ["ZX_PRCP_ext"]],
+    ["Schneechaos", "schneechaos.png", ["ZX_SNOW_ext", "ZX_SNWD_ext"]],
+    ["Glatteis", "glatteisgefahr.png", ["ZX_SNOW_ext", "ZX_SNWD_ext"]],
+    ["Höhe", "hoehe.png", ["HY_TMAX_height", "HY_TMIN_height", "ZR_PRPC_kum_height", "ZR_SNOW_kum_height", "ZR_SNWD_kum_height"]],
+    ["Bevölkerung", "bevoelkerung.png", ["ZR_TMAX_avg_popd", "ZR_TMIN_avg_popd", "ZR_PRCP_avg_popd", "ZR_SNOW_avg_popd", "ZR_SNWD_avg_popd"]],
+    ["Landnutzung", "landnutzung.png", ["ZR_TMAX_avg_zind", "ZR_TMIN_avg_zind", "ZR_PRCP_avg_zind", "ZR_SNOW_avg_zind", "ZR_SNWD_avg_zind"]],
+];
 
 async function show() {
     screenConfig = getDisplayInfo();
     console.log(screenConfig);
     debugger;
-    kli3010.show(structuredClone(screenConfig), addLocation);
+    // addLocation ist ein Hook - hier kommt als Zwischenschritt die Themenauswahl
+    // beim Zufügen von Locations zu einer vorhandenen Location wird das nicht 
+    // angeboten, zum Wechsel muss der User zurück in die Themenauswahl
+    await kli3010.show(structuredClone(screenConfig), addLocation);
+    globalThis.help = createHelp({
+        url: "/help/klima-help-de.html"
+    });
+
 }
 
+async function showThemeSelection() {
+    return new Promise(function (resolve, reject) {
+        let containerid = "themes" + (Math.floor(Math.random() * 1000000) + 1000000);
+        if ($("div.row.themescontainer").length === 0) {
+            $("body")
+                .append($("<div/>", {
+                    id: containerid,
+                    class: "row themescontainer",
+                    css: {
+                        "backgroundColor": "#dceef9;",
+                        "touch-action": "pan-y",
+                        width: "100%"
+                    }
+                }));
+        } else {
+            containerid = $("div.row.themescontainer").attr("id");
+        }
+        let container = document.getElementById(containerid);
+
+        const section = $("<section>", {
+            class: "topic-selection"
+        }).appendTo(container);
+        const header = $("<h2>", {
+            text: "Mit welchem Thema möchtest Du beginnen?"
+        }).appendTo(section);
+        const grid = $("<div>", {
+            class: "topic-grid"
+        }).appendTo(section);
+        let topicindex = -1;
+        climateThemes.forEach(function (topic) {
+            let themeimg = topic[1];
+            topicindex++;
+            $(grid)
+                .append($("<button>", {
+                    class: "topic",
+                    topicindex: topicindex,
+                    click: function (evt) {
+                        evt.preventDefault();
+                        resolve(topic);
+                    }
+                })
+                    .append($("<img/>", {
+                        class: "topic-icon",
+                        src: "img/climatethemes/" + themeimg,
+                    }))
+                    .append($("<span/>", {
+                        class: "topic-title",
+                        html: topic[0]
+                    }))
+                );
+            /*    
+            button.on("click", function () {
+                        // Auswahl bestätigen
+                        resolve(topic);
+                    });
+                */
+        });
+    });
+
+}
+
+// Dies ist der Hook
 async function addLocation(newlocation, geosets) {
     console.log(newlocation);
+    // hier ist der Punkt: wenn locationInstances === 0, dann Anzeige Themenauswahl
+    // sonst verbleibt die Themenauswahl
+    let theme = null;
+    if (locationInstances.length === 0) {
+        theme = await showThemeSelection();
+    }
+
     if (screenConfig.mode === "mobile") {
         let locIndex = locationInstances.length;
         locationInstances[locIndex] = kli3020.createLocation();
@@ -36,6 +132,7 @@ async function addLocation(newlocation, geosets) {
                     id: containerid,
                     class: "row maincontainer",
                     css: {
+                        "backgroundColor": "#dceef9;",
                         "touch-action": "pan-y",
                         width: "100%"
                     }
@@ -45,7 +142,7 @@ async function addLocation(newlocation, geosets) {
         } else {
             containerid = $("div.row.maincontainer").attr("id");
         }
-        let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets);
+        let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets, theme);
         //  firstpage.topicstring = topicstring; firstpage.type = "page";
         //  firstpage.colIndex = colIndex; firstpage.locationkey = locationkey; firstpage.locname = location.locname;
         if (typeof firstpage.topicstring !== "undefined") {
@@ -74,13 +171,14 @@ async function addLocation(newlocation, geosets) {
                     id: containerid,
                     //class: "row maincontainer"
                     css: {
+                        "backgroundColor": "#dceef9;",
                         "touch-action": "pan-y",
                         width: "100%"
                     }
                 }));
         }
-        
-        let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets);
+
+        let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets, theme);
         //  firstpage.topicstring = topicstring; firstpage.type = "page";
         //  firstpage.colIndex = colIndex; firstpage.locationkey = locationkey; firstpage.locname = location.locname;
         if (typeof firstpage.topicstring !== "undefined") {
