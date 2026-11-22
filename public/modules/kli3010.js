@@ -20,6 +20,23 @@ async function show(screenConfig, hook) {
     if (addbutton === false) {
         $("#navigation")
             .append($("<button/>", {
+                class: "btn btn-sm btn-danger",
+                style: "margin-left:auto;",
+                html: "Test",
+                click: async function (evt) {
+                    evt.preventDefault();
+                    console.log(locationInstances);
+                    for (let instance of locationInstances) {
+                       let alldata = instance.getCoreData();
+                        debugger;
+                    }
+                    debugger;
+
+                }
+            }));
+
+        $("#navigation")
+            .append($("<button/>", {
                 class: "btn btn-sm btn-primary",
                 style: "margin-left:auto;",
                 html: "+Location",
@@ -33,6 +50,7 @@ async function show(screenConfig, hook) {
                     });
                 }
             }));
+
         addbutton = true;
     }
 
@@ -65,8 +83,11 @@ async function show(screenConfig, hook) {
         <input id="place" name="place" required autocomplete="address-level2" placeholder="z.B. Bonn">
         <label for="countrycode">Ländername</label>
         <input id="countrycode" name="countrycode" required  placeholder="z.B. DE">
-        <button class="btn btn-primary btn-sm primary" data-action="searchlocation">Ort auswählen</button>
       </form>
+      <br>
+      <button class="btn btn-primary btn-sm primary" data-action="searchlocation">Trefferliste anzeigen</button>
+      <button class="btn btn-primary btn-sm primarymap exact" data-action="searchlocation">exakte Treffer in Karte anzeigen</button>
+      <button class="btn btn-primary btn-sm primarymap alle" data-action="searchlocation">alle Treffer in Karte anzeigen</button>
     </details>
     <p class="hint">Keine Anmeldung nötig. Dein Standort wird nur nach deiner Zustimmung abgefragt.</p>`;
     let sectionid = "sec" + (Math.floor(Math.random() * 1000000) + 1000000);
@@ -95,6 +116,25 @@ async function show(screenConfig, hook) {
 
     let oldlocations = await getOldLocations(sectionid);
     // cookie für frühere Auswahl
+    /**
+     * primarymap - Anzeige der GEONAMES Treffer in der Worldmap
+     */
+    $("#" + sectionid).on("click", "button.primarymap", async function (evt) {
+        evt.preventDefault();
+        let exactfilter = $(this).hasClass("exact");
+        let action = $(this)[0].dataset.action;
+        if (action === "searchlocation") {
+            let searchstring = $("#" + sectionid).find("input[name=place]").first().val();
+            if (searchstring.trim().length === 0) {
+                alert("Bitte Ortsname eingeben");
+                return;
+            }
+            let country_code = $("#" + sectionid).find("input[name=countrycode]").first().val();
+            let ret = await showGeonamesInMap(sectionid, searchstring, country_code, exactfilter);
+        }
+    });
+
+
     $("#" + sectionid).on("click", "button.primary", async function (evt) {
         evt.preventDefault();
 
@@ -220,6 +260,236 @@ async function getOldLocations(sectionid) {
     }
 }
 
+
+
+/**
+* showGeonamesInMap - Anzeige GEONAMES Treffer in Worldmap
+* Versuch Reuse über geopoints. Prüfen Cookie ist auch eine Anzeigeoption
+*
+* @param {any} sectionid -
+* @param {string} searchstring -
+* @param {any} country_code -
+* @param {any} exactfilter -
+*
+* @returns {any} - Anzeige in der Worldmap und Event für Folgeschritte
+*/
+async function showGeonamesInMap(sectionid, searchstring, country_code, exactfilter) {
+
+    let ret = {};
+    let sql = "";
+    sql += " SELECT KLIGEONAMES.geonameid, KLIGEONAMES.name, KLIGEONAMES.latitude, KLIGEONAMES.longitude,";
+    sql += " KLIGEONAMES.population, KLIGEONAMES.elevation,";
+    sql += " KLIGEONAMES.admin1_code,";
+    sql += " KLIGEONAMES.country_code, KLICOUNTRYCODES.name as country,";
+    sql += " KLISTATES.statename"
+    sql += " FROM KLIGEONAMES";
+    sql += " LEFT JOIN KLICOUNTRYCODES";
+    sql += " ON KLIGEONAMES.country_code = KLICOUNTRYCODES.alpha2";
+    sql += " LEFT JOIN KLISTATES";
+    sql += " ON KLIGEONAMES.country_code || '.' || KLIGEONAMES.admin1_code = KLISTATES.statekey";
+    if (typeof searchstring === "string" && searchstring.trim().length > 0) {
+        let ands = [];
+        let such = searchstring;
+        let frags = such.split(" ");
+        if (frags.length > 0 && exactfilter === false) {
+            for (let frag of frags) {
+                ands.push(" lower(KLIGEONAMES.name) LIKE '%" + frag + "%'");
+            }
+            //sql += " WHERE " + ands.join(" AND ");
+        } else {
+            //sql += " WHERE lower(KLIGEONAMES.name) LIKE('" + frags[0] + "%'";
+            ands.push(" lower(KLIGEONAMES.name) = '" + frags[0].toLowerCase() + "'");
+        }
+        if (typeof country_code === "string" && country_code.trim().length > 0) {
+            ands.push(" KLIGEONAMES.country_code = '" + country_code + "'");
+        }
+        if (ands.length > 0) {
+            sql += " WHERE  " + ands.join(" AND ");
+        }
+    }
+    sql += " ORDER BY KLIGEONAMES.name, KLIGEONAMES.latitude DESC";  // KLIGEONAMES.geonameid";
+    // Zugriff auf SQL
+    console.log(sql);
+    let startTime = new Date();
+    let response = await fetch("/getallrecordsx", {
+        method: "post",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        //make sure to serialize your JSON body - nur bei POST, dann einfache url
+        body: JSON.stringify({
+            sel: sql,
+            timeout: 10 * 60 * 1000,
+            skip: 0,
+            limit: 0
+        })
+    });
+    let ret1 = await response.json();
+    console.log(ret1.message);
+    if (ret1.error === true) {
+        alert(ret1.message);
+        return;
+    }
+    if (ret1.records === "undefined" || ret1.records === null) {
+        alert(ret1.message + "\n keine Daten gefunden");
+        return;
+    }
+    if (Array.isArray(ret1.records) && ret1.records.length === 0) {
+        alert("keine Daten gefunden");
+        return;
+    }
+    //let perf = kli6900.getPerformance(startTime);
+    if (ret1.error === false && ret1.records !== "undefined" && ret1.records !== null &&
+        Array.isArray(ret1.records)) {
+
+        let icountry = 0;
+        let geoid = "kli3010geomap";
+        $("#" + geoid).remove();
+        $("#" + sectionid)
+            .append($("<div/>", {
+                id: geoid,
+            }));
+
+        let location = {
+            geonameid: ret1.records[0].geonameid,
+            "source": "GEONAMES",
+            "locname": ret1.records[0].name,
+            country_code: ret1.records[0].country_code,
+            "latitude": ret1.records[0].latitude,
+            "longitude": ret1.records[0].longitude,
+            "accuracy": 1
+        };
+        let $geomap = $("#" + geoid);
+        let { maps, pageid, toolbar0 } = await showMap($geomap, location);
+        let geopoints = [];
+        for (let record of ret1.records) {
+            let location = {
+                geonameid: record.geonameid,
+                "source": "GEONAMES",
+                stationid: record.geonameid,
+                "locname": record.name,
+                stationname: record.name,
+                country_code: record.country_code,
+                variable: record.country_code,
+                "latitude": record.latitude,
+                "longitude": record.longitude,
+                "accuracy": 1
+            };
+            geopoints.push(location);
+        }
+        // parms.onMarkerClick
+
+        let onGeoMarkerClick = async function (e) {
+            console.log("onMarkerClick");
+            let station = this.options;
+            console.log("onMarkerClick:" + JSON.stringify(station));
+            let [source, geonameid, country_code] = station.id.split("_");
+            let location = {
+                geonameid: geonameid,
+                "locname": station.stationname,
+                "latitude": station.latitude,
+                "longitude": station.longitude,
+                country_code: country_code,
+                "source": "GEONAMES",
+            }
+            await showWorldmap4Location($main, location);
+        };
+
+        await maps.addMarkerLayer("stationlayer", "location", location, geopoints, {
+            onMarkerClick: onGeoMarkerClick
+        });
+    }
+
+
+    $("#" + sectionid).off("click", "a.kli3010name");
+    $("#" + sectionid).on("click", "a.kli3010name", async function (evt) {
+        evt.preventDefault();
+        // auswahl des Ortes, Anzeigen in Map mit Stationen
+        let li = $(this).closest("li");
+        let location = $(li)[0].dataset;
+        await showWorldmap4Location($main, location);
+    });
+
+    async function showWorldmap4Location($main, location) {
+        // Anzeige der Worldmap geordnet in slider
+        let { maps, pageid, toolbar0 } = await showMap($main, location);
+        // Aufbringen der Marker für DWD-Layer und für GHCND-Layer
+        let distancekm = 50;
+        let geopoints = await searchStations(location, distancekm);
+        // jetzt die geopoints in den layer bringen
+        // Klassifizierung der Stationen mit Zeitbezug 1952 - 2017
+        let inLimit = 0;
+        let geosets = new Array(3);
+        geosets[0] = [];
+        geosets[1] = [];
+        geosets[2] = [];
+        let alpha3s = [];
+        for (let station of geopoints) {
+            station.stationkey = station.source + "_" + station.stationid;
+            console.log(station.locname, station.fromyear, station.toyear);
+            if (!alpha3s.includes(station.alpha3)) {
+                alpha3s.push(station.alpha3)
+            }
+            if (station.fromyear <= "1952" && station.toyear >= "2017") {
+                inLimit++;
+                if (inLimit <= 5) {
+                    station.type = "Good Data-near";
+                    station.tcode = 0;
+                    geosets[0].push(station);
+                } else {
+                    station.type = "Good Data-far";
+                    station.tcode = 1;
+                    geosets[1].push(station);
+                }
+            } else {
+                station.type = "Bad Data";
+                geosets[2].push(station);
+                station.tcode = 2;
+            }
+        }
+        //await maps.addMarkerLayer("stationlayer", "GHCND", location, geopoints, {});
+        await maps.addMarkerLayer("stationlayer", "Good,near", location, geosets[0], {});
+        await maps.addMarkerLayer("stationlayer", "Good,far", location, geosets[1], { hide: true });
+        await maps.addMarkerLayer("stationlayer", "Bad Data", location, geosets[2], { hide: true });
+        // countrypolygons holen vom Server über alpha3s
+        await maps.addCountryLayer(alpha3s);
+        // jetzt wird es ernst, der User wird gefragt, ob er die Daten analysieren möchte
+        toolbar0.focusMarkers();
+        $("#" + pageid)
+            .append($("<button/>", {
+                class: "btn btn-sm btn-primary",
+                css: {
+                    margin: "10px"
+                },
+                html: location.locname + " Auswerten",
+                click: async function (evt) {
+                    evt.preventDefault();
+                    await locationhook(location, geosets);
+                    //await startStatistics(location, geosets);
+                }
+            }));
+
+        $("#" + pageid)
+            .append($("<button/>", {
+                class: "btn btn-sm btn-primary",
+                css: {
+                    margin: "10px"
+                },
+                html: "Zurück",
+                click: function (evt) {
+                    evt.preventDefault();
+                    let targetid = $(".welcome").attr("id");
+                    let target = document.getElementById(targetid);
+                    target.scrollIntoView({
+                        behavior: "smooth",
+                        block: "nearest",
+                        inline: "start"
+                    });
+                }
+            }));
+    }
+}
 
 async function showCandidates(sectionid, searchstring, country_code, latitude, longitude, distance) {
     if (!(typeof searchstring === "string" && searchstring === "*cookie")) {
@@ -401,6 +671,13 @@ async function showCandidates(sectionid, searchstring, country_code, latitude, l
             }
         }
     }
+    /*
+    $("#" + sectionid).off("click", ".kli1000Btip");
+    $("#" + sectionid).on("click", ".kli1000Btip", async function (evt) {
+        evt.preventDefault();
+        let that = this;
+    });
+    */
     $("#" + sectionid).off("click", "a.kli3010name");
     $("#" + sectionid).on("click", "a.kli3010name", async function (evt) {
         evt.preventDefault();
@@ -489,7 +766,7 @@ async function showCandidates(sectionid, searchstring, country_code, latitude, l
 
 /**
 * showMap - Anzeige der Weltkarte, noch ohne Marker
-*           addWorldmapSlider stellt den leadfet-Container bereit
+*           addWorldmapSlider stellt den leaflet-Container bereit
 *            maps.showWorldMap führt die Anzeige durch 
 * @param {any} $main - Vorgabe des Containers
 * @param {any} location - Vorgabe des Ortes, hier nur administrativ im Header

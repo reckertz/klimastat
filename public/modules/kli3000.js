@@ -14,11 +14,11 @@ let $main = $("#application");
 let $stat = [];
 
 let screenConfig = null;
-let locationInstances = [];
+globalThis.locationInstances = [];
 
 let destroyer = null;
 
-let actualTheme = null;
+let activeTheme = null;
 let themePromise;
 
 // addQualityPage ist noch ein Thema
@@ -40,7 +40,6 @@ let climateThemes = [
 async function show() {
     screenConfig = getDisplayInfo();
     console.log(screenConfig);
-    debugger;
     // addLocation ist ein Hook - hier kommt als Zwischenschritt die Themenauswahl
     // beim Zufügen von Locations zu einer vorhandenen Location wird das nicht 
     // angeboten, zum Wechsel muss der User zurück in die Themenauswahl
@@ -85,8 +84,10 @@ async function showThemeSelection() {
             topicindex++;
             $(grid)
                 .append($("<button>", {
-                    class: "topic",
+                    class: "topic topicselection",
                     topicindex: topicindex,
+                    topic: JSON.stringify(topic),
+                    /*
                     click: function (evt) {
                         evt.preventDefault();
                         if (typeof resolve === "undefined") {
@@ -94,6 +95,7 @@ async function showThemeSelection() {
                         }
                         resolve(topic);
                     }
+                    */
                 })
                     .append($("<img/>", {
                         class: "topic-icon",
@@ -111,6 +113,8 @@ async function showThemeSelection() {
                     });
                 */
         });
+
+
         let target = $("div.row.themescontainer")[0];
         //let target = document.getElementById(pageid + "help");
         target.scrollIntoView({
@@ -118,6 +122,26 @@ async function showThemeSelection() {
             block: "start",
             inline: "nearest"
         });
+
+        $("div.row.themescontainer").on("click", ".topicselection", async function (evt) {
+            evt.preventDefault();
+            let topicindex = $(this).attr("topicindex");
+            let topic = JSON.parse($(this).attr("topic"));
+            if ($(this).hasClass("selectiondone")) {
+                // hier für alle locations neue article einfügen,
+                // wenn diese noch nicht vorhanden sind
+                // addTopics
+
+            } else {
+                let buttons = $("div.row.themescontainer").find("button.topicselection").toArray();
+                for (let button of buttons) {
+                    $(button).removeClass("selectiondone");
+                    $(button).addClass("selectiondone");
+                }
+                resolve(topic);
+            }
+        });
+
     });
 
 }
@@ -130,9 +154,14 @@ async function addLocation(newlocation, geosets) {
     let theme = null;
     if (locationInstances.length === 0) {
         theme = await showThemeSelection();
-
+        activeTheme = structuredClone(theme);
+        if (typeof activeTheme === "string") {
+            activeTheme = activeTheme.split(",");
+            theme = activeTheme;
+        }
+    } else {
+        theme = activeTheme;
     }
-
     if (screenConfig.mode === "mobile") {
         let locIndex = locationInstances.length;
         locationInstances[locIndex] = kli3020.createLocation();
@@ -153,6 +182,7 @@ async function addLocation(newlocation, geosets) {
         } else {
             containerid = $("div.row.maincontainer").attr("id");
         }
+        debugger;  // locationInstances
         let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets, theme);
         //  firstpage.topicstring = topicstring; firstpage.type = "page";
         //  firstpage.colIndex = colIndex; firstpage.locationkey = locationkey; firstpage.locname = location.locname;
@@ -180,7 +210,7 @@ async function addLocation(newlocation, geosets) {
             $("body")
                 .append($("<div/>", {
                     id: containerid,
-                    //class: "row maincontainer"
+                    class: "row maincontainer",
                     css: {
                         "backgroundColor": "#dceef9;",
                         "touch-action": "pan-y",
@@ -188,7 +218,7 @@ async function addLocation(newlocation, geosets) {
                     }
                 }));
         }
-
+        debugger;   // locationInstances[locIndex]
         let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets, theme);
         //  firstpage.topicstring = topicstring; firstpage.type = "page";
         //  firstpage.colIndex = colIndex; firstpage.locationkey = locationkey; firstpage.locname = location.locname;

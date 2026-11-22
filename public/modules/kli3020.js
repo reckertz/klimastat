@@ -314,6 +314,22 @@ function createLocation() {
     //locationInstances.push(createLocation());
     //let locIndex = locationInstances.length - 1;
 
+    function getCoreData() {
+        return {
+            criticalDays,
+            topicParms,
+            containerid,
+            mode,
+            location,
+            locationkey,
+            geosets,
+            extdays,
+            records,
+            recindex
+        }
+    }
+
+
     async function addTopics(newcontainerid, colIndex, newmode, newlocation, newgeosets, theme) {
         await help.generate(topicParms);
         containerid = newcontainerid;
@@ -369,6 +385,7 @@ function createLocation() {
                         "scroll-margin-top": "50px"
                     },
                     "data-colindex": colIndex,
+                    "data-locname": location.locname,
                     "data-topic": topicstring,
                     "data-place": locationkey,
                     "data-title": title,
@@ -446,6 +463,7 @@ function createLocation() {
                         border: "3px solid red"
                     },
                     "data-colindex": colIndex,
+                    "data-locname": location.locname,
                     "data-topic": topicstring,
                     "data-place": locationkey,
                     "data-title": title,
@@ -1835,7 +1853,9 @@ function createLocation() {
             rows.push(row);
         }
         if (cmd === "show") {
-            let html = rowsToTable(rows, headerfields);
+            let $article = $("#" + containerid).closest("article");
+            let locname = $article.attr("data-locname");
+            let html = rowsToTable(rows, headerfields, locname);
             let tid = "tbl" + (Math.floor(Math.random() * 1000000) + 1000000);
             $("#" + containerid)
                 .append($("<div/>", {
@@ -1867,7 +1887,10 @@ function createLocation() {
                 );
         } else if (cmd === "showcopy") {
             // nicht sichtbare Tabelle
-            let html = rowsToTable(rows, []);
+            debugger;
+            let $article = $("#" + containerid).closest("article");
+            let locname = $article.attr("data-locname");
+            let html = rowsToTable(rows, [], locname);
             // html bereitstellen im Clipboard
             await navigator.clipboard.write([
                 new ClipboardItem({
@@ -1885,7 +1908,10 @@ function createLocation() {
     * @param {any} rows -
     * @returns {any} - Ausgabe in DOM
     */
-    function rowsToTable(rows, headerfields) {
+    function rowsToTable(rows, headerfields, locname) {
+        if (typeof locname === "undefined") {
+            locname = "";
+        }
         if (!rows.length) return "";
         if (typeof headerfields !== "undefined" && Array.isArray(headerfields) && headerfields.length > 0) {
             let headlength = headerfields.length;
@@ -1895,7 +1921,7 @@ function createLocation() {
             html += "<thead>";
             html += "<tr>";
             html += "<th colspan='" + difflength + "'>";
-            html += location.locname + " Summary"; //  + " " + rows[0].slice(0, headlength).join(" "); // Indizes 0 bis n
+            html += locname + " Summary"; //  + " " + rows[0].slice(0, headlength).join(" "); // Indizes 0 bis n
             html += "</th>";
             html += "</tr>";
             html += "<tr>";
@@ -2098,7 +2124,7 @@ function createLocation() {
 
         let canvasid = $(this).attr("canvasid");
         let graph = Chart.getChart(canvasid);
-        await copyChartAttrsCSV(graph);
+        await copyChartAttrsCSV(graph, canvasid);
     });
 
 
@@ -2112,7 +2138,7 @@ function createLocation() {
     });
 
 
-    async function copyChartAttrsCSV(graph) {
+    async function copyChartAttrsCSV(graph, canvasid) {
 
         const datasets = graph.data.datasets;
 
@@ -2209,7 +2235,9 @@ function createLocation() {
                 }
             }
         }
-        let html = rowsToTable(rows, []);
+        let $article = $("#" + containerid).closest("article");
+        let locname = $article.attr("data-locname");
+        let html = rowsToTable(rows, [], locname);
         // html bereitstellen im Clipboard
         await navigator.clipboard.write([
             new ClipboardItem({
@@ -3229,7 +3257,8 @@ function createLocation() {
         return result;
     }
     return {
-        addTopics
+        addTopics,
+        getCoreData
     };
 }
 

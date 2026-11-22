@@ -250,6 +250,9 @@
                         zind_2019AD: geopoint.zind_2019AD
                     }
                 };
+                if (typeof geopoint.country_code !== "undefined") {
+                    geoparms.custom.country_code = geopoint.country_code;
+                }
                 // radius, color, fill: true berechnen aus source, variable
                 if (geopoint.source === "ICOSCO2H") {
                     geoparms.color = "red";
@@ -269,7 +272,7 @@
                 let marker2 = L.circleMarker([geopoint.latitude, geopoint.longitude], geoparms);
 
                 let geopointtitle = geopoint.stationname;
-                if (typeof geopoint.variable !== "undefined") {
+                if (typeof geopoint.variable === "string" && geopoint.variable !== "#" && geopoint.variable.length > 0) {
                     geopointtitle += " (" + geopoint.variable + ")";
                 }
                 let html = '<div class="kli1000Btip" style="font-size:10px;padding:1px !important;">' + geopointtitle + '</div>';

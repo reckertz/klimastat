@@ -83,7 +83,9 @@ function createHelp(args = {}) {
 </section>`;
 
         }).join("\n\n");
+        try {
         await navigator.clipboard.writeText(html);
+        } catch(err) {};
         return html;
     }
 
