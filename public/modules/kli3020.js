@@ -2316,24 +2316,22 @@ function createLocation() {
     });
 
     function showChartScience($page, pageid, canvasid) {
-        // auf der Ebene pageid gibt es zahlreiche Attribute
-        // <article id="dp1421410" 
-        // class="page desktop" 
-        // data-colindex="0" 
-        // data-topic="Zeitreihe_yeardata_TMAX_avg" 
-        // data-place="Trippelsdorf 2821102" 
-        // data-title="Zeitreihe" 
-        // data-datasource="yeardata" 
-        // data-variable="TMAX" 
-        // data-method="avg" 
-        // data-altmethod1="max" 
-        // data-altmethod2="min" 
-        // style="flex: 0 0 31%; box-sizing: border-box; padding-top: 5px; margin: 3px; border: 3px solid red;"></article>
-        // die einfache Darstellung mit method avg bekommt eine einfache Analyse
         let fromyear = 1950;
         let toyear = 2019;
         let graph = Chart.getChart(canvasid);
 
+        // bereinigen berechnete Daten reg, regper, 
+        let idels = 0;
+        for (let i = graph.data.datasets.length - 1; i >= 0; i--) {
+            let dataset = graph.data.datasets[i];
+            let parts = dataset.method.split("_");
+            if (parts.length > 1) {
+                graph.data.datasets.splice(i, 1);
+                idels++;
+            }
+        }
+        console.log("datasets gelöscht:" + idels);
+        debugger;
         let crits = {
             "check": [],
             "stationkey": [],
@@ -2387,9 +2385,129 @@ function createLocation() {
             }
         }
         console.log(crits);
+
+        let pageparms = $page[0].dataset;
+        console.log(pageparms);
+
+        // alle datasets nicht sichtbar setzen
+        for (let i = 0; i < graph.data.datasets.length; i++) {
+            graph.setDatasetVisibility(i, false);
+            graph.data.datasets[i].minmax = "*";
+        }
+        // Fallunterscheidung
+        crits.minmax = {}
+        if (crits.check.includes("data")) {
+            // raw data
+            for (let i = 0; i < graph.data.datasets.length; i++) {
+                let dataset = graph.data.datasets[i];
+                let minmaxvar = dataset.variable;
+                if (!["avg", "kum", "ext"].includes(dataset.method)) {
+                    continue;
+                }
+                if (typeof crits.minmax[minmaxvar] === "undefined") {
+                    crits.minmax[minmaxvar] = {
+                        min: null,
+                        imin: null,
+                        max: null,
+                        imax: null
+                    }
+                }
+                let stationkey = dataset.source + "_" + dataset.stationid;
+                let value = dataset.custom.avg;
+                if (value === null) {
+                    continue;
+                }
+                if (crits.minmax[minmaxvar].min === null) {
+                    crits.minmax[minmaxvar].min = value;
+                    crits.minmax[minmaxvar].imin = i;
+                    crits.minmax[minmaxvar].stationkey = stationkey;
+                } else if (crits.minmax[minmaxvar].min > value) {
+                    crits.minmax[minmaxvar].min = value;
+                    crits.minmax[minmaxvar].imin = i;
+                    crits.minmax[minmaxvar].stationkey = stationkey;
+                }
+                if (crits.minmax[minmaxvar].max === null) {
+                    crits.minmax[minmaxvar].max = value;
+                    crits.minmax[minmaxvar].imax = i;
+                    crits.minmax[minmaxvar].stationkey = stationkey;
+                } else if (crits.minmax[minmaxvar].max < value) {
+                    crits.minmax[minmaxvar].max = value;
+                    crits.minmax[minmaxvar].imax = i;
+                    crits.minmax[minmaxvar].stationkey = stationkey;
+                }
+
+            }
+        }
+        // Vererben minmax in die Daten - raw-Sätze avg, kum, ext
+        for (let i = 0; i < graph.data.datasets.length; i++) {
+            let dataset = graph.data.datasets[i];
+            for (let minmaxvar of Object.keys(crits.minmax)) {
+                if (dataset.variable === minmaxvar && dataset.check === "data") {
+                    if (i === crits.minmax[minmaxvar].imin) {
+                        graph.data.datasets[i].minmax = "min";
+                        graph.data.datasets[i].label += " MIN";
+                        graph.setDatasetVisibility(i, true);
+                    } else if (i === crits.minmax[minmaxvar].imax) {
+                        graph.data.datasets[i].minmax = "max";
+                        graph.data.datasets[i].label += " MAX";
+                        graph.setDatasetVisibility(i, true);
+                    }
+                }
+            }
+        }
+        graph.update("none");
+
+
+        //if (!["avg", "kum", "ext"].includes(dataset.method)) {
+        //    continue;
+        //}
+
+        // Buttons prüfen und generieren, erweiterte Daten löschen und neu generieren mit minmax Vererbung
+        // Reminder Spezialfall crits.check='hyde' nur vererben 
+        if (crits.variable.length > 1) {
+            // variable-Buttons anlegen, vor allem bei hyde
+        }
+
+        for (method of ["avg", "kum", "ext"]) {
+            if (!crits.method.includes(method)) {
+                continue;
+            }
+            // method-Buttons anlegen, wenn notwendig, alle 4!
+
+            // erweiterte method-datasets anlegen, reminder: vorher wurden alle evt. vorhandenen gelöscht
+
+
+
+        }
+
+
+
+
         debugger;
 
+    }
+
+    function showChartScience_OLD($page, pageid, canvasid) {
+        // auf der Ebene pageid gibt es zahlreiche Attribute
+        // <article id="dp1421410" 
+        // class="page desktop" 
+        // data-colindex="0" 
+        // data-topic="Zeitreihe_yeardata_TMAX_avg" 
+        // data-place="Trippelsdorf 2821102" 
+        // data-title="Zeitreihe" 
+        // data-datasource="yeardata" 
+        // data-variable="TMAX" 
+        // data-method="avg" 
+        // data-altmethod1="max" 
+        // data-altmethod2="min" 
+        // style="flex: 0 0 31%; box-sizing: border-box; padding-top: 5px; margin: 3px; border: 3px solid red;"></article>
+        // die einfache Darstellung mit method avg bekommt eine einfache Analyse
+        let fromyear = 1950;
+        let toyear = 2019;
+        let graph = Chart.getChart(canvasid);
+
         let parms = $page[0].dataset;
+        debugger;
         let setindex = new Map(graph.data.datasets.map(function (rec, i) {
             rec.key = rec.source + "_" + rec.stationid + "_" + rec.variable + "_" + rec.method;
             return [rec.key, i];
