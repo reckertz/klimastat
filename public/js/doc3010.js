@@ -40,7 +40,6 @@
     };
 
     doc3010.show = async function (args) {
-        debugger;
         // einbinden externe Module, die nicht in index.html sind
         let ret00 = await kli6900.getScriptA("doc3001");
         let url = "https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js";

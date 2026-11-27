@@ -36,7 +36,6 @@ function mapService() {
     * image ist hier ein Symbol: natural oder nasa
     */
     async function showWorldMap(containerid, imagetype) {
-
         let data1 = {
             timeout: 10 * 60 * 1000,
         };

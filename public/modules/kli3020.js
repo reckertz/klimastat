@@ -151,11 +151,12 @@ function createLocation() {
     ];
 
     let topicParms = topicParms2;
-
+    /*
     for (let topicParm of topicParms) {
         let [title, locfunction, datasource, variable, method, altmethod1, altmethod2, hydevar, helpkey] = topicParm;
         console.log(helpkey + "\t" + locfunction.name + "\t" + title + "\n");
     }
+    */
 
     let detailtopics = [
         ["Tagesreihe", "years", "TMAX", "val", "", ""],
@@ -169,6 +170,16 @@ function createLocation() {
     // criticalDays[topic].conditions[{days: n, mmin|max|minsum: m}];
 
     let criticalDays = {
+        /*
+        TMAX_avg: {
+            title: "Zeitreihe TMAX",
+            variable: "TMAX",
+            func: addStandardPage,
+            methods: "avg,min,max",
+            initial: "minmax"  // kleinste und größte Line, aus avg über alle Werte
+            // hyde: nur bei Hyde-Punkten
+        },
+        */
         TMAX_hot: {
             title: "Hitzewelle",
             conditions: [
@@ -339,8 +350,19 @@ function createLocation() {
         locationkey = location.locname.replace(/[^\p{L}\p{N}]/gu, "");
         locationkey += " " + location.geonameid;
         let firstpage = {};
-        let ret = await getKLIDATA(location, geosets);  // records je Instanz übergeordnet!!!
-        recindex = new Map(records.map((rec, i) => [rec.key, i]));
+        // Prüfen, ob records bereits daten hat, wenn ja, dann kein Zugriff
+        if (Array.isArray(records) && records.length > 0) {
+            console.log("data already loaded");
+        } else {
+            const signal = activity.show(
+                "Wetterdaten - Serverzugriff …"
+            );
+            let ret = await getKLIDATA(location, geosets);  // records je Instanz übergeordnet!!!
+            recindex = new Map(records.map((rec, i) => [rec.key, i]));
+            activity.message(
+                "Klimadaten werden übernommen …"
+            );
+        }
         // Vorlauf für den Fall der Theme-Übergabe
         let tparms = topicParms;
         if (typeof theme !== "undefined") {
@@ -366,6 +388,7 @@ function createLocation() {
                 $slider = $("<section>", {
                     id: "ds" + (Math.floor(Math.random() * 1000000) + 1000000),
                     class: "col col-12 slider mobile",  //  place-slider",
+                    "data-theme": theme[0],
                     "data-topic": topicstring,
                     "data-colindex": colIndex,
                     "data-title": title,
@@ -386,6 +409,7 @@ function createLocation() {
                     },
                     "data-colindex": colIndex,
                     "data-locname": location.locname,
+                    "data-theme": theme[0],
                     "data-topic": topicstring,
                     "data-place": locationkey,
                     "data-title": title,
@@ -439,6 +463,7 @@ function createLocation() {
                             display: "flex",
                             "flex-wrap": "wrap"
                         },
+                        "data-theme": theme[0],
                         "data-topic": topicstring,
                         "data-title": title,
                         "data-datasource": datasource,
@@ -464,6 +489,7 @@ function createLocation() {
                     },
                     "data-colindex": colIndex,
                     "data-locname": location.locname,
+                    "data-theme": theme[0],
                     "data-topic": topicstring,
                     "data-place": locationkey,
                     "data-title": title,
@@ -473,7 +499,7 @@ function createLocation() {
                     "data-altmethod1": altmethod1,
                     "data-altmethod2": altmethod2,
                     "data-hydevar": hydevar,
-                    "data.helpkey": helpkey
+                    "data-helpkey": helpkey
                 });
                 if (typeof firstpage.topicstring === "undefined") {
                     firstpage.topicstring = topicstring;
@@ -482,16 +508,9 @@ function createLocation() {
                     firstpage.locationkey = locationkey;
                     firstpage.locname = location.locname;
                 }
-                /*
-                $page.append(
-                    $("<span style='font-weight: bold;margin:5px;'>").text(`${location.locname} ${variable} ${title}`),
-                    // $("<span style='margin:5px'>").text(`(${locationkey})`)
-                );
-                */
 
                 let pagetitle = `${location.locname} ${variable} ${title}`;
                 addPageHeader($page, pagetitle, helpkey);
-
                 $page.append(
                     $("<div/>", {
                         id: pageid + "chart",
@@ -505,6 +524,7 @@ function createLocation() {
                 let ret = await locfunction($page, mode, location, geosets, topicParm);
             }
         }
+        activity.close();
         return firstpage;
     }
 
@@ -567,14 +587,17 @@ function createLocation() {
 
         content.append(
             $("<button>", {
-                text: "Hilfe",
-                "data-action": "help"
+                class: "datamenu",
+                text: "Hilfe Clipboard",
+                "data-action": "helpcopy"
             }),
             $("<button>", {
+                class: "datamenu",
                 text: "Export",
                 "data-action": "export"
             }),
             $("<button>", {
+                class: "datamenu",
                 text: "Einstellungen",
                 "data-action": "settings"
             })
@@ -584,7 +607,14 @@ function createLocation() {
         actions.append(menu);
     }
 
+    $(document).on("click", ".datamenu", async function (evt) {
+        if ($(this).dataset.action === "helpcopy") {
 
+            try {
+                await navigator.clipboard.writeText(html);
+            } catch (err) { };
+        }
+    });
 
     // die Qualitydata ausgeben!!! wie conditions
     async function addQualityPage($page, mode, location, geosets, topicParm) {
@@ -672,6 +702,7 @@ function createLocation() {
                 for (let setmethod of [method, altmethod1, altmethod2]) {
                     if (setmethod === "") continue;
                     let dataset = {
+                        check: "data",
                         label: station.locname,
                         source: station.source,
                         stationid: station.stationid,
@@ -680,7 +711,6 @@ function createLocation() {
                         datakey: station.source + "_" + station.stationid + "_" + variable,
                         variable: variable,
                         method: setmethod,
-                        check: "data",
                         fromyear: fromyear,
                         toyear: toyear,
                         yAxisID: "y",
@@ -771,6 +801,7 @@ function createLocation() {
                 .append($("<canvas/>", {
                     id: pageid + "canvas"
                 }));
+            await pause(100);
             await new Promise(function (resolve, reject) {
                 requestAnimationFrame(async function () {
                     let canvasid = pageid + "canvas";   // vorher "canvas"
@@ -867,6 +898,7 @@ function createLocation() {
         //["Zeitreihe", dummy, "yeardata", "TMAX", "avg", "max", "min","height"],
         // async function showStatisticPageWithHydevar(hparms, xlabels, doregression) {
         //let { $page, itopic, key, locations, title, datasource, variable, method, altmethod1, altmethod2, hydevar } = hparms;
+        debugger;
         if (!(datasource === "yeardata" && ["TMAX", "TMIN", "DTR", "PRCP", "SNOW", "SNWD"].includes(variable) && ["avg", "avg_reg", "kum", "kum_reg"].includes(method) && hydevar !== "")) {
             return {};
         }
@@ -885,6 +917,7 @@ function createLocation() {
             for (let setmethod of [method, altmethod1, altmethod2]) {
                 if (setmethod === "") continue;
                 let dataset = {
+                    check: "hydedata",
                     label: station.locname,
                     source: station.source,
                     stationid: station.stationid,
@@ -893,7 +926,6 @@ function createLocation() {
                     datakey: station.source + "_" + station.stationid + "_" + variable,
                     variable: variable,
                     method: setmethod,
-                    check: "data",
                     hydevar: hydevar,
                     fromyear: fromyear,
                     toyear: toyear,
@@ -902,7 +934,6 @@ function createLocation() {
                 let recind = recindex.get(dataset.datakey);
                 let record = records[recind];
                 if (typeof record === "undefined") {
-
                     continue;
                 }
                 // hydevar => hydeval bereitstellen
@@ -911,6 +942,8 @@ function createLocation() {
                     hydeval = record[hydevar];
                     dataset.hydevar = hydevar;   // Feld bzw. Feldtyp
                     dataset.hydevars = "height,height";
+                    dataset.hydevar1 = "height";  // Feldname
+                    dataset.hydevar2 = "height";  // Feldname
                     dataset.hydeval1 = hydeval;  // Wert
                     dataset.hydeval2 = hydeval;  // Wert
                     dataset.label = station.locname + " (" + hydeval + ")";
@@ -930,6 +963,8 @@ function createLocation() {
                     let hydeval_2019 = record[hydevar2];
                     dataset.hydeval1 = hydeval_1950;
                     dataset.hydeval2 = hydeval_2019;
+                    dataset.hydevar1 = hydevar1;
+                    dataset.hydevar2 = hydevar2;
                     // dedizierte Aufbereitung für bessere Lesbarkeint
                     if (hydevar === "zind") {
                         dataset.label = station.locname + " (" + parseInt(dataset.hydeval1) + "/" + parseInt(dataset.hydeval2) + ")";
@@ -991,6 +1026,7 @@ function createLocation() {
                 continue;  // per Definition: keine Daten
             }
             let hydedataset = structuredClone(referencedataset);
+            hydedataset.check = "hyde";
             hydedataset.method = referencedataset.hydevar;
             hydedataset.variable = referencedataset.hydevar;
             hydedataset.label += " (" + referencedataset.hydeval1 + "/" + referencedataset.hydeval2 + ")";
@@ -1009,7 +1045,7 @@ function createLocation() {
 
         let icount = 0;
         for (let dataset of datasets) {
-            if (dataset.check === "data") {
+            if (dataset.check === "hydedata") {
                 icount++;
             }
         }
@@ -1122,6 +1158,7 @@ function createLocation() {
                 }
                 let dataset = {
                     type: "line",
+                    check: "topic",
                     label: station.stationname,
                     hidden: false,
                     visible: true,
@@ -1131,7 +1168,7 @@ function createLocation() {
                     stationkey: station.source + "_" + station.stationid,
                     datakey: station.source + "_" + station.stationid + "_" + variable + "_" + topic,
                     topic: topic,
-                    variable: variable,
+                    variable: topic,   // variable,
                     method: "ext",
                     fromyear: fromyear,
                     toyear: toyear,
@@ -1181,7 +1218,7 @@ function createLocation() {
             .append($("<canvas/>", {
                 id: pageid + "canvas"
             }));
-
+        await pause(100);
         let canvasid = pageid + "canvas";
         let canvas = document.getElementById(canvasid);
         let ctx = canvas.getContext("2d");
@@ -1200,6 +1237,14 @@ function createLocation() {
             points: chart.data.datasets.map(ds => ds.data?.length)
         });
     }
+
+
+    async function pause(ms = 50) {
+        return new Promise(resolve => {
+            setTimeout(resolve, ms);
+        });
+    };
+
 
     function checkChart(chart) {
         let canvas = chart.canvas;
@@ -1393,13 +1438,14 @@ function createLocation() {
 
         let ind = 0;
         for (let key of sortedkeys) {
-
             vcontrol.stations[key].dashPatternsIndex = ind;
             ind++;
         }
         // colindex umsetzen in class!!! damit die Events unique werden
         let datasetclass = "datasetclass" + $page.attr("data-colindex");
 
+        // erst mal die Science-Buttons erzeugen 1,2,3,4
+        // showScienceButtons(containerid, "scienceClass", canvasid, graph, vcontrolfields, hydevar, vcontrol);
         // Buttons erzeugen
         let crits = Object.keys(vcontrol);
         for (let crit of crits) {
@@ -1606,7 +1652,7 @@ function createLocation() {
 
         $("#" + containerid)
             .append($("<button/>", {
-                class: "btn btn-sm btn-warning kli2000sciencedata " + datasetclass,
+                class: "btn btn-sm btn-warning kli3020sciencedata " + datasetclass,
                 css: {
                     margin: "5px",
                     padding: "0px"
@@ -1697,6 +1743,299 @@ function createLocation() {
         }));
         */
     };
+
+
+    function showScienceButtons(containerid, scienceClass, canvasid, graph, variables, hydevar, vcontrol) {
+        let pparms = [["P0", 1950, 1979], ["P1", 1970, 1999], ["P2", 1990, 2019]];
+        // detect leading variable und hydevar
+        debugger;
+        let action = "";
+        if (typeof variables !== "undefined" && variables !== null &&
+            Array.isArray(variables) && variables.length > 0 && variables[0] === "topics") {
+            // case topics/topic    
+            action = "topic";
+        } else if (typeof hydevar !== "undefined" && hydevar !== null) {
+            // case hydevar
+            leading.hydevar = hydevar;
+            action = "hydevar";
+        } else {
+            // case classic variable
+            action = "variable";
+        }
+        console.log("action", action);
+        // Extremwerte und damit extrem-datasets für leadvariable bestimmen.
+        // minmax mit <attributename>: min:..., max:...
+        let minmax = {};
+        let ind = -1;
+        for (let dataset of graph.data.datasets) {
+            ind++;  // ab 0
+            if (typeof dataset.custom === "undefined" && dataset.data.length === 70) {
+                let erg = kli6900.getTrivial(dataset.data, false, false);
+                dataset.custom = Object.assign({}, erg);
+            } else if (typeof dataset.custom === "undefined" && dataset.data.length === 2) {
+                let data = [];
+                if (typeof dataset.data[0].y !== "undefined") {
+                    data.push(dataset.data[0].y);
+                }
+                if (typeof dataset.data[1].y !== "undefined") {
+                    data.push(dataset.data[1].y);
+                }
+                let erg = kli6900.getTrivial(data, false, false);
+                dataset.custom = Object.assign({}, erg);
+            }
+            if (action === "topic") {
+                // es könnte mehrere topics in einem Chart geben
+                let attributename = dataset.topic;
+                let avg = dataset.custom.avg;
+                if (avg === null) {
+                    continue;
+                }
+                if (typeof minmax[attributename] === "undefined") {
+                    minmax[attributename] = {
+                        min: null,
+                        imin: null,
+                        max: null,
+                        imax: null
+                    }
+                }
+                if (minmax[attributename].min === null) {
+                    minmax[attributename].min = avg;
+                    minmax[attributename].imin = ind;
+                } else if (minmax[attributename].min > avg) {
+                    minmax[attributename].min = avg;
+                    minmax[attributename].imin = ind;
+                }
+
+                if (minmax[attributename].max === null) {
+                    minmax[attributename].max = avg;
+                    minmax[attributename].imax = ind;
+                } else if (minmax[attributename].max < avg) {
+                    minmax[attributename].max = avg;
+                    minmax[attributename].imax = ind;
+                }
+            }
+
+        }
+        if (action === "topic") {
+            let topics = Object.keys(minmax);
+            for (let topic of topics) {
+                let topicdata = minmax[topic];
+                $("#" + containerid)
+                    .append($("<button/>", {
+                        class: "btn btn-sm btn-info datasetscience",
+                        css: {
+                            margin: "5px",
+                            padding: "0px"
+                        },
+                        canvasid: canvasid,
+                        action: action,
+                        parms: JSON.stringify(topicdata),
+                        phase: "1",
+                        html: "1 " + topic,
+                        title: "min und max " + topic + " raw data",
+                    }));
+                $("#" + containerid)
+                    .append($("<button/>", {
+                        class: "btn btn-sm btn-info datasetscience",
+                        css: {
+                            margin: "5px",
+                            padding: "0px"
+                        },
+                        canvasid: canvasid,
+                        action: action,
+                        parms: JSON.stringify(topicdata),
+                        phase: "2",
+                        html: "2 ",
+                        title: "min und max " + topic + " horizontal 30-year buckets",
+                    }));
+                $("#" + containerid)
+                    .append($("<button/>", {
+                        class: "btn btn-sm btn-info datasetscience",
+                        css: {
+                            margin: "5px",
+                            padding: "0px"
+                        },
+                        canvasid: canvasid,
+                        action: action,
+                        parms: JSON.stringify(topicdata),
+                        phase: "3",
+                        html: "3 ",
+                        title: "min und max " + topic + " gradients 30-year buckets",
+                    }));
+                $("#" + containerid)
+                    .append($("<button/>", {
+                        class: "btn btn-sm btn-info datasetscience",
+                        css: {
+                            margin: "5px",
+                            padding: "0px"
+                        },
+                        canvasid: canvasid,
+                        action: action,
+                        parms: JSON.stringify(topicdata),
+                        phase: "4",
+                        html: "4 ",
+                        title: "min und max " + topic + " regression",
+                    }));
+            }
+        }
+        console.log(minmax);
+        /*
+         $("#" + containerid)
+             .append($("<button/>", {
+                 class: "btn btn-sm btn-success datasetfilter " + datasetclass,
+                 css: {
+                     visibility: "hidden",
+                     margin: "5px",
+                     padding: "0px"
+                 },
+                 canvasid: canvasid,
+                 varname: crit.substring(0, crit.length - 1),
+                 varvalue: period,
+                 fromyear: pfromyear,
+                 toyear: ptoyear,
+                 html: "<span>" + oksign + "</span><span> " + period + "</span>",
+                 title: "Auswertung Verdichtung auf 30 Jahre",
+                 title: crit + " " + period
+             }));
+         */
+    }
+    $(document).on("click", ".datasetscience", function (evt) {
+        evt.preventDefault();
+        let canvasid = $(this).attr("canvasid");
+        let pageid = canvasid.replace("canvas", "");
+        let action = $(this).attr("action");
+        let parms = JSON.parse($(this).attr("parms")); // min, imin, max, imax
+        let phase = $(this).attr("phase");
+        let graph = Chart.getChart(canvasid);
+        // erst alles aussetzen und dabei die Button-Kriterien sammeln
+        let critcontrol = {}; // <varname>:[<varvalue>, ...]
+        for (let crit of ["stationkey", "variable", "method"]) {
+            let buttons = $("#" + pageid).find("button[varname='" + crit + "']").toArray();
+            for (let button of buttons) {
+                let varvalue = $(button).attr("varvalue");
+                if (typeof varvalue === "undefined") {
+                    continue;
+                }
+                if (typeof critcontrol[crit] === "undefined") {
+                    critcontrol[crit] = [];
+                }
+                critcontrol[crit].push(varvalue);
+                $(button).find("span").first().html(cancelsign);
+            }
+        }
+        let datacontrol = {
+            stationkey: [],
+            variable: [],
+            method: []
+        };
+        for (let idataset = 0; idataset < graph.data.datasets.length; idataset++) {
+            let dataset = graph.data.datasets[idataset];
+            for (let crit of ["stationkey", "variable", "method"]) {
+                if (crit === "stationkey") {
+                    if (typeof dataset.source !== "undefined" && typeof dataset.stationid !== "undefined") {
+                        let stationkey = dataset.source + "_" + dataset.stationid;
+                        if (!datacontrol.stationkey.includes(stationkey)) {
+                            datacontrol.stationkey.push(stationkey);
+                        }
+                    }
+                } else {
+                    if (typeof dataset[crit] !== "undefined") {
+                        if (!datacontrol[crit].includes(dataset[crit])) {
+                            datacontrol[crit].push(dataset[crit]);
+                        }
+                    }
+                }
+            }
+        }
+
+        debugger;
+        if (action === "topic") {
+            if (phase === "1") {
+                // Rohdaten
+                for (let idataset = 0; idataset < graph.data.datasets.length; idataset++) {
+                    if (idataset === parms.imin || idataset === parms.imax) {
+                        graph.setDatasetVisibility(idataset, true);
+                        // die Buttons müssen aktualisiert werden
+                        let dataset = graph.data.datasets[idataset];
+                        let stationkey = dataset.source + "_" + dataset.stationid;
+                        let button = $("#" + pageid).find("button[varname=stationkey][varvalue='" + stationkey + "']");
+                        $(button).find("span").first().html(oksign);
+                    } else {
+                        graph.setDatasetVisibility(idataset, false);
+                    }
+                }
+                graph.update("none");
+            } else if (phase === "2") {
+                // Treppenstufen - Science
+                let idataset = -1;
+                let docancel = false;
+                let len = graph.data.datasets.length;
+                for (let dataset of graph.data.datasets) {
+                    idataset++;
+                    if (idataset >= len) {
+                        break;  // Abbruch beim alten Stand length, sonst werden neue Sätze zu viel bearbeitet
+                    }
+                    if (dataset.variable === parms.variable && dataset.method === parms.method) {
+                        let checkkey = dataset.source + "_" + dataset.stationid + "_" + dataset.variable + "_" + "P0";
+                        let checkind = setindex.get(checkkey);
+                        if (typeof graph.data.datasets[checkind] !== "undefined") {
+                            docancel = true;
+                            break;
+                        }
+                        let visible = graph.isDatasetVisible(idataset);
+                        for (let pparms of [["P0", 1950, 1979], ["P1", 1970, 1999], ["P2", 1990, 2019]]) {
+                            let [period, pfromyear, ptoyear] = pparms;
+                            let fromind = pfromyear - fromyear;
+                            let toind = ptoyear - fromyear;
+                            let pdata = dataset.data.slice(fromind, toind);
+                            let erg = kli6900.getTrivial(pdata, false, false);
+                            let pdataset = kli6900.cloneObject(dataset);
+                            pdataset.originalmethod = dataset.method;
+                            pdataset.method += period;
+                            pdataset.key = dataset.source + "_" + dataset.stationid + "_" + dataset.variable + "_" + period;
+                            pdataset.label += period;
+                            pdataset.period = period;
+                            if (regscience === false) {
+                                pdataset.data = [
+                                    { x: fromind, y: erg.avg },
+                                    { x: toind, y: erg.avg }
+                                    //{ x: pfromyear, y: erg.avg },
+                                    //{ x: ptoyear, y: erg.avg }
+                                ];
+                            } else {
+                                // Regressionsrechnung 
+                                let result = getregression(pdata, 0);
+                                let y1 = result.regdata[0];
+                                let y2 = result.regdata[result.regdata.length - 1];
+                                pdataset.data = [
+                                    { x: fromind, y: y1 },
+                                    { x: toind, y: y2 }
+                                    //{ x: pfromyear, y: erg.avg },
+                                    //{ x: ptoyear, y: erg.avg }
+                                ];
+                            }
+                            pdataset.parsing = false;
+                            pdataset.borderColor = "red";
+                            pdataset.pointRadius = 0;
+                            pdataset.borderWidth = 3;
+                            console.log(pdataset.yAxisID);
+                            if (yAxisID === "") {
+                                yAxisID = pdataset.yAxisID;
+                            }
+                            graph.data.datasets.push(pdataset);
+                            console.log(pdataset.key, pdataset.yAxisID, pdataset.period);
+                            graph.setDatasetVisibility(graph.data.datasets.length - 1, visible);
+                        }
+                    }
+                }
+
+
+
+
+                graph.update("none");
+            }
+        }
+    });
 
     function addGenericFilterButtons(containerid, genericClass, canvasid, varname) {
         for (let oper of [">", "<", "*", "#"]) {
@@ -1887,7 +2226,6 @@ function createLocation() {
                 );
         } else if (cmd === "showcopy") {
             // nicht sichtbare Tabelle
-            debugger;
             let $article = $("#" + containerid).closest("article");
             let locname = $article.attr("data-locname");
             let html = rowsToTable(rows, [], locname);
@@ -1963,7 +2301,7 @@ function createLocation() {
     `;
     }
 
-    $(document).on("click", "button.kli2000sciencedata", async function (evt) {
+    $(document).on("click", "button.kli3020sciencedata", async function (evt) {
         evt.preventDefault();
         evt.stopImmediatePropagation();
         evt.stopPropagation();
@@ -1971,9 +2309,9 @@ function createLocation() {
         let canvasid = $(this).attr("canvasid");
         let pageid = canvasid.replace("canvas", "");
         let $page = $("#" + pageid);
-        $page.find("button[canvasid=" + canvasid + "][varname=method][varvalue=P0]").css("visibility", "visible");
-        $page.find("button[canvasid=" + canvasid + "][varname=method][varvalue=P1]").css("visibility", "visible");
-        $page.find("button[canvasid=" + canvasid + "][varname=method][varvalue=P2]").css("visibility", "visible");
+        //$page.find("button[canvasid=" + canvasid + "][varname=method][varvalue=P0]").css("visibility", "visible");
+        //$page.find("button[canvasid=" + canvasid + "][varname=method][varvalue=P1]").css("visibility", "visible");
+        //$page.find("button[canvasid=" + canvasid + "][varname=method][varvalue=P2]").css("visibility", "visible");
         await showChartScience($page, pageid, canvasid);
     });
 
@@ -1995,11 +2333,68 @@ function createLocation() {
         let fromyear = 1950;
         let toyear = 2019;
         let graph = Chart.getChart(canvasid);
+
+        let crits = {
+            "check": [],
+            "stationkey": [],
+            "variable": [],
+            "method": [],
+            "*hydevar": []
+        };
+        for (let dataset of graph.data.datasets) {
+            for (let fieldname of ["check", "stationkey", "variable", "method", "*hydevar"]) {
+                if (fieldname.startsWith("*")) {
+                    // mit * werden Metafelder markiert, daher anderer Ablauf
+                    let fldname = fieldname.substring(1);
+                    // Berechnung auf der Metaebene
+                    if (typeof dataset[fldname] !== "undefined") {
+                        let value = dataset[fldname];
+                        if (fldname !== null) {
+                            if (typeof crits[fldname] === "undefined") {
+                                crits[fldname] = [];
+                            }
+                            if (!crits[fldname].includes(value)) {
+                                crits[fldname].push(value)
+                            }
+                        }
+                        // Berechnung auf der Datenebene
+                        if (typeof crits[value] === "undefined") {
+                            crits[value] = [];
+                        }
+                        let datavalue1 = dataset.hydeval1;  // Wechsel der Ebene
+                        if (datavalue1 !== null) {
+                            if (!crits[value].includes(datavalue1)) {
+                                crits[value].push(datavalue1)
+                            }
+                        }
+                        let datavalue2 = dataset.hydeval2;  // Wechsel der Ebene
+                        if (datavalue2 !== null) {
+                            if (!crits[value].includes(datavalue2)) {
+                                crits[value].push(datavalue2)
+                            }
+                        }
+                    }
+                } else {
+                    if (typeof dataset[fieldname] !== "undefined") {
+                        let value = dataset[fieldname];
+                        if (fieldname !== null) {
+                            if (!crits[fieldname].includes(value)) {
+                                crits[fieldname].push(value)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        console.log(crits);
+        debugger;
+
         let parms = $page[0].dataset;
         let setindex = new Map(graph.data.datasets.map(function (rec, i) {
             rec.key = rec.source + "_" + rec.stationid + "_" + rec.variable + "_" + rec.method;
             return [rec.key, i];
         }));
+
 
         let yAxisID = "";
         let regscience = false;
@@ -2024,7 +2419,6 @@ function createLocation() {
                         break;
                     }
                     let visible = graph.isDatasetVisible(idataset);
-
                     for (let pparms of [["P0", 1950, 1979], ["P1", 1970, 1999], ["P2", 1990, 2019]]) {
                         let [period, pfromyear, ptoyear] = pparms;
                         let fromind = pfromyear - fromyear;
@@ -2067,7 +2461,6 @@ function createLocation() {
                         graph.data.datasets.push(pdataset);
                         console.log(pdataset.key, pdataset.yAxisID, pdataset.period);
                         graph.setDatasetVisibility(graph.data.datasets.length - 1, visible);
-
                     }
                 }
             }
@@ -3272,11 +3665,14 @@ $(document).on("click", ".helpinformation", function (evt) {
     if (mode === "mobile") {
         if ($("#" + pageid + "help").length > 0) {
             let target = document.getElementById(pageid + "help");
+            /*
             target.scrollIntoView({
                 behavior: "smooth",
                 block: "start",
                 inline: "nearest"
             });
+            */
+            kli6900.scrollTop(target);
             return;
         }
         if ($("#" + pageid + "chart").length > 0) {
@@ -3291,15 +3687,10 @@ $(document).on("click", ".helpinformation", function (evt) {
                 }));
 
         }
-        // pageid + "help"
         let $pagehelp = $("#" + pageid + "help");
         help.show(topic, "embedded", $pagehelp);
         let target = document.getElementById(pageid + "help");
-        target.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-            inline: "nearest"
-        });
+        kli6900.scrollTop(target);
     } else if (mode === "desktop") {
         help.show(topic, "dialog");
     }

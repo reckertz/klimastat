@@ -81,11 +81,12 @@ function createHelp(args = {}) {
         <p>Vertiefender Text ...</p>
     </details>
 </section>`;
-
         }).join("\n\n");
+        /*
         try {
         await navigator.clipboard.writeText(html);
         } catch(err) {};
+         */
         return html;
     }
 
@@ -108,6 +109,21 @@ function createHelp(args = {}) {
 
         dialog = document.createElement("dialog");
         dialog.className = "help-dialog";
+
+        const copy = document.createElement("button");
+        copy.type = "button";
+        copy.textContent = "Copy";
+        copy.className = "help-close";
+        copy.setAttribute("aria-label", "Copy");
+        copy.addEventListener("click", async function () {
+            if ($(this).dataset.action === "helpcopy") {
+
+                try {
+                    await navigator.clipboard.writeText(html);
+                } catch (err) { };
+            }
+        });
+
 
         const close = document.createElement("button");
         close.type = "button";

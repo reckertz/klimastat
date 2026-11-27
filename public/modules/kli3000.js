@@ -5,6 +5,10 @@ import * as kli3010 from "/modules/kli3010.js";
 import * as kli3020 from "/modules/kli3020.js";
 import { createHelp } from "/modules/help.js";
 
+import { createActivity } from "/modules/activity.js";
+
+globalThis.activity = createActivity();
+
 let oksign = "&#10003;"; // Haken "✓" oder &#x25CB;
 let cancelsign = "&#10005;"; // x oder &#x25CF;
 let okletter = "✓";
@@ -19,6 +23,8 @@ globalThis.locationInstances = [];
 let destroyer = null;
 
 let activeTheme = null;
+
+globalThis.themeControl = [];  // Kontrolle der bereits aktiven themes = climateThemes.Auswahl
 let themePromise;
 
 // addQualityPage ist noch ein Thema
@@ -37,9 +43,11 @@ let climateThemes = [
     ["Landnutzung", "landnutzung.png", ["ZR_TMAX_avg_zind", "ZR_TMIN_avg_zind", "ZR_PRCP_avg_zind", "ZR_SNOW_avg_zind", "ZR_SNWD_avg_zind"]],
 ];
 
+
 async function show() {
     screenConfig = getDisplayInfo();
     console.log(screenConfig);
+    debugger;
     // addLocation ist ein Hook - hier kommt als Zwischenschritt die Themenauswahl
     // beim Zufügen von Locations zu einer vorhandenen Location wird das nicht 
     // angeboten, zum Wechsel muss der User zurück in die Themenauswahl
@@ -47,8 +55,58 @@ async function show() {
     globalThis.help = createHelp({
         url: "/help/klima-help-de.html"
     });
-
 }
+
+/**
+ * follow-up events auf Theme-Kachel, ergänzen von Auswertungen zu bestehenden pages
+ */
+$(document).on("click", "button.topicselectiondone", async function (evt) {
+    evt.preventDefault();
+    let topicindex = $(this).attr("topicindex");
+    let topic = JSON.parse($(this).attr("topic"));
+    let theme = topic;
+    let themename = topic[0];
+    let ifound = false;
+
+    for (let oldtheme of themeControl) {
+        if (themename === oldtheme[0]) {
+            ifound = true;
+            break;
+        }
+    }
+    if (ifound === false) {
+        themeControl.push(topic);
+    } else {
+        // Thema ist bereit ausgegeben, daher nur Positionierung
+        let helpkey = topic[2][0];
+        let target = $("article[data-theme='" + topic[0] + "'][data-helpkey='" + helpkey + "']").first()[0];
+        kli6900.scrollTop(target);
+        return;
+    }
+    // neues Topic = Theme für alle vorhandenen Locations
+    let index = -1;
+    for (let locationInstance of locationInstances) {
+        index++;
+        //let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets, theme);
+        let coredata = locationInstance.getCoreData();
+        /* criticalDays, topicParms, containerid, mode, location, locationkey, 
+        geosets, extdays, records, recindex */
+        let containerid = coredata.containerid;
+        let colIndex = index;
+        let newmode = coredata.mode;
+        let newlocation = coredata.location;
+        let newgeosets = coredata.geosets;
+        // Prüfen, ob das theme bereits angezeigt wird
+        await locationInstance.addTopics(containerid, colIndex, newmode, newlocation, newgeosets, theme);
+    }
+    // hier fehlt noch die Positionierung
+    let helpkey = topic[2][0];
+    let target = $("article[data-theme='" + topic[0] + "'][data-helpkey='" + helpkey + "']").first()[0];
+    kli6900.scrollTop(target);
+});
+
+
+
 
 async function showThemeSelection() {
     return new Promise(function (resolve, reject) {
@@ -113,54 +171,116 @@ async function showThemeSelection() {
                     });
                 */
         });
-
-
         let target = $("div.row.themescontainer")[0];
-        //let target = document.getElementById(pageid + "help");
-        target.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-            inline: "nearest"
-        });
-
+        kli6900.scrollTop(target);
         $("div.row.themescontainer").on("click", ".topicselection", async function (evt) {
             evt.preventDefault();
+            evt.stopPropagation();
+            evt.stopImmediatePropagation();
             let topicindex = $(this).attr("topicindex");
             let topic = JSON.parse($(this).attr("topic"));
-            if ($(this).hasClass("selectiondone")) {
+            if ($(this).hasClass("topicselectiondone")) {
                 // hier für alle locations neue article einfügen,
                 // wenn diese noch nicht vorhanden sind
                 // addTopics
-
+                alert("sollte nicht passieren");
             } else {
+                $("div.row.themescontainer").off("click", ".topicselection");
                 let buttons = $("div.row.themescontainer").find("button.topicselection").toArray();
                 for (let button of buttons) {
-                    $(button).removeClass("selectiondone");
-                    $(button).addClass("selectiondone");
+                    $(button).removeClass("topicselectiondone");
+                    $(button).addClass("topicselectiondone");
+                    $(button).removeClass("topicselection");
+                }
+                // Prüfen, ob topic in themeControl steht und ergänzen, wenn erforderlich
+                let themename = topic[0];
+                let ifound = false;
+                for (let oldtheme of themeControl) {
+                    if (themename === oldtheme[0]) {
+                        ifound = true;
+                        break;
+                    }
+                }
+                if (ifound === false) {
+                    themeControl.push(topic);
                 }
                 resolve(topic);
             }
         });
-
     });
-
 }
 
+
+
 // Dies ist der Hook
-async function addLocation(newlocation, geosets) {
+async function addLocation(newlocation, geosets, locationtype) {
+
+    let visiblelocations = $("#activelocations").find("a").toArray();
+    if (visiblelocations.length >= 3) {
+        alert("not more than 3 locations allowed in one Analysis");
+        return;
+    }
+
+    // check if already in analysis
+    let found = false;
+    for (let visiblelocation of visiblelocations) {
+        let locname = $(visiblelocation).attr("locname");
+        let geonameid = $(visiblelocation).attr("geonameid");
+        if (locname === newlocation.locname && geonameid === newlocation.geonameid) {
+            found = true;
+            break;
+        }
+    }
+    if (found === true) {
+        alert("location already in use");
+        return;
+    }
+
+    // Zufügen zu activelocations
+    $("#activelocations")
+        .append($("<a/>", {
+            css: {
+                "margin-right": "10px"
+            },
+            href: "",
+            html: newlocation.locname + " (" + newlocation.geonameid + ")",
+            locname: newlocation.locname,
+            geonameid: newlocation.geonameid
+        }));
+
+    let oldlocations = kli6900.getCookie("oldlocations");
+    if (oldlocations === null) {
+        oldlocations = {};
+    }
+    oldlocations[newlocation.geonameid] = {
+        geonameid: newlocation.geonameid,
+        locname: newlocation.locname,
+        latitude: newlocation.latitude,
+        longitude: newlocation.longitude,
+        country_code: newlocation.country_code,
+        tsupd: new Date().toISOString()
+    }
+    kli6900.setCookie("oldlocations", JSON.stringify(oldlocations));
+
     console.log(newlocation);
     // hier ist der Punkt: wenn locationInstances === 0, dann Anzeige Themenauswahl
     // sonst verbleibt die Themenauswahl
     let theme = null;
     if (locationInstances.length === 0) {
         theme = await showThemeSelection();
-        activeTheme = structuredClone(theme);
-        if (typeof activeTheme === "string") {
-            activeTheme = activeTheme.split(",");
-            theme = activeTheme;
+        // nur zufügen, wenn noch nicht vorhanden
+        let found = false;
+        for (let thistheme of themeControl) {
+            if (thistheme[0] === theme[0]) {
+                found = true;
+                break;
+            }
+        }
+        if (found = false) {
+            themeControl.push(theme);
         }
     } else {
-        theme = activeTheme;
+        // hier muss themeControl genutzt werden, um die bestehenden themes abzuarbeiten!!!
     }
     if (screenConfig.mode === "mobile") {
         let locIndex = locationInstances.length;
@@ -182,8 +302,14 @@ async function addLocation(newlocation, geosets) {
         } else {
             containerid = $("div.row.maincontainer").attr("id");
         }
-        debugger;  // locationInstances
-        let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets, theme);
+        let firstpage = null;
+        for (theme of themeControl) {
+            let thispage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets, theme);
+            if (firstpage === null) {
+                firstpage = structuredClone(thispage);
+            }
+        }
+        //let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets, theme);
         //  firstpage.topicstring = topicstring; firstpage.type = "page";
         //  firstpage.colIndex = colIndex; firstpage.locationkey = locationkey; firstpage.locname = location.locname;
         if (typeof firstpage.topicstring !== "undefined") {
@@ -218,8 +344,13 @@ async function addLocation(newlocation, geosets) {
                     }
                 }));
         }
-        debugger;   // locationInstances[locIndex]
-        let firstpage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets, theme);
+        let firstpage = null;
+        for (theme of themeControl) {
+            let thispage = await locationInstances[locIndex].addTopics(containerid, locIndex, screenConfig.mode, newlocation, geosets, theme);
+            if (firstpage === null) {
+                firstpage = structuredClone(thispage);
+            }
+        }
         //  firstpage.topicstring = topicstring; firstpage.type = "page";
         //  firstpage.colIndex = colIndex; firstpage.locationkey = locationkey; firstpage.locname = location.locname;
         if (typeof firstpage.topicstring !== "undefined") {

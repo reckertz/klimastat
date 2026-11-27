@@ -369,6 +369,28 @@
         msgcount = 0;
     };
 
+    kli6900.scrollTop = function (target, vpixels) {
+        let targetid = target;
+        if (typeof target === "object") {
+            targetid = $(target).attr("id");
+        }
+        let targetSlider = document.getElementById(targetid);
+        let navHeight = document.querySelector("nav").offsetHeight;
+        if (typeof navHeight === "undefined" || navHeight === null) {
+            if (typeof vpixels !== "undefined") {
+                navHeight = vpixels;
+            } else {
+                navHeight = 0;
+            }
+        }
+        let rect = targetSlider.getBoundingClientRect();
+        let top = window.scrollY + rect.top - navHeight;
+        window.scrollTo({
+            top,
+            behavior: "instant"
+        });
+
+    }
 
     /**
      * getPerformance - Initialisierung mit Timestamp, sonst wird Default now gesetzt
@@ -1205,7 +1227,7 @@
                 if (typeof (o[key]) !== "object") {
                     alert(key + "=>" + o[key] + " : " + typeof (o[key]));
                 }
-                debugger;
+
             }
         }
         return output;

@@ -3,6 +3,10 @@
  * select locations and provide  locations
  */
 
+let { mapService } = await import("/modules/kli2000B.js");
+console.log(typeof mapService); // "function"
+console.log(mapService.length);  // 0
+
 let oksign = "&#10003;"; // Haken "✓" oder &#x25CB;
 let cancelsign = "&#10005;"; // x oder &#x25CF;
 let okletter = "✓";
@@ -18,39 +22,38 @@ async function show(screenConfig, hook) {
     // screenConfig mit: columns : 1,height: 667, width: 375
     // mode: "mobile", orientation: "portrait", sliderMode: "isolated", touch: true
     if (addbutton === false) {
-        $("#navigation")
-            .append($("<button/>", {
-                class: "btn btn-sm btn-danger",
-                style: "margin-left:auto;",
-                html: "Test",
-                click: async function (evt) {
-                    evt.preventDefault();
-                    console.log(locationInstances);
-                    for (let instance of locationInstances) {
-                       let alldata = instance.getCoreData();
-                        debugger;
-                    }
-                    debugger;
+        $("#headerbuttons")
 
-                }
-            }));
-
-        $("#navigation")
             .append($("<button/>", {
                 class: "btn btn-sm btn-primary",
-                style: "margin-left:auto;",
+                //style: "display:flex;gap:10px;",   // margin-left:auto;
+                html: "+Thema",
+                click: async function (evt) {
+                    evt.preventDefault();
+                    console.log(themeControl);
+                    // row themescontainer scrollto
+                    let targetid = $("div.row.themescontainer").attr("id");
+                    let targetSlider = document.getElementById(targetid);
+                    let navHeight = document.querySelector("nav").offsetHeight;
+                    let rect = targetSlider.getBoundingClientRect();
+                    let top = window.scrollY + rect.top - navHeight;
+                    window.scrollTo({
+                        top,
+                        behavior: "instant"
+                    });
+                }
+            }))
+
+            .append($("<button/>", {
+                class: "btn btn-sm btn-primary",
+                //style: "display:flex;gap:10px;",   // margin-left:auto;
                 html: "+Location",
                 click: async function (evt) {
                     evt.preventDefault();
                     let target = document.getElementById("application");
-                    target.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                        inline: "nearest"
-                    });
+                    kli6900.scrollTop(target);
                 }
             }));
-
         addbutton = true;
     }
 
@@ -58,6 +61,7 @@ async function show(screenConfig, hook) {
     <p class="eyebrow">Dein Klima. Deine Umgebung.</p>
     <h1>Wie hat sich das Klima bei dir verändert?</h1>
     <p>Vergleiche historische Temperaturen von Wetterstationen in deiner Nähe – verständlich und auf Grundlage von Messdaten.</p>
+    <div id='activelocations'></div>
     <details>
       <summary>Optionen (für später)</summary>
     
@@ -97,12 +101,7 @@ async function show(screenConfig, hook) {
         html: html
     }));
     let target = document.getElementById("application");
-    target.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-        inline: "nearest"
-    });
-
+    kli6900.scrollTop(target);
 
     $("#" + sectionid).on("click", "button.qualitycontrol", async function (evt) {
         evt.preventDefault();
@@ -130,6 +129,7 @@ async function show(screenConfig, hook) {
                 return;
             }
             let country_code = $("#" + sectionid).find("input[name=countrycode]").first().val();
+            country_code = country_code.toUpperCase();
             let ret = await showGeonamesInMap(sectionid, searchstring, country_code, exactfilter);
         }
     });
@@ -153,6 +153,9 @@ async function show(screenConfig, hook) {
             //}
             let ret = await showCandidates(sectionid, searchstring, country_code);
         } else if (action === "location") {
+            const signal = activity.show(
+                "Standortdaten aufbereiten …"
+            );
             let geolocation = null;
             let geopermission = await getGeoPermission();
             if (geopermission === "granted") {
@@ -166,8 +169,12 @@ async function show(screenConfig, hook) {
             if (geolocation === null) {
                 geolocation = await getgeoLocationByIP();
             }
+            activity.message(
+                "Anzeige Standortdaten …"
+            );
             console.log(geolocation);
             await showCandidates(sectionid, "", "", geolocation.lat, geolocation.lon, 10);
+            activity.close();
         } else if (action === "oldlocations") {
             let oldlocations = await getOldLocations(sectionid);
         }
@@ -223,7 +230,7 @@ async function getGeoPermission() {
 
 
 /**
-* getOldLocations - vereinfachte showCandidantes Lösung aus cookie
+* getOldLocations - vereinfachte showCandidates Lösung aus cookie
 * @param {any} sectionid - Container mit der Liste
 *
 * @returns {any} - This function does not return a value but performs assertions on the input data.
@@ -247,7 +254,7 @@ async function getOldLocations(sectionid) {
             html += "</a></span>";
             $liste.append($("<li/>", {
                 html: html,
-                origin: "dialog",
+                "data-origin": "cookie",
                 "data-geonameid": oldlocation.geonameid,
                 "data-locname": oldlocation.locname,
                 "data-latitude": oldlocation.latitude,
@@ -408,7 +415,45 @@ async function showGeonamesInMap(sectionid, searchstring, country_code, exactfil
         // auswahl des Ortes, Anzeigen in Map mit Stationen
         let li = $(this).closest("li");
         let location = $(li)[0].dataset;
-        await showWorldmap4Location($main, location);
+        if (location.origin === "cookie") {
+            // direkte Bereitstellung ohne Worldmap, wenn "alt"
+            let distancekm = 50;
+            let geopoints = await searchStations(location, distancekm);
+            // jetzt die geopoints in den layer bringen
+            // Klassifizierung der Stationen mit Zeitbezug 1952 - 2017
+            let inLimit = 0;
+            let geosets = new Array(3);
+            geosets[0] = [];
+            geosets[1] = [];
+            geosets[2] = [];
+            let alpha3s = [];
+            for (let station of geopoints) {
+                station.stationkey = station.source + "_" + station.stationid;
+                console.log(station.locname, station.fromyear, station.toyear);
+                if (!alpha3s.includes(station.alpha3)) {
+                    alpha3s.push(station.alpha3)
+                }
+                if (station.fromyear <= "1952" && station.toyear >= "2017") {
+                    inLimit++;
+                    if (inLimit <= 5) {
+                        station.type = "Good Data-near";
+                        station.tcode = 0;
+                        geosets[0].push(station);
+                    } else {
+                        station.type = "Good Data-far";
+                        station.tcode = 1;
+                        geosets[1].push(station);
+                    }
+                } else {
+                    station.type = "Bad Data";
+                    geosets[2].push(station);
+                    station.tcode = 2;
+                }
+            }
+            await locationhook(location, geosets, "oldlocation1");
+        } else {
+            await showWorldmap4Location($main, location);
+        }
     });
 
     async function showWorldmap4Location($main, location) {
@@ -427,7 +472,7 @@ async function showGeonamesInMap(sectionid, searchstring, country_code, exactfil
         let alpha3s = [];
         for (let station of geopoints) {
             station.stationkey = station.source + "_" + station.stationid;
-            console.log(station.locname, station.fromyear, station.toyear);
+            //console.log(station.locname, station.fromyear, station.toyear);
             if (!alpha3s.includes(station.alpha3)) {
                 alpha3s.push(station.alpha3)
             }
@@ -465,7 +510,7 @@ async function showGeonamesInMap(sectionid, searchstring, country_code, exactfil
                 html: location.locname + " Auswerten",
                 click: async function (evt) {
                     evt.preventDefault();
-                    await locationhook(location, geosets);
+                    await locationhook(location, geosets, "newlocation");
                     //await startStatistics(location, geosets);
                 }
             }));
@@ -481,11 +526,7 @@ async function showGeonamesInMap(sectionid, searchstring, country_code, exactfil
                     evt.preventDefault();
                     let targetid = $(".welcome").attr("id");
                     let target = document.getElementById(targetid);
-                    target.scrollIntoView({
-                        behavior: "smooth",
-                        block: "nearest",
-                        inline: "start"
-                    });
+                    kli6900.scrollTop(target);
                 }
             }));
     }
@@ -517,7 +558,7 @@ async function showCandidates(sectionid, searchstring, country_code, latitude, l
                 //sql += " WHERE " + ands.join(" AND ");
             } else {
                 //sql += " WHERE lower(KLIGEONAMES.name) LIKE('" + frags[0] + "%'";
-                ands.push(" lower(KLIGEONAMES.name) LIKE('" + frags[0] + "%'");
+                ands.push(" lower(KLIGEONAMES.name) LIKE('" + frags[0].toLowerCase() + "%'");
             }
             if (typeof country_code === "string" && country_code.trim().length > 0) {
                 ands.push(" KLIGEONAMES.country_code = '" + country_code + "'");
@@ -659,6 +700,7 @@ async function showCandidates(sectionid, searchstring, country_code, latitude, l
                     .append($("<li/>", {
                         id: ulid + "_" + count,
                         class: "kli3010candidate",
+                        "data-origin": "newlocation",
                         "data-table": "KLIGEONAMES",
                         "data-source": "KLIGEONAMES",
                         "data-geonameid": record.geonameid,
@@ -684,6 +726,45 @@ async function showCandidates(sectionid, searchstring, country_code, latitude, l
         // auswahl des Ortes, Anzeigen in Map mit Stationen
         let li = $(this).closest("li");
         let location = $(li)[0].dataset;
+        let origin = location.origin;
+        if (origin === "cookie") {
+            // direkte Bereitstellung ohne Worldmap, wenn "alt"
+            let distancekm = 50;
+            let geopoints = await searchStations(location, distancekm);
+            // jetzt die geopoints in den layer bringen
+            // Klassifizierung der Stationen mit Zeitbezug 1952 - 2017
+            let inLimit = 0;
+            let geosets = new Array(3);
+            geosets[0] = [];
+            geosets[1] = [];
+            geosets[2] = [];
+            let alpha3s = [];
+            for (let station of geopoints) {
+                station.stationkey = station.source + "_" + station.stationid;
+                //console.log(station.locname, station.fromyear, station.toyear);
+                if (!alpha3s.includes(station.alpha3)) {
+                    alpha3s.push(station.alpha3)
+                }
+                if (station.fromyear <= "1952" && station.toyear >= "2017") {
+                    inLimit++;
+                    if (inLimit <= 5) {
+                        station.type = "Good Data-near";
+                        station.tcode = 0;
+                        geosets[0].push(station);
+                    } else {
+                        station.type = "Good Data-far";
+                        station.tcode = 1;
+                        geosets[1].push(station);
+                    }
+                } else {
+                    station.type = "Bad Data";
+                    geosets[2].push(station);
+                    station.tcode = 2;
+                }
+            }
+            await locationhook(location, geosets, "oldlocation1");
+            return;
+        }
         // Anzeige der Worldmap geordnet in slider
         let { maps, pageid, toolbar0 } = await showMap($main, location);
         // Aufbringen der Marker für DWD-Layer und für GHCND-Layer
@@ -737,7 +818,7 @@ async function showCandidates(sectionid, searchstring, country_code, latitude, l
                 html: location.locname + " Auswerten",
                 click: async function (evt) {
                     evt.preventDefault();
-                    await locationhook(location, geosets);
+                    await locationhook(location, geosets, "oldlocation");
                     //await startStatistics(location, geosets);
                 }
             }));
@@ -753,11 +834,7 @@ async function showCandidates(sectionid, searchstring, country_code, latitude, l
                     evt.preventDefault();
                     let targetid = $(".welcome").attr("id");
                     let target = document.getElementById(targetid);
-                    target.scrollIntoView({
-                        behavior: "smooth",
-                        block: "nearest",
-                        inline: "start"
-                    });
+                    kli6900.scrollTop(target);
                 }
             }));
     });
@@ -791,26 +868,19 @@ async function showMap($main, location) {
         width: width + "px",
         height: height + "px"
     });
-
-    let { mapService } = await import("/modules/kli2000B.js");
-    console.log(typeof mapService); // "function"
-    console.log(mapService.length);  // 0
     let maps = mapService({});
     // links navigation, rechts Arbeits- und Ergebnisbereich
     // ret.records hat die Staionen um localization, wenn localization nicht null ist
     // let centerlocation = localization;
     let imagetype = "natural";
+    //  worldmap, worldmapid, layerControl
+    let testcontainer = $("#" + containerid);
+    pause(100);
     let { worldmap, worldmapid, layerControl } = await maps.showWorldMap(containerid, imagetype);
-
     let toolbar0 = maps.createLeafletToolbar();
     toolbar0.focusMarkers();
     let target = document.getElementById(pageid);
-    target.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-        inline: "nearest"
-    });
-
+    kli6900.scrollTop(target);
     return {
         maps: maps,
         pageid: pageid,
@@ -818,6 +888,11 @@ async function showMap($main, location) {
     };
 }
 
+async function pause(ms = 50) {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms);
+    });
+};
 
 async function searchStations(location, distancekm) {
     let ret = {};
@@ -957,45 +1032,37 @@ async function searchStations(location, distancekm) {
 
 async function addWorldmapSlider($main, location) {
     let $slider = null;
-    if ($(".place-slider.locationmap").length === 0) {
+    debugger;
+    if ($(".app-slider.locationmap").length === 0) {
+        let sliderid = "p" + (Math.floor(Math.random() * 1000000) + 1000000);
         $slider = $("<section>", {
-            class: "app-slider locationmap",
+            class: "app-slider vertical locationmap",
+            id: sliderid,
             "data-topic": "locationmap"
         });
         $main.append($slider);
-        let oldlocations = kli6900.getCookie("oldlocations");
-        if (oldlocations === null) {
-            oldlocations = {};
-        }
-        oldlocations[location.geonameid] = {
-            geonameid: location.geonameid,
-            locname: location.locname,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            country_code: location.country_code,
-            tsupd: new Date().toISOString()
-        }
-        kli6900.setCookie("oldlocations", JSON.stringify(oldlocations));
     } else {
         $slider = $(".app-slider.locationmap");
     }
+    debugger;
     let place = location.locname + " " + location.geonameid;
     let $page = null;
     let pageid = null;
-    if ($(".app-page.locationmap[data-place='" + place + "']").length === 0) {
-        pageid = "p" + (Math.floor(Math.random() * 1000000) + 1000000);
-        $page = $("<article>", {
-            id: pageid,
-            class: "app-page locationmap",
-            "data-place": place,
-            "data-topic": "locationmap"
-        });
-        $slider.append($page);
-    } else {
-        $(".app-page.locationmap[data-place='" + place + "']").children().remove();
-        pageid = $(".app-page.locationmap[data-place='" + place + "']").attr("pageid");
-        $page = $("#" + pageid);
-    }
+    //if ($(".app-page.locationmap[data-place='" + place + "']").length === 0) {
+    pageid = "p" + (Math.floor(Math.random() * 1000000) + 1000000);
+    $page = $("<article>", {
+        id: pageid,
+        class: "app-page locationmap",
+        "data-place": place,
+        "data-geonameid": location.geonameid,
+        "data-topic": "locationmap"
+    });
+    $slider.append($page);
+    //} else {
+    //    $(".app-page.locationmap[data-place='" + place + "']").children().remove();
+    //    pageid = $(".app-page.locationmap[data-place='" + place + "']").attr("pageid");
+    //    $page = $("#" + pageid);
+    //}
     $page.append(
         $("<h2>").text(`${place}`)
     );
@@ -1011,7 +1078,6 @@ async function addWorldmapSlider($main, location) {
     //    .forEach(page => observer.observe(page));
     return pageid;
 }
-
 export {
     show
 }

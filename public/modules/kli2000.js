@@ -2558,6 +2558,8 @@ async function searchStations(location, distancekm) {
 async function showMap($main, location) {
     //await getScript("/js/kli1000B.js");
     //let maps = window.kli1000B.mapService();
+    // hier liegt pageid undefined gelegentlich vor, obwohl korrekte Vorgaben
+    debugger;
     let pageid = await addWorldmapSlider($main, location);
     let containerid = pageid + "content";
     $("#" + containerid).removeClass("myleaflet-map");
@@ -2602,28 +2604,28 @@ async function showMap($main, location) {
 
 async function addWorldmapSlider($main, location) {
     let $slider = null;
-    if ($(".place-slider.locationmap").length === 0) {
-        $slider = $("<section>", {
-            class: "app-slider locationmap",
-            "data-topic": "locationmap"
-        });
-        $main.append($slider);
-        let oldlocations = kli6900.getCookie("oldlocations");
-        if (oldlocations === null) {
-            oldlocations = {};
-        }
-        oldlocations[location.geonameid] = {
-            geonameid: location.geonameid,
-            locname: location.locname,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            country_code: location.country_code,
-            tsupd: new Date().toISOString()
-        }
-        kli6900.setCookie("oldlocations", JSON.stringify(oldlocations));
-    } else {
-        $slider = $(".app-slider.locationmap");
+    //if ($(".place-slider.locationmap").length === 0) {
+    $slider = $("<section>", {
+        class: "app-slider locationmap",
+        "data-topic": "locationmap"
+    });
+    $main.append($slider);
+    let oldlocations = kli6900.getCookie("oldlocations");
+    if (oldlocations === null) {
+        oldlocations = {};
     }
+    oldlocations[location.geonameid] = {
+        geonameid: location.geonameid,
+        locname: location.locname,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        country_code: location.country_code,
+        tsupd: new Date().toISOString()
+    }
+    kli6900.setCookie("oldlocations", JSON.stringify(oldlocations));
+    //} else {
+    //    $slider = $(".app-slider.locationmap");
+
     let place = location.locname + " " + location.geonameid;
     let $page = null;
     let pageid = null;
@@ -2654,6 +2656,10 @@ async function addWorldmapSlider($main, location) {
         }));
     //document.querySelectorAll(".place-page")
     //    .forEach(page => observer.observe(page));
+    if (typeof pageid === "undefined" || pageid === null) {
+        alert("pageid");
+        debugger;
+    }
     return pageid;
 }
 
